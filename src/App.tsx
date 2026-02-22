@@ -1,49 +1,38 @@
-import { useEffect } from 'react'
-import { observer } from 'mobx-react-lite'
-import { useStore } from './hooks/useStore'
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import Layout from './components/shared/Layout'
+import ProtectedRoute from './components/shared/ProtectedRoute'
+import Dashboard from './pages/Dashboard'
+import TripDetail from './pages/TripDetail'
+import AddExpense from './pages/AddExpense'
+import Settle from './pages/Settle'
+import Login from './pages/Login'
 
-const App = observer(() => {
-  const { trips, auth } = useStore()
-
-  useEffect(() => {
-    trips.fetchTrips()
-  }, [trips])
-
-  if (auth.isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
-  }
-
-  if (trips.isLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading trips...</div>
-  }
-
+function App() {
   return (
-    <div className="min-h-screen p-8">
-      <h1 className="text-4xl font-bold mb-8">TripLedger</h1>
+    <BrowserRouter>
+      <Routes>
+        {/* Public route */}
+        <Route path="/login" element={<Login />} />
 
-      <div className="mb-6">
-        <p className="text-lg">Logged in as: <span className="font-semibold">{auth.currentUser?.displayName}</span></p>
-      </div>
+        {/* Protected routes with Layout */}
+        <Route
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/trips/:id" element={<TripDetail />} />
+          <Route path="/trips/:id/add" element={<AddExpense />} />
+          <Route path="/trips/:id/settle" element={<Settle />} />
+        </Route>
 
-      <div>
-        <h2 className="text-2xl font-semibold mb-4">My Trips ({trips.myTrips.length})</h2>
-        {trips.myTrips.length === 0 ? (
-          <p className="text-gray-500">No trips found</p>
-        ) : (
-          <ul className="space-y-2">
-            {trips.myTrips.map(trip => (
-              <li key={trip.id} className="p-4 border rounded-lg">
-                <div className="font-semibold">{trip.name}</div>
-                <div className="text-sm text-gray-600">
-                  {trip.description} • {trip.members.length} members • {trip.isSettled ? '✓ Settled' : 'Active'}
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-    </div>
+        {/* Catch-all redirect to dashboard */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </BrowserRouter>
   )
-})
+}
 
 export default App
