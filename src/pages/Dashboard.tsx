@@ -1,13 +1,15 @@
 // src/pages/Dashboard.tsx
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/hooks/useStore'
 import TripCard from '@/components/trip/TripCard'
 
+type Tab = 'active' | 'settled'
+
 const Dashboard = observer(() => {
   const { trips } = useStore()
+  const [activeTab, setActiveTab] = useState<Tab>('active')
 
-  // Fetch trips on mount
   useEffect(() => {
     trips.fetchTrips()
   }, [trips])
@@ -28,11 +30,13 @@ const Dashboard = observer(() => {
     )
   }
 
+  const displayedTrips = activeTab === 'active' ? trips.activeTrips : trips.settledTrips
+
   return (
     <div className="max-w-2xl mx-auto">
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-8">
+      <div className="flex items-center justify-between mb-6">
         <h2 className="text-3xl font-bold">My Trips</h2>
         <button
           disabled
@@ -43,37 +47,56 @@ const Dashboard = observer(() => {
         </button>
       </div>
 
-      {/* Active Trips */}
-      <section className="mb-10">
-        <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-          Active · {trips.activeTrips.length}
-        </h3>
+      {/* Tabs */}
+      <div className="flex gap-1 border-b mb-6">
+        <button
+          onClick={() => setActiveTab('active')}
+          className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+            activeTab === 'active'
+              ? 'text-primary'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          Active
+          <span className="ml-1.5 text-xs bg-muted px-1.5 py-0.5 rounded-full">
+            {trips.activeTrips.length}
+          </span>
+          {activeTab === 'active' && (
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+          )}
+        </button>
 
-        {trips.activeTrips.length === 0 ? (
-          <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
-            No active trips. Create one to get started!
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {trips.activeTrips.map(trip => (
-              <TripCard key={trip.id} trip={trip} />
-            ))}
-          </div>
-        )}
-      </section>
+        <button
+          onClick={() => setActiveTab('settled')}
+          className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+            activeTab === 'settled'
+              ? 'text-primary'
+              : 'text-muted-foreground hover:text-foreground'
+          }`}
+        >
+          Settled
+          <span className="ml-1.5 text-xs bg-muted px-1.5 py-0.5 rounded-full">
+            {trips.settledTrips.length}
+          </span>
+          {activeTab === 'settled' && (
+            <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+          )}
+        </button>
+      </div>
 
-      {/* Settled Trips */}
-      {trips.settledTrips.length > 0 && (
-        <section>
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-3">
-            Settled · {trips.settledTrips.length}
-          </h3>
-          <div className="space-y-3">
-            {trips.settledTrips.map(trip => (
-              <TripCard key={trip.id} trip={trip} />
-            ))}
-          </div>
-        </section>
+      {/* Trip List */}
+      {displayedTrips.length === 0 ? (
+        <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
+          {activeTab === 'active'
+            ? 'No active trips. Create one to get started!'
+            : 'No settled trips yet.'}
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {displayedTrips.map(trip => (
+            <TripCard key={trip.id} trip={trip} />
+          ))}
+        </div>
       )}
 
     </div>
