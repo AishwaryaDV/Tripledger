@@ -33,7 +33,7 @@ const Dashboard = observer(() => {
   const displayedTrips = activeTab === 'active' ? trips.activeTrips : trips.settledTrips
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="w-full max-w-3xl mx-auto">
 
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
@@ -48,10 +48,10 @@ const Dashboard = observer(() => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 border-b mb-6">
+      <div className="flex border-b mb-6">
         <button
           onClick={() => setActiveTab('active')}
-          className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+          className={`flex-1 py-2 text-sm font-medium transition-colors relative ${
             activeTab === 'active'
               ? 'text-primary'
               : 'text-muted-foreground hover:text-foreground'
@@ -68,7 +68,7 @@ const Dashboard = observer(() => {
 
         <button
           onClick={() => setActiveTab('settled')}
-          className={`px-4 py-2 text-sm font-medium transition-colors relative ${
+          className={`flex-1 py-2 text-sm font-medium transition-colors relative ${
             activeTab === 'settled'
               ? 'text-primary'
               : 'text-muted-foreground hover:text-foreground'

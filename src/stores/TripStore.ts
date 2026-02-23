@@ -47,13 +47,21 @@ export class TripStore {
   }
 
   async fetchTrip(id: string) {
-    const { data } = await api.get<Trip>(`/trips/${id}`)
-    runInAction(() => {
-      this.currentTrip = data
-      // Also update in trips array if present
-      const idx = this.trips.findIndex(t => t.id === id)
-      if (idx >= 0) this.trips[idx] = data
-    })
+    runInAction(() => { this.isLoading = true })
+    try {
+      const data = USE_MOCK
+        ? await mockHandlers.getTrip(id)
+        : (await api.get<Trip>(`/trips/${id}`)).data
+      runInAction(() => {
+        this.currentTrip = data
+        const idx = this.trips.findIndex(t => t.id === id)
+        if (idx >= 0) this.trips[idx] = data
+      })
+    } catch (e: any) {
+      runInAction(() => { this.error = e.message })
+    } finally {
+      runInAction(() => { this.isLoading = false })
+    }
   }
 
   async createTrip(payload: Partial<Trip>) {
