@@ -2,8 +2,10 @@
 import { MOCK_TRIPS, MOCK_EXPENSES, MOCK_BALANCES, MOCK_SUGGESTIONS, MOCK_SETTLEMENTS } from './data'
 import type { Trip, Expense, Balance, SettlementSuggestion, Settlement } from '../types'
 
-// In-memory store so recordSettlement persists within a session
+// In-memory stores so mutations persist within a session
 let settlements = [...MOCK_SETTLEMENTS]
+// Mutable trip objects so reopenTrip is reflected in subsequent getTrip calls
+const mutableTrips = MOCK_TRIPS.map(t => ({ ...t }))
 
 // Simulates network latency so loading spinners are visible
 const delay = (ms = 300) => new Promise(res => setTimeout(res, ms))
@@ -11,12 +13,19 @@ const delay = (ms = 300) => new Promise(res => setTimeout(res, ms))
 export const mockHandlers = {
   async getTrips(): Promise<Trip[]> {
     await delay()
-    return [...MOCK_TRIPS]
+    return [...mutableTrips]
   },
 
   async getTrip(id: string): Promise<Trip> {
     await delay()
-    return MOCK_TRIPS.find(t => t.id === id)!
+    return mutableTrips.find(t => t.id === id)!
+  },
+
+  async reopenTrip(id: string): Promise<Trip> {
+    await delay()
+    const trip = mutableTrips.find(t => t.id === id)!
+    trip.isSettled = false
+    return { ...trip }
   },
 
   async getExpenses(tripId: string): Promise<Expense[]> {

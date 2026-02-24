@@ -13,13 +13,19 @@ const TripCard = ({ trip }: TripCardProps) => {
   return (
     <div
       onClick={() => navigate(`/trips/${trip.id}`)}
-      className="p-5 rounded-xl border bg-card text-card-foreground shadow-sm cursor-pointer hover:shadow-md hover:border-primary/40 transition-all"
+      className={`p-5 rounded-xl border text-card-foreground shadow-sm cursor-pointer transition-all ${
+        trip.isSettled
+          ? 'bg-muted/40 border-border/50 hover:border-border'
+          : 'bg-card hover:shadow-md hover:border-primary/40'
+      }`}
     >
       <div className="flex items-start justify-between gap-4">
         {/* Left: trip info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h3 className="font-semibold text-lg truncate">{trip.name}</h3>
+            <h3 className={`font-semibold text-lg truncate ${trip.isSettled ? 'text-muted-foreground' : ''}`}>
+              {trip.name}
+            </h3>
             {trip.isSettled && (
               <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium shrink-0">
                 Settled
@@ -53,7 +59,11 @@ const TripCard = ({ trip }: TripCardProps) => {
             <div
               key={member.userId}
               title={member.displayName}
-              className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold border-2 border-background"
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-semibold border-2 border-background ${
+                trip.isSettled
+                  ? 'bg-muted text-muted-foreground'
+                  : 'bg-primary text-primary-foreground'
+              }`}
             >
               {member.displayName.charAt(0).toUpperCase()}
             </div>

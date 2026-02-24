@@ -64,6 +64,21 @@ export class TripStore {
     }
   }
 
+  async reopenTrip(id: string) {
+    try {
+      const updated = USE_MOCK
+        ? await mockHandlers.reopenTrip(id)
+        : (await api.patch<Trip>(`/trips/${id}`, { isSettled: false })).data
+      runInAction(() => {
+        if (this.currentTrip?.id === id) this.currentTrip = updated
+        const idx = this.trips.findIndex(t => t.id === id)
+        if (idx >= 0) this.trips[idx] = updated
+      })
+    } catch (e: any) {
+      runInAction(() => { this.error = e.message })
+    }
+  }
+
   async createTrip(payload: Partial<Trip>) {
     const { data } = await api.post<Trip>('/trips', payload)
     runInAction(() => { this.trips.push(data) })

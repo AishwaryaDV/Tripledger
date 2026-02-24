@@ -22,6 +22,7 @@ const TripDetail = observer(() => {
   const navigate = useNavigate()
   const { trips, expenses, balances, auth } = useStore()
   const [activeTab, setActiveTab] = useState<Tab>('expenses')
+  const [confirmReopen, setConfirmReopen] = useState<'reopen' | 'add' | null>(null)
 
   useEffect(() => {
     if (!id) return
@@ -99,7 +100,57 @@ const TripDetail = observer(() => {
         </div>
 
         {/* Action buttons */}
-        {!trip.isSettled && (
+        {trip.isSettled ? (
+          <div className="mt-5 space-y-3">
+            {/* Settled banner */}
+            <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 flex items-center justify-between gap-4">
+              <p className="text-sm text-amber-700">
+                This trip is settled. You can reopen it to make changes.
+              </p>
+              <button
+                onClick={() => setConfirmReopen('reopen')}
+                className="text-sm font-medium text-amber-700 hover:text-amber-900 shrink-0 transition-colors"
+              >
+                Reopen Trip
+              </button>
+            </div>
+            <button
+              onClick={() => setConfirmReopen('add')}
+              className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors"
+            >
+              + Add Expense
+            </button>
+
+            {/* Inline confirmation */}
+            {confirmReopen && (
+              <div className="rounded-lg border bg-card p-4 space-y-3">
+                <p className="text-sm">
+                  {confirmReopen === 'add'
+                    ? 'This trip is settled. Adding an expense will reopen it — balances will update. Continue?'
+                    : 'Reopening this trip will mark it as active again. Continue?'}
+                </p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={async () => {
+                      await trips.reopenTrip(id!)
+                      setConfirmReopen(null)
+                      if (confirmReopen === 'add') navigate(`/trips/${id}/add`)
+                    }}
+                    className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+                  >
+                    {confirmReopen === 'add' ? 'Reopen & Add Expense' : 'Yes, Reopen'}
+                  </button>
+                  <button
+                    onClick={() => setConfirmReopen(null)}
+                    className="px-4 py-1.5 rounded-lg border text-sm font-medium hover:bg-muted transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        ) : (
           <div className="flex gap-3 mt-5">
             <button
               onClick={() => navigate(`/trips/${id}/add`)}
