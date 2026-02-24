@@ -209,22 +209,26 @@ const Settle = observer(() => {
                     <span className="text-sm font-semibold">
                       {formatCurrency(s.amount, s.currency)}
                     </span>
-                    {openFormIndex === i ? (
-                      <button
-                        type="button"
-                        onClick={closeForm}
-                        className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-                      >
-                        Cancel
-                      </button>
+                    {s.fromUserId === currentUserId ? (
+                      openFormIndex === i ? (
+                        <button
+                          type="button"
+                          onClick={closeForm}
+                          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          Cancel
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => openForm(s, i)}
+                          className="text-xs px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity font-medium"
+                        >
+                          Record Payment
+                        </button>
+                      )
                     ) : (
-                      <button
-                        type="button"
-                        onClick={() => openForm(s, i)}
-                        className="text-xs px-3 py-1.5 rounded-md bg-primary text-primary-foreground hover:opacity-90 transition-opacity font-medium"
-                      >
-                        Record Payment
-                      </button>
+                      <span className="text-xs text-muted-foreground italic">awaiting payment</span>
                     )}
                   </div>
                 </div>
