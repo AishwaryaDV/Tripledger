@@ -79,9 +79,38 @@ export class TripStore {
     }
   }
 
-  async createTrip(payload: Partial<Trip>) {
-    const { data } = await api.post<Trip>('/trips', payload)
-    runInAction(() => { this.trips.push(data) })
-    return data
+  async createTrip(payload: { name: string; description?: string; currencies: string[]; baseCurrency: string }) {
+    const creator = this.root.auth.currentUser
+    if (!creator) throw new Error('Not logged in')
+    const creatorMember = { userId: creator.id, displayName: creator.displayName, role: 'owner' as const }
+    try {
+      const data = USE_MOCK
+        ? await mockHandlers.createTrip(payload, creatorMember)
+        : (await api.post<Trip>('/trips', payload)).data
+      runInAction(() => { this.trips.push(data) })
+      return data
+    } catch (e: any) {
+      runInAction(() => { this.error = e.message })
+      throw e
+    }
+  }
+
+  async joinTrip(code: string) {
+    const user = this.root.auth.currentUser
+    if (!user) throw new Error('Not logged in')
+    const joiner = { userId: user.id, displayName: user.displayName, role: 'member' as const }
+    try {
+      const data = USE_MOCK
+        ? await mockHandlers.joinTrip(code, joiner)
+        : (await api.post<Trip>(`/trips/join`, { code })).data
+      runInAction(() => {
+        const idx = this.trips.findIndex(t => t.id === data.id)
+        if (idx >= 0) this.trips[idx] = data
+        else this.trips.push(data)
+      })
+      return data
+    } catch (e: any) {
+      throw e
+    }
   }
 }

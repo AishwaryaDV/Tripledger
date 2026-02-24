@@ -1,11 +1,14 @@
 // src/mocks/handlers.ts
 import { MOCK_TRIPS, MOCK_EXPENSES, MOCK_BALANCES, MOCK_SUGGESTIONS, MOCK_SETTLEMENTS } from './data'
-import type { Trip, Expense, Balance, SettlementSuggestion, Settlement } from '../types'
+import type { Trip, Expense, Balance, SettlementSuggestion, Settlement, TripMember } from '../types'
 
 // In-memory stores so mutations persist within a session
 let settlements = [...MOCK_SETTLEMENTS]
-// Mutable trip objects so reopenTrip is reflected in subsequent getTrip calls
-const mutableTrips = MOCK_TRIPS.map(t => ({ ...t }))
+// Mutable trip objects so reopenTrip/createTrip/joinTrip are reflected in subsequent calls
+const mutableTrips: Trip[] = MOCK_TRIPS.map(t => ({ ...t }))
+
+const generateJoinCode = () =>
+  Math.random().toString(36).slice(2, 8).toUpperCase()
 
 // Simulates network latency so loading spinners are visible
 const delay = (ms = 300) => new Promise(res => setTimeout(res, ms))
@@ -19,6 +22,32 @@ export const mockHandlers = {
   async getTrip(id: string): Promise<Trip> {
     await delay()
     return mutableTrips.find(t => t.id === id)!
+  },
+
+  async createTrip(payload: { name: string; description?: string; currencies: string[]; baseCurrency: string }, creator: TripMember): Promise<Trip> {
+    await delay(500)
+    const newTrip: Trip = {
+      id: 'trip-' + Date.now(),
+      name: payload.name,
+      description: payload.description,
+      currencies: payload.currencies,
+      baseCurrency: payload.baseCurrency,
+      members: [creator],
+      isSettled: false,
+      createdAt: new Date().toISOString(),
+      joinCode: generateJoinCode(),
+    }
+    mutableTrips.push(newTrip)
+    return { ...newTrip }
+  },
+
+  async joinTrip(code: string, joiner: TripMember): Promise<Trip> {
+    await delay(400)
+    const trip = mutableTrips.find(t => t.joinCode === code.toUpperCase())
+    if (!trip) throw new Error('Trip not found. Check the code and try again.')
+    const alreadyMember = trip.members.some(m => m.userId === joiner.userId)
+    if (!alreadyMember) trip.members.push(joiner)
+    return { ...trip }
   },
 
   async reopenTrip(id: string): Promise<Trip> {

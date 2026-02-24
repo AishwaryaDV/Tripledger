@@ -20,7 +20,7 @@ const TABS: { key: Tab; label: string }[] = [
 const TripDetail = observer(() => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { trips, expenses, balances, auth } = useStore()
+  const { trips, expenses, balances, auth, currency } = useStore()
   const [activeTab, setActiveTab] = useState<Tab>('expenses')
   const [confirmReopen, setConfirmReopen] = useState<'reopen' | 'add' | null>(null)
 
@@ -30,6 +30,13 @@ const TripDetail = observer(() => {
     expenses.fetchExpenses(id)
     balances.fetchBalances(id)
   }, [id, trips, expenses, balances])
+
+  // Auto-fetch rates once trip is loaded (if stale or base changed)
+  useEffect(() => {
+    if (trips.currentTrip) {
+      currency.fetchRates(trips.currentTrip.baseCurrency)
+    }
+  }, [trips.currentTrip?.baseCurrency, currency])
 
   if (trips.isLoading || expenses.isLoading) {
     return (
@@ -168,12 +175,28 @@ const TripDetail = observer(() => {
         )}
       </div>
 
-      {/* Total spend */}
-      <div className="rounded-xl bg-muted/50 p-4 mb-6 flex items-center justify-between">
-        <span className="text-sm text-muted-foreground">Total spend</span>
-        <span className="text-xl font-bold">
-          {formatCurrency(expenses.totalAmount, trip.baseCurrency)}
-        </span>
+      {/* Total spend + currency rate bar */}
+      <div className="rounded-xl bg-muted/50 p-4 mb-6">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">Total spend</span>
+          <span className="text-xl font-bold">
+            {formatCurrency(expenses.totalAmount, trip.baseCurrency)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
+          <div className="text-xs text-muted-foreground">
+            {currency.updatedAt
+              ? `Rates as of ${new Date(currency.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · ${new Date(currency.updatedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`
+              : currency.isLoading ? 'Fetching rates...' : 'Rates not loaded'}
+          </div>
+          <button
+            onClick={() => currency.fetchRates(trip.baseCurrency, true)}
+            disabled={currency.isLoading}
+            className="text-xs text-primary hover:opacity-70 disabled:opacity-40 transition-opacity font-medium"
+          >
+            {currency.isLoading ? 'Refreshing...' : '↻ Refresh rates'}
+          </button>
+        </div>
       </div>
 
       {/* Tabs — equally distributed */}

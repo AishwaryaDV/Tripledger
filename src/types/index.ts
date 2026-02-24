@@ -26,11 +26,12 @@ export interface Trip {
   id: string
   name: string
   description?: string
-  currencies: Currency[] // max 3
+  currencies: Currency[]
   baseCurrency: Currency
   members: TripMember[]
   isSettled: boolean
   createdAt: string
+  joinCode: string
 }
 
 export interface ExpenseSplit {

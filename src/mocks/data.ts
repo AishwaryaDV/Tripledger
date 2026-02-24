@@ -13,6 +13,7 @@ export const MOCK_TRIPS: Trip[] = [
     currencies: ['INR', 'USD', 'EUR'], isSettled: false,
     description: 'Beach trip with the squad',
     createdAt: '2026-03-01T00:00:00Z',
+    joinCode: 'GOA26X',
     members: [
       { userId: 'user-1', displayName: 'You', role: 'owner' },
       { userId: 'user-2', displayName: 'Priya', role: 'member' },
@@ -23,6 +24,7 @@ export const MOCK_TRIPS: Trip[] = [
     id: 'trip-2', name: 'Bangkok 2025', baseCurrency: 'USD',
     currencies: ['USD', 'THB'], isSettled: true,
     description: 'All settled up!', createdAt: '2025-11-10T00:00:00Z',
+    joinCode: 'BKK25Y',
     members: [{ userId: 'user-1', displayName: 'You', role: 'owner' }],
   },
 ]

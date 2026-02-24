@@ -28,7 +28,7 @@ const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
 const AddExpense = observer(() => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { trips, expenses, auth } = useStore()
+  const { trips, expenses, auth, currency } = useStore()
 
   const [splits, setSplits] = useState<ExpenseSplit[]>([])
   const [splitType, setSplitType] = useState<SplitType>('equal')
@@ -54,6 +54,11 @@ const AddExpense = observer(() => {
     if (!trips.currentTrip) trips.fetchTrip(id)
   }, [id, trips])
 
+  // Fetch rates when trip is known
+  useEffect(() => {
+    if (trip) currency.fetchRates(trip.baseCurrency)
+  }, [trip?.baseCurrency, currency])
+
   const onSplitChange = (newSplits: ExpenseSplit[], newSplitType: SplitType) => {
     setSplits(newSplits)
     setSplitType(newSplitType)
@@ -63,12 +68,15 @@ const AddExpense = observer(() => {
     if (!id) return
     setIsSubmitting(true)
 
+    const rate = currency.getRate(data.currency) ?? 1
+    const amountBase = currency.convert(Number(data.amount), data.currency) ?? Number(data.amount)
+
     await expenses.addExpense(id, {
       title: data.title,
       amount: Number(data.amount),
       currency: data.currency,
-      amountBase: Number(data.amount), // simplified — real version converts via exchange rate
-      exchangeRate: 1,
+      amountBase,
+      exchangeRate: rate,
       category: data.category,
       splitType,
       splits,
@@ -147,6 +155,22 @@ const AddExpense = observer(() => {
             </select>
           </div>
         </div>
+
+        {/* Inline base currency conversion hint */}
+        {watchedCurrency && watchedCurrency !== trip.baseCurrency && Number(watchedAmount) > 0 && (() => {
+          const converted = currency.convert(Number(watchedAmount), watchedCurrency)
+          const rate = currency.getRate(watchedCurrency)
+          return converted !== null ? (
+            <p className="text-xs text-muted-foreground -mt-3">
+              = {new Intl.NumberFormat('en-US', { style: 'currency', currency: trip.baseCurrency }).format(converted)}
+              <span className="ml-2 opacity-70">
+                (1 {watchedCurrency} = {new Intl.NumberFormat('en-US', { style: 'currency', currency: trip.baseCurrency }).format(rate!)})
+              </span>
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground -mt-3">Rate not available — will use 1:1</p>
+          )
+        })()}
 
         {/* Category + Date */}
         <div className="flex gap-3">
