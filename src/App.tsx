@@ -5,6 +5,7 @@ import Dashboard from './pages/Dashboard'
 import TripDetail from './pages/TripDetail'
 import AddExpense from './pages/AddExpense'
 import Settle from './pages/Settle'
+import CreateTrip from './pages/CreateTrip'
 import Login from './pages/Login'
 
 function App() {
@@ -23,6 +24,7 @@ function App() {
           }
         >
           <Route path="/" element={<Dashboard />} />
+          <Route path="/trips/new" element={<CreateTrip />} />
           <Route path="/trips/:id" element={<TripDetail />} />
           <Route path="/trips/:id/add" element={<AddExpense />} />
           <Route path="/trips/:id/settle" element={<Settle />} />
