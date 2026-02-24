@@ -23,6 +23,13 @@ const TripDetail = observer(() => {
   const { trips, expenses, balances, auth, currency } = useStore()
   const [activeTab, setActiveTab] = useState<Tab>('expenses')
   const [confirmReopen, setConfirmReopen] = useState<'reopen' | 'add' | null>(null)
+  const [codeCopied, setCodeCopied] = useState(false)
+
+  const copyJoinCode = (code: string) => {
+    navigator.clipboard.writeText(code)
+    setCodeCopied(true)
+    setTimeout(() => setCodeCopied(false), 2000)
+  }
 
   useEffect(() => {
     if (!id) return
@@ -89,6 +96,20 @@ const TripDetail = observer(() => {
               <span>{trip.currencies.join(' · ')}</span>
               <span>·</span>
               <span>Base: {trip.baseCurrency}</span>
+            </div>
+
+            {/* Join code */}
+            <div className="flex items-center gap-2 mt-3">
+              <span className="text-xs text-muted-foreground">Invite code:</span>
+              <span className="text-xs font-mono font-semibold tracking-widest bg-muted px-2 py-0.5 rounded">
+                {trip.joinCode}
+              </span>
+              <button
+                onClick={() => copyJoinCode(trip.joinCode)}
+                className="text-xs text-primary hover:opacity-70 transition-opacity font-medium"
+              >
+                {codeCopied ? 'Copied!' : 'Copy'}
+              </button>
             </div>
           </div>
 
