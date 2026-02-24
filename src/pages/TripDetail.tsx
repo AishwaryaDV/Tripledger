@@ -8,18 +8,19 @@ import BalanceSummary from '@/components/trip/BalanceSummary'
 import SettleSuggestions from '@/components/trip/SettleSuggestions'
 import { formatCurrency } from '@/lib/utils'
 
-type Tab = 'expenses' | 'balances' | 'suggestions'
+type Tab = 'expenses' | 'balances' | 'suggestions' | 'spending'
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'expenses',    label: 'Expenses' },
   { key: 'balances',    label: 'Balances' },
   { key: 'suggestions', label: 'Suggested Payments' },
+  { key: 'spending',    label: 'Spending' },
 ]
 
 const TripDetail = observer(() => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { trips, expenses, balances } = useStore()
+  const { trips, expenses, balances, auth } = useStore()
   const [activeTab, setActiveTab] = useState<Tab>('expenses')
 
   useEffect(() => {
@@ -171,6 +172,67 @@ const TripDetail = observer(() => {
       {activeTab === 'suggestions' && (
         <SettleSuggestions suggestions={balances.suggestions} members={trip.members} />
       )}
+
+      {activeTab === 'spending' && (() => {
+        const currentUserId = auth.currentUser?.id
+        const totalSpend = expenses.totalAmount
+
+        const rows = trip.members
+          .map(member => ({
+            member,
+            total: expenses.expenses
+              .filter(e => e.paidBy === member.userId)
+              .reduce((sum, e) => sum + e.amountBase, 0),
+          }))
+          .sort((a, b) => b.total - a.total)
+
+        return (
+          <div className="space-y-3">
+            {rows.map(({ member, total }) => {
+              const isMe = member.userId === currentUserId
+              const pct = totalSpend > 0 ? (total / totalSpend) * 100 : 0
+              return (
+                <div
+                  key={member.userId}
+                  className={`p-4 rounded-lg border ${isMe ? 'bg-primary/5 border-primary/20' : 'bg-card'}`}
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
+                        isMe ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {member.displayName.charAt(0).toUpperCase()}
+                      </div>
+                      <span className={`text-sm font-medium ${isMe ? 'text-primary' : ''}`}>
+                        {member.displayName}
+                        {isMe && <span className="ml-1 text-xs font-normal text-muted-foreground">(you)</span>}
+                      </span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-sm font-semibold">
+                        {formatCurrency(total, trip.baseCurrency)}
+                      </span>
+                      <span className="ml-2 text-xs text-muted-foreground">
+                        {pct.toFixed(1)}%
+                      </span>
+                    </div>
+                  </div>
+                  {/* Progress bar */}
+                  <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className={`h-full rounded-full transition-all ${isMe ? 'bg-primary' : 'bg-muted-foreground/40'}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              )
+            })}
+            <p className="text-xs text-muted-foreground text-right pt-1">
+              Total trip spend: {formatCurrency(totalSpend, trip.baseCurrency)}
+            </p>
+          </div>
+        )
+      })()}
 
     </div>
   )
