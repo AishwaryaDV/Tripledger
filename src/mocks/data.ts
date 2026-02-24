@@ -1,5 +1,5 @@
 // src/mocks/data.ts
-import type { User, Trip, Expense, Balance, SettlementSuggestion } from '../types'
+import type { User, Trip, Expense, Balance, SettlementSuggestion, Settlement } from '../types'
 
 export const MOCK_USERS: User[] = [
   { id: 'user-1', email: 'you@example.com', displayName: 'You', defaultCurrency: 'INR' },
@@ -61,4 +61,29 @@ export const MOCK_BALANCES: Balance[] = [
 export const MOCK_SUGGESTIONS: SettlementSuggestion[] = [
   { fromUserId: 'user-3', toUserId: 'user-1', amount: 2162.33, currency: 'INR' },
   { fromUserId: 'user-2', toUserId: 'user-1', amount: 2000, currency: 'INR' },
+]
+
+export const MOCK_SETTLEMENTS: Settlement[] = [
+  {
+    id: 'settle-1',
+    tripId: 'trip-1',
+    fromUserId: 'user-2',
+    toUserId: 'user-1',
+    amount: 1000,
+    currency: 'INR',
+    method: 'UPI',
+    confirmedAt: '2026-03-17T10:30:00Z',
+    isPartial: true,
+  },
+  {
+    id: 'settle-2',
+    tripId: 'trip-1',
+    fromUserId: 'user-3',
+    toUserId: 'user-1',
+    amount: 2162.33,
+    currency: 'INR',
+    method: 'Cash',
+    confirmedAt: '2026-03-17T14:00:00Z',
+    isPartial: false,
+  },
 ]

@@ -1,6 +1,9 @@
 // src/mocks/handlers.ts
-import { MOCK_TRIPS, MOCK_EXPENSES, MOCK_BALANCES, MOCK_SUGGESTIONS } from './data'
-import type { Trip, Expense, Balance, SettlementSuggestion } from '../types'
+import { MOCK_TRIPS, MOCK_EXPENSES, MOCK_BALANCES, MOCK_SUGGESTIONS, MOCK_SETTLEMENTS } from './data'
+import type { Trip, Expense, Balance, SettlementSuggestion, Settlement } from '../types'
+
+// In-memory store so recordSettlement persists within a session
+let settlements = [...MOCK_SETTLEMENTS]
 
 // Simulates network latency so loading spinners are visible
 const delay = (ms = 300) => new Promise(res => setTimeout(res, ms))
@@ -29,5 +32,22 @@ export const mockHandlers = {
   async addExpense(_tripId: string, payload: Partial<Expense>): Promise<Expense> {
     await delay(600) // slightly longer to make the optimistic update visible
     return { ...payload, id: 'exp-' + Date.now() } as Expense
+  },
+
+  async getSettlements(tripId: string): Promise<Settlement[]> {
+    await delay()
+    return settlements.filter(s => s.tripId === tripId)
+  },
+
+  async recordSettlement(tripId: string, payload: Omit<Settlement, 'id' | 'tripId' | 'confirmedAt'>): Promise<Settlement> {
+    await delay(500)
+    const newSettlement: Settlement = {
+      ...payload,
+      id: 'settle-' + Date.now(),
+      tripId,
+      confirmedAt: new Date().toISOString(),
+    }
+    settlements = [...settlements, newSettlement]
+    return newSettlement
   },
 }
