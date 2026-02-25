@@ -18,7 +18,7 @@ const Layout = observer(() => {
           {/* User Info - Right */}
           {auth.currentUser && (
             <div className="flex items-center gap-3">
-              <div className="text-right">
+              <div className="text-right hidden sm:block">
                 <p className="text-sm font-medium">{auth.currentUser.displayName}</p>
                 <p className="text-xs text-muted-foreground">{auth.currentUser.email}</p>
               </div>

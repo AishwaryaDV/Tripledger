@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/hooks/useStore'
 import TripCard from '@/components/trip/TripCard'
+import { TripCardSkeleton } from '@/components/shared/Skeleton'
 
 type Tab = 'active' | 'settled'
 
@@ -36,16 +37,22 @@ const Dashboard = observer(() => {
 
   if (trips.isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-muted-foreground">Loading trips...</p>
+      <div className="w-full max-w-3xl mx-auto space-y-3 pt-4">
+        {[1, 2, 3].map(i => <TripCardSkeleton key={i} />)}
       </div>
     )
   }
 
   if (trips.error) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-destructive">{trips.error}</p>
+      <div className="flex flex-col items-center justify-center py-20 gap-3">
+        <p className="text-destructive text-sm">{trips.error}</p>
+        <button
+          onClick={() => trips.fetchTrips(true)}
+          className="text-sm text-primary hover:opacity-70 font-medium transition-opacity"
+        >
+          Retry
+        </button>
       </div>
     )
   }
@@ -56,9 +63,9 @@ const Dashboard = observer(() => {
     <div className="w-full max-w-3xl mx-auto">
 
       {/* Header */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <h2 className="text-3xl font-bold">My Trips</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 shrink-0">
           <button
             onClick={() => { setShowConnect(v => !v); setConnectError(null); setConnectCode('') }}
             className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${

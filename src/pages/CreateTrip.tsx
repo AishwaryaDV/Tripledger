@@ -175,7 +175,7 @@ const CreateTrip = observer(() => {
           <p className="text-xs text-muted-foreground mb-3">
             Pick up to 3 currencies your group will use on this trip.
           </p>
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {SUPPORTED_CURRENCIES.map(c => {
               const isSelected = selectedCurrencies.includes(c.code)
               const isDisabled = !isSelected && selectedCurrencies.length >= 3

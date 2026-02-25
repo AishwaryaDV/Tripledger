@@ -8,7 +8,11 @@ interface BalanceSummaryProps {
 }
 
 const BalanceSummary = ({ balances, baseCurrency }: BalanceSummaryProps) => {
-  if (balances.length === 0) return null
+  if (balances.length === 0) return (
+    <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
+      No balances yet. Add an expense to get started.
+    </div>
+  )
 
   return (
     <div className="space-y-2">

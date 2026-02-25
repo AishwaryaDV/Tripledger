@@ -1,19 +1,4 @@
 // src/components/expense/SplitEditor.tsx
-
-// TODO (Session 8 polish): Implement cross-mode value conversion when switching tabs.
-// When a user switches from one split mode to another, pre-fill the new mode's values
-// based on what was already entered. Conversions to implement:
-//   Equal → Percentage: 100 / includedCount per person (e.g. 33.33% each)
-//   Equal → Exact:      totalAmount / includedCount per person
-//   Equal → Shares:     1 share each for included members
-//   Exact → Percentage: (memberAmount / totalAmount) * 100 per person
-//   Exact → Shares:     proportional — normalise exact amounts to share ratios
-//   Percentage → Exact: (pct / 100) * totalAmount per person
-//   Percentage → Shares: use pct values directly as share counts
-//   Shares → Percentage: (memberShares / totalShares) * 100 per person
-//   Shares → Exact:     (memberShares / totalShares) * totalAmount per person
-// Goal: user sets Equal, switches to Percentage, sees 33.33% pre-filled — just tweaks one number.
-
 import { useState, useEffect } from 'react'
 import type { TripMember, ExpenseSplit, SplitType } from '@/types'
 import { formatCurrency } from '@/lib/utils'
@@ -98,6 +83,89 @@ const SplitEditor = ({ members, totalAmount, currency, onChange }: SplitEditorPr
     return []
   }
 
+  // ── Cross-mode conversion ─────────────────────────────────────────────────
+
+  const convertValues = (from: SplitType, to: SplitType): ModeValues => {
+    const result: ModeValues = Object.fromEntries(members.map(m => [m.userId, 0]))
+
+    if (from === 'equal') {
+      const count = included.size
+      if (count === 0) return result
+
+      if (to === 'percentage') {
+        const pct = parseFloat((100 / count).toFixed(4))
+        members.forEach(m => { result[m.userId] = included.has(m.userId) ? pct : 0 })
+      } else if (to === 'exact') {
+        const share = totalAmount > 0 ? parseFloat((totalAmount / count).toFixed(2)) : 0
+        members.forEach(m => { result[m.userId] = included.has(m.userId) ? share : 0 })
+      } else if (to === 'shares') {
+        members.forEach(m => { result[m.userId] = included.has(m.userId) ? 1 : 0 })
+      }
+
+    } else if (from === 'exact') {
+      if (to === 'percentage') {
+        members.forEach(m => {
+          result[m.userId] = totalAmount > 0
+            ? parseFloat(((values[m.userId] ?? 0) / totalAmount * 100).toFixed(2))
+            : 0
+        })
+      } else if (to === 'shares') {
+        // Use exact amounts directly as proportional share values
+        members.forEach(m => { result[m.userId] = parseFloat((values[m.userId] ?? 0).toFixed(2)) })
+      }
+
+    } else if (from === 'percentage') {
+      if (to === 'exact') {
+        members.forEach(m => {
+          result[m.userId] = parseFloat(((values[m.userId] ?? 0) / 100 * totalAmount).toFixed(2))
+        })
+      } else if (to === 'shares') {
+        // Round percentages to nearest integer share
+        members.forEach(m => { result[m.userId] = Math.round(values[m.userId] ?? 0) })
+      }
+
+    } else if (from === 'shares') {
+      const totalShares = members.reduce((s, m) => s + (values[m.userId] ?? 0), 0)
+      if (to === 'percentage') {
+        members.forEach(m => {
+          result[m.userId] = totalShares > 0
+            ? parseFloat(((values[m.userId] ?? 0) / totalShares * 100).toFixed(2))
+            : 0
+        })
+      } else if (to === 'exact') {
+        members.forEach(m => {
+          result[m.userId] = totalShares > 0
+            ? parseFloat(((values[m.userId] ?? 0) / totalShares * totalAmount).toFixed(2))
+            : 0
+        })
+      }
+    }
+
+    return result
+  }
+
+  const switchMode = (newMode: SplitType) => {
+    if (newMode === mode) return
+
+    if (newMode === 'equal') {
+      // Include whoever had a non-zero value in the previous mode
+      if (mode !== 'equal') {
+        const hasAnyValue = members.some(m => (values[m.userId] ?? 0) > 0)
+        if (hasAnyValue) {
+          setIncluded(new Set(members.filter(m => (values[m.userId] ?? 0) > 0).map(m => m.userId)))
+        }
+        // if all values were 0, keep current included set as-is
+      }
+      setMode(newMode)
+      return
+    }
+
+    setValues(convertValues(mode, newMode))
+    setMode(newMode)
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
   const setValue = (userId: string, val: number) => {
     setValues(prev => ({ ...prev, [userId]: val }))
   }
@@ -128,7 +196,7 @@ const SplitEditor = ({ members, totalAmount, currency, onChange }: SplitEditorPr
           <button
             key={m.key}
             type="button"
-            onClick={() => setMode(m.key)}
+            onClick={() => switchMode(m.key)}
             className={`flex-1 py-2 text-sm font-medium transition-colors relative ${
               mode === m.key
                 ? 'text-primary'

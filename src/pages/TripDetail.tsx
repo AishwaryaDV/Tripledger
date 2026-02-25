@@ -7,6 +7,7 @@ import ExpenseCard from '@/components/expense/ExpenseCard'
 import BalanceSummary from '@/components/trip/BalanceSummary'
 import SettleSuggestions from '@/components/trip/SettleSuggestions'
 import { formatCurrency } from '@/lib/utils'
+import { ExpenseCardSkeleton, BalanceRowSkeleton } from '@/components/shared/Skeleton'
 
 type Tab = 'expenses' | 'balances' | 'suggestions' | 'spending'
 
@@ -47,16 +48,23 @@ const TripDetail = observer(() => {
 
   if (trips.isLoading || expenses.isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-muted-foreground">Loading trip...</p>
+      <div className="w-full max-w-3xl mx-auto space-y-3 pt-4">
+        <BalanceRowSkeleton />
+        {[1, 2, 3].map(i => <ExpenseCardSkeleton key={i} />)}
       </div>
     )
   }
 
   if (trips.error) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-destructive">{trips.error}</p>
+      <div className="flex flex-col items-center justify-center py-20 gap-3">
+        <p className="text-destructive text-sm">{trips.error}</p>
+        <button
+          onClick={() => { trips.fetchTrip(id!); expenses.fetchExpenses(id!) }}
+          className="text-sm text-primary hover:opacity-70 font-medium transition-opacity"
+        >
+          Retry
+        </button>
       </div>
     )
   }
@@ -206,7 +214,9 @@ const TripDetail = observer(() => {
         </div>
         <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
           <div className="text-xs text-muted-foreground">
-            {currency.updatedAt
+            {currency.error
+              ? <span className="text-destructive">Couldn't fetch rates</span>
+              : currency.updatedAt
               ? `Rates as of ${new Date(currency.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · ${new Date(currency.updatedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`
               : currency.isLoading ? 'Fetching rates...' : 'Rates not loaded'}
           </div>
@@ -220,13 +230,13 @@ const TripDetail = observer(() => {
         </div>
       </div>
 
-      {/* Tabs — equally distributed */}
-      <div className="flex border-b mb-6">
+      {/* Tabs — equally distributed, scroll on mobile */}
+      <div className="flex border-b mb-6 overflow-x-auto scrollbar-none">
         {TABS.map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 py-2 text-sm font-medium transition-colors relative ${
+            className={`flex-1 min-w-max py-2 px-2 text-sm font-medium transition-colors relative whitespace-nowrap ${
               activeTab === tab.key
                 ? 'text-primary'
                 : 'text-muted-foreground hover:text-foreground'
@@ -248,8 +258,16 @@ const TripDetail = observer(() => {
       {/* Tab content */}
       {activeTab === 'expenses' && (
         expenses.expenses.length === 0 ? (
-          <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
-            No expenses yet. Add the first one!
+          <div className="rounded-xl border border-dashed p-8 text-center space-y-3">
+            <p className="text-muted-foreground text-sm">No expenses yet.</p>
+            {!trip.isSettled && (
+              <button
+                onClick={() => navigate(`/trips/${id}/add`)}
+                className="text-sm text-primary font-medium hover:opacity-70 transition-opacity"
+              >
+                + Add the first expense
+              </button>
+            )}
           </div>
         ) : (
           <div className="space-y-2">
@@ -271,6 +289,12 @@ const TripDetail = observer(() => {
       {activeTab === 'spending' && (() => {
         const currentUserId = auth.currentUser?.id
         const totalSpend = expenses.totalAmount
+
+        if (expenses.expenses.length === 0) return (
+          <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
+            No expenses yet — spending breakdown will appear here.
+          </div>
+        )
 
         const rows = trip.members
           .map(member => ({

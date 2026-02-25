@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
 import { useStore } from '@/hooks/useStore'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { BalanceRowSkeleton } from '@/components/shared/Skeleton'
 import type { SettlementSuggestion } from '@/types'
 
 type Tab = 'suggestions' | 'activity'
@@ -77,10 +78,10 @@ const Settle = observer(() => {
     setTimeout(() => setNotification(null), 5000)
   }
 
-  if (!trip) {
+  if (!trip || balances.isLoading) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-muted-foreground">Loading...</p>
+      <div className="w-full max-w-3xl mx-auto space-y-3 pt-4">
+        {[1, 2, 3].map(i => <BalanceRowSkeleton key={i} />)}
       </div>
     )
   }
