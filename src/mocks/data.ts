@@ -21,6 +21,17 @@ export const MOCK_TRIPS: Trip[] = [
     ],
   },
   {
+    id: 'trip-3', name: 'Dubai 2026', baseCurrency: 'AED',
+    currencies: ['AED', 'INR'], isSettled: false,
+    description: 'Long weekend in the desert',
+    createdAt: '2026-05-10T00:00:00Z',
+    joinCode: 'DXB26Z',
+    members: [
+      { userId: 'user-1', displayName: 'You', role: 'owner' },
+      { userId: 'user-2', displayName: 'Priya', role: 'member' },
+    ],
+  },
+  {
     id: 'trip-2', name: 'Bangkok 2025', baseCurrency: 'USD',
     currencies: ['USD', 'THB'], isSettled: true,
     description: 'All settled up!', createdAt: '2025-11-10T00:00:00Z',
@@ -50,6 +61,26 @@ export const MOCK_EXPENSES: Expense[] = [
       { userId: 'user-1', amountOwed: 1162.33, isSettled: false },
       { userId: 'user-2', amountOwed: 1162.33, isSettled: true },
       { userId: 'user-3', amountOwed: 1162.34, isSettled: false },
+    ],
+  },
+  {
+    id: 'exp-3', tripId: 'trip-3', paidBy: 'user-1',
+    title: 'Burj Khalifa Tickets', amount: 300, currency: 'AED',
+    amountBase: 300, exchangeRate: 1, category: 'activities',
+    splitType: 'equal', expenseDate: '2026-05-11',
+    splits: [
+      { userId: 'user-1', amountOwed: 150, isSettled: true },
+      { userId: 'user-2', amountOwed: 150, isSettled: false },
+    ],
+  },
+  {
+    id: 'exp-4', tripId: 'trip-3', paidBy: 'user-2',
+    title: 'Desert Safari', amount: 5800, currency: 'INR',
+    amountBase: 237.7, exchangeRate: 0.041, category: 'activities',
+    splitType: 'equal', expenseDate: '2026-05-12',
+    splits: [
+      { userId: 'user-1', amountOwed: 118.85, isSettled: false },
+      { userId: 'user-2', amountOwed: 118.85, isSettled: true },
     ],
   },
 ]
