@@ -1,5 +1,5 @@
 // src/mocks/data.ts
-import type { User, Trip, Expense, Balance, SettlementSuggestion, Settlement } from '../types'
+import type { User, Trip, Expense, Balance, SettlementSuggestion, Settlement, Note } from '../types'
 
 export const MOCK_USERS: User[] = [
   { id: 'user-1', email: 'you@example.com', displayName: 'You', defaultCurrency: 'INR' },
@@ -94,6 +94,24 @@ export const MOCK_BALANCES: Balance[] = [
 export const MOCK_SUGGESTIONS: SettlementSuggestion[] = [
   { fromUserId: 'user-3', toUserId: 'user-1', amount: 2162.33, currency: 'INR' },
   { fromUserId: 'user-2', toUserId: 'user-1', amount: 2000, currency: 'INR' },
+]
+
+export const MOCK_NOTES: Note[] = [
+  {
+    id: 'note-1', tripId: 'trip-1', authorId: 'user-1', authorName: 'You',
+    content: 'Remember to split the airport taxi separately — Rahul took a different cab.',
+    createdAt: '2026-03-15T08:00:00Z',
+  },
+  {
+    id: 'note-2', tripId: 'trip-1', authorId: 'user-2', authorName: 'Priya',
+    content: 'I'll handle the dinner reservation deposits. Deduct from my balance when settling.',
+    createdAt: '2026-03-15T09:30:00Z',
+  },
+  {
+    id: 'note-3', tripId: 'trip-3', authorId: 'user-1', authorName: 'You',
+    content: 'Dubai Mall parking is free if you spend over 200 AED — keep receipts.',
+    createdAt: '2026-05-10T14:00:00Z',
+  },
 ]
 
 export const MOCK_SETTLEMENTS: Settlement[] = [

@@ -82,3 +82,13 @@ export interface Settlement {
   confirmedAt?: string
   isPartial: boolean
 }
+
+export interface Note {
+  id: string
+  tripId: string
+  authorId: string
+  authorName: string
+  content: string
+  createdAt: string
+  updatedAt?: string
+}

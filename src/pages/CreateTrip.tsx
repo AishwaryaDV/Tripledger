@@ -128,7 +128,7 @@ const CreateTrip = observer(() => {
 
       <button
         type="button"
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/dashboard')}
         className="text-sm text-muted-foreground hover:text-foreground mb-6 flex items-center gap-1 transition-colors"
       >
         ← Back to trips
@@ -245,7 +245,7 @@ const CreateTrip = observer(() => {
           </button>
           <button
             type="button"
-            onClick={() => navigate('/')}
+            onClick={() => navigate('/dashboard')}
             className="px-6 py-2.5 rounded-lg border text-sm font-medium hover:bg-muted transition-colors"
           >
             Cancel

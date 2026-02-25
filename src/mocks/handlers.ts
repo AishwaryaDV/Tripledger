@@ -1,6 +1,8 @@
 // src/mocks/handlers.ts
-import { MOCK_TRIPS, MOCK_EXPENSES, MOCK_BALANCES, MOCK_SUGGESTIONS, MOCK_SETTLEMENTS } from './data'
-import type { Trip, Expense, Balance, SettlementSuggestion, Settlement, TripMember } from '../types'
+import { MOCK_TRIPS, MOCK_EXPENSES, MOCK_BALANCES, MOCK_SUGGESTIONS, MOCK_SETTLEMENTS, MOCK_NOTES } from './data'
+import type { Trip, Expense, Balance, SettlementSuggestion, Settlement, TripMember, Note } from '../types'
+
+let notes = [...MOCK_NOTES]
 
 // In-memory stores so mutations persist within a session
 let settlements = [...MOCK_SETTLEMENTS]
@@ -75,6 +77,29 @@ export const mockHandlers = {
   async getSettlements(tripId: string): Promise<Settlement[]> {
     await delay()
     return settlements.filter(s => s.tripId === tripId)
+  },
+
+  async getNotes(tripId: string): Promise<Note[]> {
+    await delay()
+    return notes.filter(n => n.tripId === tripId)
+  },
+
+  async addNote(tripId: string, authorId: string, authorName: string, content: string): Promise<Note> {
+    await delay(300)
+    const note: Note = { id: 'note-' + Date.now(), tripId, authorId, authorName, content, createdAt: new Date().toISOString() }
+    notes = [...notes, note]
+    return note
+  },
+
+  async editNote(noteId: string, content: string): Promise<Note> {
+    await delay(300)
+    notes = notes.map(n => n.id === noteId ? { ...n, content, updatedAt: new Date().toISOString() } : n)
+    return notes.find(n => n.id === noteId)!
+  },
+
+  async deleteNote(noteId: string): Promise<void> {
+    await delay(300)
+    notes = notes.filter(n => n.id !== noteId)
   },
 
   async recordSettlement(tripId: string, payload: Omit<Settlement, 'id' | 'tripId' | 'confirmedAt'>): Promise<Settlement> {

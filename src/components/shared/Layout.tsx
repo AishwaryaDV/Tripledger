@@ -1,6 +1,7 @@
 import { observer } from 'mobx-react-lite'
 import { Outlet, Link } from 'react-router-dom'
 import { useStore } from '../../hooks/useStore'
+import Calculator from './Calculator'
 
 const Layout = observer(() => {
   const { auth } = useStore()
@@ -11,7 +12,7 @@ const Layout = observer(() => {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           {/* App Name - Left */}
-          <Link to="/" className="flex items-center gap-2">
+          <Link to="/dashboard" className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-primary">TripLedger</h1>
           </Link>
 
@@ -42,6 +43,9 @@ const Layout = observer(() => {
       <main className="container mx-auto px-4 py-6">
         <Outlet />
       </main>
+
+      {/* Floating Calculator */}
+      <Calculator />
     </div>
   )
 })

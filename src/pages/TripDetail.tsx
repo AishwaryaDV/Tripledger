@@ -9,22 +9,27 @@ import SettleSuggestions from '@/components/trip/SettleSuggestions'
 import { formatCurrency } from '@/lib/utils'
 import { ExpenseCardSkeleton, BalanceRowSkeleton } from '@/components/shared/Skeleton'
 
-type Tab = 'expenses' | 'balances' | 'suggestions' | 'spending'
+type Tab = 'expenses' | 'balances' | 'suggestions' | 'spending' | 'notes'
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'expenses',    label: 'Expenses' },
   { key: 'balances',    label: 'Balances' },
   { key: 'suggestions', label: 'Suggested Payments' },
   { key: 'spending',    label: 'Spending' },
+  { key: 'notes',       label: 'Notes' },
 ]
 
 const TripDetail = observer(() => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
-  const { trips, expenses, balances, auth, currency } = useStore()
+  const { trips, expenses, balances, auth, currency, notes } = useStore()
   const [activeTab, setActiveTab] = useState<Tab>('expenses')
   const [confirmReopen, setConfirmReopen] = useState<'reopen' | 'add' | null>(null)
   const [codeCopied, setCodeCopied] = useState(false)
+  const [newNote, setNewNote] = useState('')
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
+  const [editingContent, setEditingContent] = useState('')
+  const [isAddingNote, setIsAddingNote] = useState(false)
 
   const copyJoinCode = (code: string) => {
     navigator.clipboard.writeText(code)
@@ -37,7 +42,8 @@ const TripDetail = observer(() => {
     trips.fetchTrip(id)
     expenses.fetchExpenses(id)
     balances.fetchBalances(id)
-  }, [id, trips, expenses, balances])
+    notes.fetchNotes(id)
+  }, [id, trips, expenses, balances, notes])
 
   // Auto-fetch rates once trip is loaded (if stale or base changed)
   useEffect(() => {
@@ -77,7 +83,7 @@ const TripDetail = observer(() => {
 
       {/* Back button */}
       <button
-        onClick={() => navigate('/')}
+        onClick={() => navigate('/dashboard')}
         className="text-sm text-muted-foreground hover:text-foreground mb-6 flex items-center gap-1 transition-colors"
       >
         ← Back to trips
@@ -248,6 +254,11 @@ const TripDetail = observer(() => {
                 {expenses.expenses.length}
               </span>
             )}
+            {tab.key === 'notes' && notes.notes.length > 0 && (
+              <span className="ml-1.5 text-xs bg-muted px-1.5 py-0.5 rounded-full">
+                {notes.notes.length}
+              </span>
+            )}
             {activeTab === tab.key && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
             )}
@@ -349,6 +360,129 @@ const TripDetail = observer(() => {
             <p className="text-xs text-muted-foreground text-right pt-1">
               Total trip spend: {formatCurrency(totalSpend, trip.baseCurrency)}
             </p>
+          </div>
+        )
+      })()}
+
+      {/* Notes tab */}
+      {activeTab === 'notes' && (() => {
+        const currentUserId = auth.currentUser?.id
+
+        const handleAddNote = async () => {
+          if (!newNote.trim() || !id) return
+          setIsAddingNote(true)
+          await notes.addNote(id, newNote.trim())
+          setNewNote('')
+          setIsAddingNote(false)
+        }
+
+        const startEdit = (noteId: string, content: string) => {
+          setEditingNoteId(noteId)
+          setEditingContent(content)
+        }
+
+        const saveEdit = async () => {
+          if (!editingNoteId || !editingContent.trim()) return
+          await notes.editNote(editingNoteId, editingContent.trim())
+          setEditingNoteId(null)
+          setEditingContent('')
+        }
+
+        const sorted = [...notes.notes].sort(
+          (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )
+
+        return (
+          <div className="space-y-4">
+            {/* Add note */}
+            <div className="rounded-lg border bg-card p-3 space-y-2">
+              <textarea
+                value={newNote}
+                onChange={e => setNewNote(e.target.value)}
+                placeholder="Add a note for the group..."
+                rows={2}
+                className="w-full text-sm bg-background border rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+              />
+              <div className="flex justify-end">
+                <button
+                  onClick={handleAddNote}
+                  disabled={isAddingNote || !newNote.trim()}
+                  className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {isAddingNote ? 'Adding...' : 'Add Note'}
+                </button>
+              </div>
+            </div>
+
+            {/* Notes list */}
+            {sorted.length === 0 ? (
+              <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
+                No notes yet. Add one above.
+              </div>
+            ) : sorted.map(note => {
+              const isOwner = note.authorId === currentUserId
+              const isEditing = editingNoteId === note.id
+              return (
+                <div key={note.id} className={`rounded-lg border bg-card p-4 space-y-2 ${isOwner ? 'border-primary/20' : ''}`}>
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2">
+                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${isOwner ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                        {note.authorName.charAt(0).toUpperCase()}
+                      </div>
+                      <span className="text-sm font-medium">{note.authorName}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {formatDate(note.createdAt)}
+                        {note.updatedAt && ' · edited'}
+                      </span>
+                    </div>
+                    {isOwner && !isEditing && (
+                      <div className="flex items-center gap-2 shrink-0">
+                        <button
+                          onClick={() => startEdit(note.id, note.content)}
+                          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => notes.deleteNote(note.id)}
+                          className="text-xs text-destructive hover:opacity-70 transition-opacity"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  {isEditing ? (
+                    <div className="space-y-2">
+                      <textarea
+                        value={editingContent}
+                        onChange={e => setEditingContent(e.target.value)}
+                        rows={2}
+                        className="w-full text-sm bg-background border rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary resize-none"
+                      />
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          onClick={saveEdit}
+                          disabled={!editingContent.trim()}
+                          className="px-3 py-1 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 disabled:opacity-50"
+                        >
+                          Save
+                        </button>
+                        <button
+                          onClick={() => setEditingNoteId(null)}
+                          className="px-3 py-1 rounded-md border text-xs hover:bg-muted"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-sm text-foreground/90 leading-relaxed">{note.content}</p>
+                  )}
+                </div>
+              )
+            })}
           </div>
         )
       })()}
