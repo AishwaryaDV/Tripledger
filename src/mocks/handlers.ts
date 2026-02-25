@@ -69,9 +69,9 @@ export const mockHandlers = {
     return { balances: MOCK_BALANCES, suggestions: MOCK_SUGGESTIONS }
   },
 
-  async addExpense(_tripId: string, payload: Partial<Expense>): Promise<Expense> {
+  async addExpense(tripId: string, payload: Partial<Expense>): Promise<Expense> {
     await delay(600) // slightly longer to make the optimistic update visible
-    return { ...payload, id: 'exp-' + Date.now() } as Expense
+    return { ...payload, tripId, id: 'exp-' + Date.now() } as Expense
   },
 
   async getSettlements(tripId: string): Promise<Settlement[]> {
