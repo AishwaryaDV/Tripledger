@@ -68,7 +68,6 @@ const Dashboard = observer(() => {
   }
 
   const tabTrips = activeTab === 'active' ? trips.activeTrips : trips.settledTrips
-  const availableTypes = CIRCLE_FILTERS.filter(f => tabTrips.some(t => t.circleType === f.value))
   const displayedTrips = typeFilter === 'all' ? tabTrips : tabTrips.filter(t => t.circleType === typeFilter)
 
   return (
@@ -160,39 +159,38 @@ const Dashboard = observer(() => {
         </button>
       </div>
 
-      {/* Type filter chips — only shown when there's more than one type in this tab */}
-      {availableTypes.length > 1 && (
-        <div className="flex flex-wrap gap-2 mb-4">
-          <button
-            onClick={() => setTypeFilter('all')}
-            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-              typeFilter === 'all'
-                ? 'bg-foreground text-background border-foreground'
-                : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground'
-            }`}
-          >
-            All
-          </button>
-          {availableTypes.map(f => {
-            const Icon = f.icon
-            const isActive = typeFilter === f.value
-            return (
-              <button
-                key={f.value}
-                onClick={() => setTypeFilter(isActive ? 'all' : f.value)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                  isActive
-                    ? 'bg-foreground text-background border-foreground'
-                    : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground'
-                }`}
-              >
-                <Icon size={11} />
-                {f.label}
-              </button>
-            )
-          })}
-        </div>
-      )}
+      {/* Type filter chips */}
+      <div className="flex items-center gap-2 mb-4 flex-wrap">
+        <span className="text-xs font-medium text-muted-foreground shrink-0">Filters</span>
+        <button
+          onClick={() => setTypeFilter('all')}
+          className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+            typeFilter === 'all'
+              ? 'bg-foreground text-background border-foreground'
+              : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground'
+          }`}
+        >
+          All
+        </button>
+        {CIRCLE_FILTERS.map(f => {
+          const Icon = f.icon
+          const isActive = typeFilter === f.value
+          return (
+            <button
+              key={f.value}
+              onClick={() => setTypeFilter(isActive ? 'all' : f.value)}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                isActive
+                  ? 'bg-foreground text-background border-foreground'
+                  : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground'
+              }`}
+            >
+              <Icon size={11} />
+              {f.label}
+            </button>
+          )
+        })}
+      </div>
 
       {/* Circle List */}
       {displayedTrips.length === 0 ? (
