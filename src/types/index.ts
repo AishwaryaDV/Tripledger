@@ -2,6 +2,8 @@
 
 export type Currency = 'USD' | 'EUR' | 'GBP' | 'INR' | 'AUD' | 'JPY' | string
 
+export type CircleType = 'trip' | 'personal' | 'household' | 'event'
+
 export type SplitType = 'equal' | 'exact' | 'percentage' | 'shares'
 
 export type ExpenseCategory =
@@ -26,6 +28,7 @@ export interface Trip {
   id: string
   name: string
   description?: string
+  circleType: CircleType
   currencies: Currency[]
   baseCurrency: Currency
   members: TripMember[]

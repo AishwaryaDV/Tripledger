@@ -65,7 +65,7 @@ const Dashboard = observer(() => {
 
       {/* Header */}
       <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-        <h2 className="text-3xl font-bold">My Trips</h2>
+        <h2 className="text-3xl font-bold">My Circles</h2>
         <div className="flex gap-2 shrink-0">
           <button
             onClick={() => { setShowConnect(v => !v); setConnectError(null); setConnectCode('') }}
@@ -81,7 +81,7 @@ const Dashboard = observer(() => {
             className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5"
           >
             <Plus size={15} />
-            New Trip
+            New Circle
           </button>
         </div>
       </div>
@@ -89,7 +89,7 @@ const Dashboard = observer(() => {
       {/* Connect inline panel */}
       {showConnect && (
         <div className="rounded-lg border bg-card p-4 mb-4 space-y-3">
-          <p className="text-sm font-medium">Join a trip with a code</p>
+          <p className="text-sm font-medium">Join a circle with a code</p>
           <div className="flex gap-2">
             <input
               type="text"
@@ -153,8 +153,8 @@ const Dashboard = observer(() => {
       {displayedTrips.length === 0 ? (
         <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
           {activeTab === 'active'
-            ? 'No active trips. Create one to get started!'
-            : 'No settled trips yet.'}
+            ? 'No active circles. Create one to get started!'
+            : 'No settled circles yet.'}
         </div>
       ) : (
         <div className="space-y-3">

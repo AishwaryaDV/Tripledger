@@ -79,7 +79,7 @@ export class TripStore {
     }
   }
 
-  async createTrip(payload: { name: string; description?: string; currencies: string[]; baseCurrency: string }) {
+  async createTrip(payload: { name: string; description?: string; circleType: string; currencies: string[]; baseCurrency: string }) {
     const creator = this.root.auth.currentUser
     if (!creator) throw new Error('Not logged in')
     const creatorMember = { userId: creator.id, displayName: creator.displayName, role: 'owner' as const }

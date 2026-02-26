@@ -2,14 +2,23 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
+import { ArrowLeft, Check, Copy, Plane, User, Home, PartyPopper } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
 import { SUPPORTED_CURRENCIES } from '@/lib/currencies'
-import type { Trip } from '@/types'
+import type { Trip, CircleType } from '@/types'
+
+const CIRCLE_TYPES: { value: CircleType; label: string; description: string; icon: React.ElementType }[] = [
+  { value: 'trip',      label: 'Trip',      icon: Plane,       description: 'Group travel expenses' },
+  { value: 'personal',  label: 'Personal',  icon: User,        description: 'Track your own spending' },
+  { value: 'household', label: 'Household', icon: Home,        description: 'Shared home expenses' },
+  { value: 'event',     label: 'Event',     icon: PartyPopper, description: 'One-off occasions' },
+]
 
 const CreateTrip = observer(() => {
   const navigate = useNavigate()
   const { trips } = useStore()
 
+  const [circleType, setCircleType] = useState<CircleType>('trip')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>(['INR'])
@@ -19,28 +28,31 @@ const CreateTrip = observer(() => {
   const [createdTrip, setCreatedTrip] = useState<Trip | null>(null)
   const [copied, setCopied] = useState(false)
 
+  const selectedType = CIRCLE_TYPES.find(t => t.value === circleType)!
+
   const toggleCurrency = (code: string) => {
     setSelectedCurrencies(prev => {
       if (prev.includes(code)) {
-        if (prev.length === 1) return prev // must keep at least one
+        if (prev.length === 1) return prev
         const next = prev.filter(c => c !== code)
         if (baseCurrency === code) setBaseCurrency(next[0])
         return next
       }
-      if (prev.length >= 3) return prev // max 3
+      if (prev.length >= 3) return prev
       return [...prev, code]
     })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title.trim()) { setError('Trip name is required'); return }
+    if (!title.trim()) { setError('Name is required'); return }
     setIsSubmitting(true)
     setError(null)
     try {
       const trip = await trips.createTrip({
         name: title.trim(),
         description: description.trim() || undefined,
+        circleType,
         currencies: selectedCurrencies,
         baseCurrency,
       })
@@ -61,16 +73,18 @@ const CreateTrip = observer(() => {
 
   // ── Success screen ──────────────────────────────────────────────────────────
   if (createdTrip) {
+    const TypeIcon = CIRCLE_TYPES.find(t => t.value === createdTrip.circleType)?.icon ?? Plane
     return (
       <div className="w-full max-w-3xl mx-auto">
         <div className="rounded-xl border bg-card p-8 text-center space-y-6">
           <div>
-            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center text-green-600 text-2xl mx-auto mb-4">
-              ✓
+            <div className="w-14 h-14 rounded-full bg-green-100 flex items-center justify-center text-green-600 mx-auto mb-4">
+              <Check size={28} />
             </div>
-            <h2 className="text-2xl font-bold mb-1">Trip created!</h2>
+            <h2 className="text-2xl font-bold mb-1">Circle created!</h2>
             <p className="text-muted-foreground text-sm">
-              Share this code so others can join <span className="font-medium text-foreground">{createdTrip.name}</span>
+              Share this code so others can join{' '}
+              <span className="font-medium text-foreground">{createdTrip.name}</span>
             </p>
           </div>
 
@@ -85,22 +99,29 @@ const CreateTrip = observer(() => {
               </span>
               <button
                 onClick={handleCopy}
-                className={`px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium border transition-all ${
                   copied
                     ? 'bg-green-50 border-green-200 text-green-700'
                     : 'hover:bg-muted-foreground/10'
                 }`}
               >
-                {copied ? 'Copied!' : 'Copy'}
+                {copied ? <><Check size={14} />Copied!</> : <><Copy size={14} />Copy</>}
               </button>
             </div>
             <p className="text-xs text-muted-foreground">
-              Anyone with this code can join using the <span className="font-medium">Connect</span> button on the dashboard
+              Anyone with this code can join using the <span className="font-medium">Connect</span> button on your dashboard
             </p>
           </div>
 
-          {/* Trip summary */}
+          {/* Circle summary */}
           <div className="text-left rounded-lg border bg-background p-4 space-y-1.5 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Type</span>
+              <span className="font-medium flex items-center gap-1.5">
+                <TypeIcon size={13} />
+                {CIRCLE_TYPES.find(t => t.value === createdTrip.circleType)?.label}
+              </span>
+            </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Currencies</span>
               <span className="font-medium">{createdTrip.currencies.join(' · ')}</span>
@@ -115,7 +136,7 @@ const CreateTrip = observer(() => {
             onClick={() => navigate(`/trips/${createdTrip.id}`)}
             className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
           >
-            Go to Trip →
+            Open Circle →
           </button>
         </div>
       </div>
@@ -129,23 +150,61 @@ const CreateTrip = observer(() => {
       <button
         type="button"
         onClick={() => navigate('/dashboard')}
-        className="text-sm text-muted-foreground hover:text-foreground mb-6 flex items-center gap-1 transition-colors"
+        className="text-sm text-muted-foreground hover:text-foreground mb-6 flex items-center gap-1.5 transition-colors"
       >
-        ← Back to trips
+        <ArrowLeft size={15} />
+        Back to circles
       </button>
 
-      <h2 className="text-3xl font-bold mb-8">Create New Trip</h2>
+      <h2 className="text-3xl font-bold mb-2">New Circle</h2>
+      <p className="text-muted-foreground text-sm mb-8">
+        A circle is a shared space for tracking and splitting expenses.
+      </p>
 
       <form onSubmit={handleSubmit} className="space-y-6">
 
+        {/* Circle type selector */}
+        <div>
+          <label className="block text-sm font-medium mb-3">What kind of circle is this?</label>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {CIRCLE_TYPES.map(type => {
+              const Icon = type.icon
+              const isSelected = circleType === type.value
+              return (
+                <button
+                  key={type.value}
+                  type="button"
+                  onClick={() => setCircleType(type.value)}
+                  className={`flex flex-col items-center gap-2 px-3 py-4 rounded-xl border text-center transition-all ${
+                    isSelected
+                      ? 'border-primary bg-primary/5 text-primary'
+                      : 'border-border hover:border-primary/40 hover:bg-muted/40'
+                  }`}
+                >
+                  <Icon size={20} className={isSelected ? 'text-primary' : 'text-muted-foreground'} />
+                  <div>
+                    <p className="text-sm font-medium">{type.label}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5 leading-tight">{type.description}</p>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         {/* Name */}
         <div>
-          <label className="block text-sm font-medium mb-1.5">Trip name</label>
+          <label className="block text-sm font-medium mb-1.5">Name</label>
           <input
             type="text"
             value={title}
             onChange={e => setTitle(e.target.value)}
-            placeholder="e.g. Goa 2026"
+            placeholder={
+              circleType === 'trip' ? 'e.g. Goa 2026' :
+              circleType === 'personal' ? 'e.g. My Expenses' :
+              circleType === 'household' ? 'e.g. Flat Expenses' :
+              'e.g. Rohan\'s Wedding'
+            }
             className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
@@ -159,7 +218,7 @@ const CreateTrip = observer(() => {
             type="text"
             value={description}
             onChange={e => setDescription(e.target.value)}
-            placeholder="e.g. Beach trip with the squad"
+            placeholder={selectedType.description}
             className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
@@ -168,12 +227,10 @@ const CreateTrip = observer(() => {
         <div>
           <div className="flex items-center justify-between mb-2">
             <label className="block text-sm font-medium">Currencies</label>
-            <span className="text-xs text-muted-foreground">
-              {selectedCurrencies.length}/3 selected
-            </span>
+            <span className="text-xs text-muted-foreground">{selectedCurrencies.length}/3 selected</span>
           </div>
           <p className="text-xs text-muted-foreground mb-3">
-            Pick up to 3 currencies your group will use on this trip.
+            Pick up to 3 currencies your circle will use.
           </p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {SUPPORTED_CURRENCIES.map(c => {
@@ -231,9 +288,7 @@ const CreateTrip = observer(() => {
           </div>
         </div>
 
-        {error && (
-          <p className="text-sm text-destructive">{error}</p>
-        )}
+        {error && <p className="text-sm text-destructive">{error}</p>}
 
         <div className="flex gap-3 pt-2">
           <button
@@ -241,7 +296,7 @@ const CreateTrip = observer(() => {
             disabled={isSubmitting}
             className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {isSubmitting ? 'Creating...' : 'Create Trip'}
+            {isSubmitting ? 'Creating...' : 'Create Circle'}
           </button>
           <button
             type="button"

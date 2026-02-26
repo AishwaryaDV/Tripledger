@@ -11,6 +11,7 @@ export const MOCK_TRIPS: Trip[] = [
   {
     id: 'trip-1', name: 'Goa 2026', baseCurrency: 'INR',
     currencies: ['INR', 'USD', 'EUR'], isSettled: false,
+    circleType: 'trip',
     description: 'Beach trip with the squad',
     createdAt: '2026-03-01T00:00:00Z',
     joinCode: 'GOA26X',
@@ -23,6 +24,7 @@ export const MOCK_TRIPS: Trip[] = [
   {
     id: 'trip-3', name: 'Dubai 2026', baseCurrency: 'AED',
     currencies: ['AED', 'INR'], isSettled: false,
+    circleType: 'trip',
     description: 'Long weekend in the desert',
     createdAt: '2026-05-10T00:00:00Z',
     joinCode: 'DXB26Z',
@@ -32,8 +34,33 @@ export const MOCK_TRIPS: Trip[] = [
     ],
   },
   {
+    id: 'trip-4', name: 'Flat Expenses', baseCurrency: 'INR',
+    currencies: ['INR'], isSettled: false,
+    circleType: 'household',
+    description: 'Rent, groceries, electricity — split 3 ways',
+    createdAt: '2026-01-01T00:00:00Z',
+    joinCode: 'FLAT01',
+    members: [
+      { userId: 'user-1', displayName: 'You', role: 'owner' },
+      { userId: 'user-2', displayName: 'Priya', role: 'member' },
+      { userId: 'user-3', displayName: 'Rahul', role: 'member' },
+    ],
+  },
+  {
+    id: 'trip-5', name: 'My Expenses', baseCurrency: 'INR',
+    currencies: ['INR'], isSettled: false,
+    circleType: 'personal',
+    description: 'Personal spending tracker',
+    createdAt: '2026-02-01T00:00:00Z',
+    joinCode: 'MYEXP1',
+    members: [
+      { userId: 'user-1', displayName: 'You', role: 'owner' },
+    ],
+  },
+  {
     id: 'trip-2', name: 'Bangkok 2025', baseCurrency: 'USD',
     currencies: ['USD', 'THB'], isSettled: true,
+    circleType: 'trip',
     description: 'All settled up!', createdAt: '2025-11-10T00:00:00Z',
     joinCode: 'BKK25Y',
     members: [{ userId: 'user-1', displayName: 'You', role: 'owner' }],

@@ -2,7 +2,15 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
-import { ArrowLeft, Plus, Copy, Check, RefreshCw, CreditCard, Pencil, Trash2 } from 'lucide-react'
+import { ArrowLeft, Plus, Copy, Check, RefreshCw, CreditCard, Pencil, Trash2, Plane, User, Home, PartyPopper } from 'lucide-react'
+import type { CircleType } from '@/types'
+
+const CIRCLE_TYPE_CONFIG: Record<CircleType, { label: string; icon: React.ElementType; style: string }> = {
+  trip:      { label: 'Trip',      icon: Plane,       style: 'bg-blue-100 text-blue-700' },
+  personal:  { label: 'Personal',  icon: User,        style: 'bg-purple-100 text-purple-700' },
+  household: { label: 'Household', icon: Home,        style: 'bg-green-100 text-green-700' },
+  event:     { label: 'Event',     icon: PartyPopper, style: 'bg-amber-100 text-amber-700' },
+}
 import { useStore } from '@/hooks/useStore'
 import ExpenseCard from '@/components/expense/ExpenseCard'
 import BalanceSummary from '@/components/trip/BalanceSummary'
@@ -88,15 +96,24 @@ const TripDetail = observer(() => {
         className="text-sm text-muted-foreground hover:text-foreground mb-6 flex items-center gap-1.5 transition-colors"
       >
         <ArrowLeft size={15} />
-        Back to trips
+        Back to circles
       </button>
 
       {/* Trip Header */}
       <div className="mb-6">
         <div className="flex items-start justify-between gap-4">
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex items-center gap-2 mb-1 flex-wrap">
               <h2 className="text-3xl font-bold">{trip.name}</h2>
+              {(() => {
+                const cfg = CIRCLE_TYPE_CONFIG[trip.circleType] ?? CIRCLE_TYPE_CONFIG.trip
+                const Icon = cfg.icon
+                return (
+                  <span className={`inline-flex items-center gap-1 text-xs font-medium px-2 py-0.5 rounded-full ${cfg.style}`}>
+                    <Icon size={11} />{cfg.label}
+                  </span>
+                )
+              })()}
               {trip.isSettled && (
                 <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">
                   Settled
