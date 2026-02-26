@@ -6,7 +6,6 @@ import { ArrowLeft, CheckCircle2, AlertTriangle, PartyPopper } from 'lucide-reac
 import { useStore } from '@/hooks/useStore'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { BalanceRowSkeleton } from '@/components/shared/Skeleton'
-import CustomSelect from '@/components/shared/CustomSelect'
 import type { SettlementSuggestion } from '@/types'
 
 type Tab = 'suggestions' | 'activity'
@@ -16,8 +15,6 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'activity',    label: 'Activity' },
 ]
 
-const METHODS = ['Cash', 'UPI', 'Bank Transfer', 'Other']
-
 const Settle = observer(() => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
@@ -26,7 +23,6 @@ const Settle = observer(() => {
   const [activeTab, setActiveTab] = useState<Tab>('suggestions')
   const [openFormIndex, setOpenFormIndex] = useState<number | null>(null)
   const [formAmount, setFormAmount] = useState('')
-  const [formMethod, setFormMethod] = useState('Cash')
   const [formIsPartial, setFormIsPartial] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [notification, setNotification] = useState<{ msg: string; isPartial: boolean } | null>(null)
@@ -47,7 +43,6 @@ const Settle = observer(() => {
   const openForm = (suggestion: SettlementSuggestion, index: number) => {
     setOpenFormIndex(index)
     setFormAmount(suggestion.amount.toFixed(2))
-    setFormMethod('Cash')
     setFormIsPartial(false)
   }
 
@@ -64,7 +59,6 @@ const Settle = observer(() => {
       toUserId: suggestion.toUserId,
       amount,
       currency: suggestion.currency,
-      method: formMethod,
       isPartial,
     })
 
@@ -263,33 +257,23 @@ const Settle = observer(() => {
                 {/* Inline payment form */}
                 {openFormIndex === i && (
                   <div className="border-t bg-muted/20 p-4 space-y-3">
-                    <div className="flex gap-3">
-                      <div className="flex-1">
-                        <label className="block text-xs font-medium mb-1">
-                          Amount ({s.currency})
-                        </label>
-                        <input
-                          type="number"
-                          min="0.01"
-                          step="0.01"
-                          value={formAmount}
-                          onChange={e => setFormAmount(e.target.value)}
-                          className="w-full border rounded-md px-2.5 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
-                        />
-                        {parseFloat(formAmount) > 0 && parseFloat(formAmount) < s.amount && (
-                          <p className="text-xs text-yellow-600 mt-1">
-                            Partial — {formatCurrency(s.amount - parseFloat(formAmount), s.currency)} still outstanding
-                          </p>
-                        )}
-                      </div>
-                      <div>
-                        <label className="block text-xs font-medium mb-1">Method</label>
-                        <CustomSelect
-                          value={formMethod}
-                          onChange={setFormMethod}
-                          options={METHODS.map(m => ({ value: m, label: m }))}
-                        />
-                      </div>
+                    <div>
+                      <label className="block text-xs font-medium mb-1">
+                        Amount ({s.currency})
+                      </label>
+                      <input
+                        type="number"
+                        min="0.01"
+                        step="0.01"
+                        value={formAmount}
+                        onChange={e => setFormAmount(e.target.value)}
+                        className="w-full border rounded-md px-2.5 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                      {parseFloat(formAmount) > 0 && parseFloat(formAmount) < s.amount && (
+                        <p className="text-xs text-yellow-600 mt-1">
+                          Partial — {formatCurrency(s.amount - parseFloat(formAmount), s.currency)} still outstanding
+                        </p>
+                      )}
                     </div>
 
                     <label className="flex items-center gap-2 cursor-pointer select-none">
@@ -354,15 +338,9 @@ const Settle = observer(() => {
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 mt-0.5 text-xs text-muted-foreground">
-                      {s.method && <span>{s.method}</span>}
-                      {s.confirmedAt && (
-                        <>
-                          <span>·</span>
-                          <span>{formatDate(s.confirmedAt)}</span>
-                        </>
-                      )}
-                    </div>
+                    {s.confirmedAt && (
+                      <p className="text-xs text-muted-foreground mt-0.5">{formatDate(s.confirmedAt)}</p>
+                    )}
                   </div>
                   <div className="text-right shrink-0 ml-4">
                     <span className={`text-sm font-semibold ${
