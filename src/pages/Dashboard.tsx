@@ -2,17 +2,26 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
-import { Plus, Link2 } from 'lucide-react'
+import { Plus, Link2, Plane, User, Home, PartyPopper } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
 import TripCard from '@/components/trip/TripCard'
 import { TripCardSkeleton } from '@/components/shared/Skeleton'
+import type { CircleType } from '@/types'
 
 type Tab = 'active' | 'settled'
+
+const CIRCLE_FILTERS: { value: CircleType; label: string; icon: React.ElementType }[] = [
+  { value: 'trip',      label: 'Trips',      icon: Plane },
+  { value: 'personal',  label: 'Personal',   icon: User },
+  { value: 'household', label: 'Household',  icon: Home },
+  { value: 'event',     label: 'Events',     icon: PartyPopper },
+]
 
 const Dashboard = observer(() => {
   const { trips } = useStore()
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState<Tab>('active')
+  const [typeFilter, setTypeFilter] = useState<CircleType | 'all'>('all')
   const [showConnect, setShowConnect] = useState(false)
   const [connectCode, setConnectCode] = useState('')
   const [connectError, setConnectError] = useState<string | null>(null)
@@ -58,7 +67,9 @@ const Dashboard = observer(() => {
     )
   }
 
-  const displayedTrips = activeTab === 'active' ? trips.activeTrips : trips.settledTrips
+  const tabTrips = activeTab === 'active' ? trips.activeTrips : trips.settledTrips
+  const availableTypes = CIRCLE_FILTERS.filter(f => tabTrips.some(t => t.circleType === f.value))
+  const displayedTrips = typeFilter === 'all' ? tabTrips : tabTrips.filter(t => t.circleType === typeFilter)
 
   return (
     <div className="w-full max-w-3xl mx-auto">
@@ -115,7 +126,7 @@ const Dashboard = observer(() => {
       {/* Tabs */}
       <div className="flex border-b mb-6">
         <button
-          onClick={() => setActiveTab('active')}
+          onClick={() => { setActiveTab('active'); setTypeFilter('all') }}
           className={`flex-1 py-2 text-sm font-medium transition-colors relative ${
             activeTab === 'active'
               ? 'text-primary'
@@ -132,7 +143,7 @@ const Dashboard = observer(() => {
         </button>
 
         <button
-          onClick={() => setActiveTab('settled')}
+          onClick={() => { setActiveTab('settled'); setTypeFilter('all') }}
           className={`flex-1 py-2 text-sm font-medium transition-colors relative ${
             activeTab === 'settled'
               ? 'text-primary'
@@ -149,10 +160,46 @@ const Dashboard = observer(() => {
         </button>
       </div>
 
-      {/* Trip List */}
+      {/* Type filter chips — only shown when there's more than one type in this tab */}
+      {availableTypes.length > 1 && (
+        <div className="flex flex-wrap gap-2 mb-4">
+          <button
+            onClick={() => setTypeFilter('all')}
+            className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+              typeFilter === 'all'
+                ? 'bg-foreground text-background border-foreground'
+                : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground'
+            }`}
+          >
+            All
+          </button>
+          {availableTypes.map(f => {
+            const Icon = f.icon
+            const isActive = typeFilter === f.value
+            return (
+              <button
+                key={f.value}
+                onClick={() => setTypeFilter(isActive ? 'all' : f.value)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                  isActive
+                    ? 'bg-foreground text-background border-foreground'
+                    : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground'
+                }`}
+              >
+                <Icon size={11} />
+                {f.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Circle List */}
       {displayedTrips.length === 0 ? (
         <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
-          {activeTab === 'active'
+          {typeFilter !== 'all'
+            ? `No ${CIRCLE_FILTERS.find(f => f.value === typeFilter)?.label.toLowerCase()} circles here.`
+            : activeTab === 'active'
             ? 'No active circles. Create one to get started!'
             : 'No settled circles yet.'}
         </div>
