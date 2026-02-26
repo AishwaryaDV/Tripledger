@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
-import { ArrowLeft, Plus, Copy, Check, RefreshCw, CreditCard, Pencil, Trash2, Plane, User, Home, PartyPopper, UtensilsCrossed, Car, BedDouble, Ticket, Package, ChevronDown } from 'lucide-react'
+import { ArrowLeft, Plus, Copy, Check, RefreshCw, CreditCard, Pencil, Trash2, Plane, User, Home, PartyPopper, UtensilsCrossed, Car, BedDouble, Ticket, Package } from 'lucide-react'
+import CustomSelect from '@/components/shared/CustomSelect'
 import type { CircleType, ExpenseCategory } from '@/types'
 
 const CIRCLE_TYPE_CONFIG: Record<CircleType, { label: string; icon: React.ElementType; style: string }> = {
@@ -370,34 +371,26 @@ const TripDetail = observer(() => {
               {/* Paid by + Sort row */}
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-medium text-muted-foreground shrink-0">Sort</span>
-                <div className="relative">
-                  <select
-                    value={sortOrder}
-                    onChange={e => setSortOrder(e.target.value as SortOrder)}
-                    className="appearance-none border rounded-lg pl-3 pr-7 py-1.5 text-xs bg-background focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-                  >
-                    <option value="newest">Newest first</option>
-                    <option value="oldest">Oldest first</option>
-                    <option value="highest">Highest amount</option>
-                    <option value="lowest">Lowest amount</option>
-                  </select>
-                  <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                </div>
+                <CustomSelect
+                  value={sortOrder}
+                  onChange={v => setSortOrder(v as SortOrder)}
+                  options={[
+                    { value: 'newest',  label: 'Newest first' },
+                    { value: 'oldest',  label: 'Oldest first' },
+                    { value: 'highest', label: 'Highest amount' },
+                    { value: 'lowest',  label: 'Lowest amount' },
+                  ]}
+                />
 
                 <span className="text-xs font-medium text-muted-foreground shrink-0 ml-2">Paid by</span>
-                <div className="relative">
-                  <select
-                    value={paidByFilter}
-                    onChange={e => setPaidByFilter(e.target.value)}
-                    className="appearance-none border rounded-lg pl-3 pr-7 py-1.5 text-xs bg-background focus:outline-none focus:ring-2 focus:ring-primary cursor-pointer"
-                  >
-                    <option value="all">Anyone</option>
-                    {trip.members.map(m => (
-                      <option key={m.userId} value={m.userId}>{m.displayName}</option>
-                    ))}
-                  </select>
-                  <ChevronDown size={12} className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-                </div>
+                <CustomSelect
+                  value={paidByFilter}
+                  onChange={setPaidByFilter}
+                  options={[
+                    { value: 'all', label: 'Anyone' },
+                    ...trip.members.map(m => ({ value: m.userId, label: m.displayName })),
+                  ]}
+                />
 
                 {isFiltered && (
                   <button
