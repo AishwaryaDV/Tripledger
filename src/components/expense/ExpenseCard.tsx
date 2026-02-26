@@ -163,10 +163,10 @@ const ExpenseCard = ({ expense, members, baseCurrency, onEdit, onDelete }: Expen
 
           {/* Right: amount + edit/delete */}
           <div className="flex flex-col items-end gap-1 shrink-0">
-            <p className="font-semibold">{formatCurrency(expense.amount, expense.currency)}</p>
+            <p className="font-semibold">{formatCurrency(expense.amountBase, baseCurrency)}</p>
             {expense.currency !== baseCurrency && (
               <p className="text-xs text-muted-foreground">
-                {formatCurrency(expense.amountBase, baseCurrency)}
+                {formatCurrency(expense.amount, expense.currency)}
               </p>
             )}
 

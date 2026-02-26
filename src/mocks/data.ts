@@ -110,9 +110,9 @@ export const MOCK_EXPENSES: Expense[] = [
       { userId: 'user-2', amountOwed: 118.85, isSettled: true },
     ],
   },
-  // Dubai (trip-2) — Priya paid for everything, You owe her
+  // Dubai (trip-3) — Priya paid for everything, You owe her AED 850
   {
-    id: 'exp-5', tripId: 'trip-2', paidBy: 'user-2',
+    id: 'exp-5', tripId: 'trip-3', paidBy: 'user-2',
     title: 'Hotel Atlantis', amount: 1200, currency: 'AED',
     amountBase: 1200, exchangeRate: 1, category: 'accommodation',
     splitType: 'equal', expenseDate: '2026-05-10',
@@ -122,7 +122,7 @@ export const MOCK_EXPENSES: Expense[] = [
     ],
   },
   {
-    id: 'exp-6', tripId: 'trip-2', paidBy: 'user-2',
+    id: 'exp-6', tripId: 'trip-3', paidBy: 'user-2',
     title: 'Burj Khalifa tickets', amount: 500, currency: 'AED',
     amountBase: 500, exchangeRate: 1, category: 'activities',
     splitType: 'equal', expenseDate: '2026-05-11',
@@ -140,15 +140,10 @@ export const MOCK_BALANCES_BY_TRIP: Record<string, Balance[]> = {
     { userId: 'user-2', displayName: 'Priya', netAmount: -2000 },
     { userId: 'user-3', displayName: 'Rahul', netAmount: -2162.33 },
   ],
-  // Dubai: You owe Priya — use this trip to test "Record Payment" as the payer
-  'trip-2': [
+  // Dubai (trip-3): You owe Priya AED 850 — use this trip to test "Record Payment" as payer
+  'trip-3': [
     { userId: 'user-1', displayName: 'You',   netAmount: -850 },
     { userId: 'user-2', displayName: 'Priya', netAmount:  850 },
-  ],
-  'trip-3': [
-    { userId: 'user-1', displayName: 'You',   netAmount:  2300 },
-    { userId: 'user-2', displayName: 'Priya', netAmount: -1200 },
-    { userId: 'user-3', displayName: 'Rahul', netAmount: -1100 },
   ],
 }
 
@@ -157,12 +152,9 @@ export const MOCK_SUGGESTIONS_BY_TRIP: Record<string, SettlementSuggestion[]> = 
     { fromUserId: 'user-3', toUserId: 'user-1', amount: 2162.33, currency: 'INR' },
     { fromUserId: 'user-2', toUserId: 'user-1', amount: 2000,    currency: 'INR' },
   ],
-  'trip-2': [
-    { fromUserId: 'user-1', toUserId: 'user-2', amount: 850, currency: 'AED' },
-  ],
+  // Dubai (trip-3): You owe Priya — you see "Record Payment" here
   'trip-3': [
-    { fromUserId: 'user-2', toUserId: 'user-1', amount: 1200, currency: 'THB' },
-    { fromUserId: 'user-3', toUserId: 'user-1', amount: 1100, currency: 'THB' },
+    { fromUserId: 'user-1', toUserId: 'user-2', amount: 850, currency: 'AED' },
   ],
 }
 
