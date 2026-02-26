@@ -49,6 +49,7 @@ const TripDetail = observer(() => {
   const [categoryFilter, setCategoryFilter] = useState<ExpenseCategory | 'all'>('all')
   const [paidByFilter, setPaidByFilter] = useState<string>('all')
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
+  const [selfFilter, setSelfFilter] = useState(false)
   const [newNote, setNewNote] = useState('')
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [editingContent, setEditingContent] = useState('')
@@ -319,9 +320,11 @@ const TripDetail = observer(() => {
           </div>
         )
 
+        const currentUserId = auth.currentUser?.id
         const filtered = expenses.expenses
           .filter(e => categoryFilter === 'all' || e.category === categoryFilter)
           .filter(e => paidByFilter === 'all' || e.paidBy === paidByFilter)
+          .filter(e => !selfFilter || (e.splits.length === 1 && e.splits[0].userId === currentUserId))
           .sort((a, b) => {
             if (sortOrder === 'newest') return new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime()
             if (sortOrder === 'oldest') return new Date(a.expenseDate).getTime() - new Date(b.expenseDate).getTime()
@@ -329,7 +332,7 @@ const TripDetail = observer(() => {
             return a.amountBase - b.amountBase // lowest
           })
 
-        const isFiltered = categoryFilter !== 'all' || paidByFilter !== 'all'
+        const isFiltered = categoryFilter !== 'all' || paidByFilter !== 'all' || selfFilter
 
         return (
           <div className="space-y-3">
@@ -366,6 +369,17 @@ const TripDetail = observer(() => {
                     </button>
                   )
                 })}
+                <button
+                  onClick={() => setSelfFilter(v => !v)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    selfFilter
+                      ? 'bg-foreground text-background border-foreground'
+                      : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground'
+                  }`}
+                >
+                  <User size={11} />
+                  Self
+                </button>
               </div>
 
               {/* Paid by + Sort row */}
@@ -394,7 +408,7 @@ const TripDetail = observer(() => {
 
                 {isFiltered && (
                   <button
-                    onClick={() => { setCategoryFilter('all'); setPaidByFilter('all') }}
+                    onClick={() => { setCategoryFilter('all'); setPaidByFilter('all'); setSelfFilter(false) }}
                     className="text-xs text-muted-foreground hover:text-foreground ml-1 underline transition-colors"
                   >
                     Clear
