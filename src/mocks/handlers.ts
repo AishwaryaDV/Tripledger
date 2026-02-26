@@ -1,5 +1,5 @@
 // src/mocks/handlers.ts
-import { MOCK_TRIPS, MOCK_EXPENSES, MOCK_BALANCES, MOCK_SUGGESTIONS, MOCK_SETTLEMENTS, MOCK_NOTES } from './data'
+import { MOCK_TRIPS, MOCK_EXPENSES, MOCK_BALANCES_BY_TRIP, MOCK_SUGGESTIONS_BY_TRIP, MOCK_BALANCES, MOCK_SUGGESTIONS, MOCK_SETTLEMENTS, MOCK_NOTES } from './data'
 import type { Trip, Expense, Balance, SettlementSuggestion, Settlement, TripMember, Note } from '../types'
 
 let notes = [...MOCK_NOTES]
@@ -74,9 +74,12 @@ export const mockHandlers = {
     return mutableExpenses.filter(e => e.tripId === tripId)
   },
 
-  async getBalances(_tripId: string): Promise<{ balances: Balance[], suggestions: SettlementSuggestion[] }> {
+  async getBalances(tripId: string): Promise<{ balances: Balance[], suggestions: SettlementSuggestion[] }> {
     await delay()
-    return { balances: MOCK_BALANCES, suggestions: MOCK_SUGGESTIONS }
+    return {
+      balances: MOCK_BALANCES_BY_TRIP[tripId] ?? MOCK_BALANCES,
+      suggestions: MOCK_SUGGESTIONS_BY_TRIP[tripId] ?? MOCK_SUGGESTIONS,
+    }
   },
 
   async addExpense(tripId: string, payload: Partial<Expense>): Promise<Expense> {

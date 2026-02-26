@@ -112,16 +112,42 @@ export const MOCK_EXPENSES: Expense[] = [
   },
 ]
 
-export const MOCK_BALANCES: Balance[] = [
-  { userId: 'user-1', displayName: 'You', netAmount: 4162.33 }, // is owed
-  { userId: 'user-2', displayName: 'Priya', netAmount: -2000 }, // owes money
-  { userId: 'user-3', displayName: 'Rahul', netAmount: -2162.33 }, // owes money
-]
+// Per-trip balances and suggestions
+export const MOCK_BALANCES_BY_TRIP: Record<string, Balance[]> = {
+  'trip-1': [
+    { userId: 'user-1', displayName: 'You',   netAmount:  4162.33 },
+    { userId: 'user-2', displayName: 'Priya', netAmount: -2000 },
+    { userId: 'user-3', displayName: 'Rahul', netAmount: -2162.33 },
+  ],
+  // Dubai: You owe Priya — use this trip to test "Record Payment" as the payer
+  'trip-2': [
+    { userId: 'user-1', displayName: 'You',   netAmount: -850 },
+    { userId: 'user-2', displayName: 'Priya', netAmount:  850 },
+  ],
+  'trip-3': [
+    { userId: 'user-1', displayName: 'You',   netAmount:  2300 },
+    { userId: 'user-2', displayName: 'Priya', netAmount: -1200 },
+    { userId: 'user-3', displayName: 'Rahul', netAmount: -1100 },
+  ],
+}
 
-export const MOCK_SUGGESTIONS: SettlementSuggestion[] = [
-  { fromUserId: 'user-3', toUserId: 'user-1', amount: 2162.33, currency: 'INR' },
-  { fromUserId: 'user-2', toUserId: 'user-1', amount: 2000, currency: 'INR' },
-]
+export const MOCK_SUGGESTIONS_BY_TRIP: Record<string, SettlementSuggestion[]> = {
+  'trip-1': [
+    { fromUserId: 'user-3', toUserId: 'user-1', amount: 2162.33, currency: 'INR' },
+    { fromUserId: 'user-2', toUserId: 'user-1', amount: 2000,    currency: 'INR' },
+  ],
+  'trip-2': [
+    { fromUserId: 'user-1', toUserId: 'user-2', amount: 850, currency: 'AED' },
+  ],
+  'trip-3': [
+    { fromUserId: 'user-2', toUserId: 'user-1', amount: 1200, currency: 'THB' },
+    { fromUserId: 'user-3', toUserId: 'user-1', amount: 1100, currency: 'THB' },
+  ],
+}
+
+// Fallback for other trips (household/personal — no balances needed)
+export const MOCK_BALANCES: Balance[] = []
+export const MOCK_SUGGESTIONS: SettlementSuggestion[] = []
 
 export const MOCK_NOTES: Note[] = [
   {
