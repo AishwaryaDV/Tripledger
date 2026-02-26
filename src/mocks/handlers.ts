@@ -8,6 +8,8 @@ let notes = [...MOCK_NOTES]
 let settlements = [...MOCK_SETTLEMENTS]
 // Mutable trip objects so reopenTrip/createTrip/joinTrip are reflected in subsequent calls
 const mutableTrips: Trip[] = MOCK_TRIPS.map(t => ({ ...t }))
+// Mutable expenses so add/edit/delete persist within a session
+let mutableExpenses: Expense[] = MOCK_EXPENSES.map(e => ({ ...e }))
 
 const generateJoinCode = () =>
   Math.random().toString(36).slice(2, 8).toUpperCase()
@@ -61,7 +63,7 @@ export const mockHandlers = {
 
   async getExpenses(tripId: string): Promise<Expense[]> {
     await delay()
-    return MOCK_EXPENSES.filter(e => e.tripId === tripId)
+    return mutableExpenses.filter(e => e.tripId === tripId)
   },
 
   async getBalances(_tripId: string): Promise<{ balances: Balance[], suggestions: SettlementSuggestion[] }> {
@@ -70,8 +72,21 @@ export const mockHandlers = {
   },
 
   async addExpense(tripId: string, payload: Partial<Expense>): Promise<Expense> {
-    await delay(600) // slightly longer to make the optimistic update visible
-    return { ...payload, tripId, id: 'exp-' + Date.now() } as Expense
+    await delay(600)
+    const newExpense = { ...payload, tripId, id: 'exp-' + Date.now() } as Expense
+    mutableExpenses.push(newExpense)
+    return newExpense
+  },
+
+  async editExpense(id: string, patch: Partial<Expense>): Promise<Expense> {
+    await delay(400)
+    mutableExpenses = mutableExpenses.map(e => e.id === id ? { ...e, ...patch } : e)
+    return mutableExpenses.find(e => e.id === id)!
+  },
+
+  async deleteExpense(id: string): Promise<void> {
+    await delay(300)
+    mutableExpenses = mutableExpenses.filter(e => e.id !== id)
   },
 
   async getSettlements(tripId: string): Promise<Settlement[]> {

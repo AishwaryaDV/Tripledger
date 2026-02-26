@@ -2,11 +2,12 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
+import { ArrowLeft, Plus, Copy, Check, RefreshCw, CreditCard, Pencil, Trash2 } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
 import ExpenseCard from '@/components/expense/ExpenseCard'
 import BalanceSummary from '@/components/trip/BalanceSummary'
 import SettleSuggestions from '@/components/trip/SettleSuggestions'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, formatDate } from '@/lib/utils'
 import { ExpenseCardSkeleton, BalanceRowSkeleton } from '@/components/shared/Skeleton'
 
 type Tab = 'expenses' | 'balances' | 'suggestions' | 'spending' | 'notes'
@@ -84,9 +85,10 @@ const TripDetail = observer(() => {
       {/* Back button */}
       <button
         onClick={() => navigate('/dashboard')}
-        className="text-sm text-muted-foreground hover:text-foreground mb-6 flex items-center gap-1 transition-colors"
+        className="text-sm text-muted-foreground hover:text-foreground mb-6 flex items-center gap-1.5 transition-colors"
       >
-        ← Back to trips
+        <ArrowLeft size={15} />
+        Back to trips
       </button>
 
       {/* Trip Header */}
@@ -120,9 +122,9 @@ const TripDetail = observer(() => {
               </span>
               <button
                 onClick={() => copyJoinCode(trip.joinCode)}
-                className="text-xs text-primary hover:opacity-70 transition-opacity font-medium"
+                className="text-xs text-primary hover:opacity-70 transition-opacity font-medium flex items-center gap-1"
               >
-                {codeCopied ? 'Copied!' : 'Copy'}
+                {codeCopied ? <><Check size={12} />Copied!</> : <><Copy size={12} />Copy</>}
               </button>
             </div>
           </div>
@@ -158,9 +160,10 @@ const TripDetail = observer(() => {
             </div>
             <button
               onClick={() => setConfirmReopen('add')}
-              className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors"
+              className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors flex items-center gap-1.5"
             >
-              + Add Expense
+              <Plus size={15} />
+              Add Expense
             </button>
 
             {/* Inline confirmation */}
@@ -196,14 +199,16 @@ const TripDetail = observer(() => {
           <div className="flex gap-3 mt-5">
             <button
               onClick={() => navigate(`/trips/${id}/add`)}
-              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5"
             >
-              + Add Expense
+              <Plus size={15} />
+              Add Expense
             </button>
             <button
               onClick={() => navigate(`/trips/${id}/settle`)}
-              className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors"
+              className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors flex items-center gap-1.5"
             >
+              <CreditCard size={15} />
               Settle Up
             </button>
           </div>
@@ -229,9 +234,10 @@ const TripDetail = observer(() => {
           <button
             onClick={() => currency.fetchRates(trip.baseCurrency, true)}
             disabled={currency.isLoading}
-            className="text-xs text-primary hover:opacity-70 disabled:opacity-40 transition-opacity font-medium"
+            className="text-xs text-primary hover:opacity-70 disabled:opacity-40 transition-opacity font-medium flex items-center gap-1"
           >
-            {currency.isLoading ? 'Refreshing...' : '↻ Refresh rates'}
+            <RefreshCw size={11} className={currency.isLoading ? 'animate-spin' : ''} />
+            {currency.isLoading ? 'Refreshing...' : 'Refresh rates'}
           </button>
         </div>
       </div>
@@ -283,7 +289,14 @@ const TripDetail = observer(() => {
         ) : (
           <div className="space-y-2">
             {expenses.expenses.map(expense => (
-              <ExpenseCard key={expense.id} expense={expense} members={trip.members} />
+              <ExpenseCard
+                key={expense.id}
+                expense={expense}
+                members={trip.members}
+                baseCurrency={trip.baseCurrency}
+                onEdit={() => navigate(`/trips/${id}/expenses/${expense.id}/edit`)}
+                onDelete={() => expenses.deleteExpense(expense.id)}
+              />
             ))}
           </div>
         )
@@ -436,18 +449,20 @@ const TripDetail = observer(() => {
                       </span>
                     </div>
                     {isOwner && !isEditing && (
-                      <div className="flex items-center gap-2 shrink-0">
+                      <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={() => startEdit(note.id, note.content)}
-                          className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                          title="Edit note"
+                          className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
                         >
-                          Edit
+                          <Pencil size={13} />
                         </button>
                         <button
                           onClick={() => notes.deleteNote(note.id)}
-                          className="text-xs text-destructive hover:opacity-70 transition-opacity"
+                          title="Delete note"
+                          className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-destructive transition-colors"
                         >
-                          Delete
+                          <Trash2 size={13} />
                         </button>
                       </div>
                     )}

@@ -31,6 +31,7 @@ function App() {
           <Route path="/trips/new" element={<CreateTrip />} />
           <Route path="/trips/:id" element={<TripDetail />} />
           <Route path="/trips/:id/add" element={<AddExpense />} />
+          <Route path="/trips/:id/expenses/:expenseId/edit" element={<AddExpense />} />
           <Route path="/trips/:id/settle" element={<Settle />} />
         </Route>
 

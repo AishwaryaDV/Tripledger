@@ -69,8 +69,36 @@ export class ExpenseStore {
     }
   }
 
+  // Optimistic edit — updates instantly, rolls back if API fails
+  async editExpense(expenseId: string, payload: Partial<Expense>) {
+    const idx = this.expenses.findIndex(e => e.id === expenseId)
+    if (idx === -1) return
+    const snapshot = { ...this.expenses[idx] }
+    runInAction(() => { this.expenses[idx] = { ...snapshot, ...payload } })
+
+    try {
+      const data = USE_MOCK
+        ? await mockHandlers.editExpense(expenseId, payload)
+        : (await api.put<Expense>(`/expenses/${expenseId}`, payload)).data
+      runInAction(() => { this.expenses[idx] = data })
+    } catch (e: any) {
+      runInAction(() => { this.expenses[idx] = snapshot; this.error = e.message })
+    }
+  }
+
+  // Optimistic delete — removes instantly, restores if API fails
   async deleteExpense(id: string) {
-    await api.delete(`/expenses/${id}`)
+    const snapshot = this.expenses.find(e => e.id === id)
     runInAction(() => { this.expenses = this.expenses.filter(e => e.id !== id) })
+
+    try {
+      if (USE_MOCK) await mockHandlers.deleteExpense(id)
+      else await api.delete(`/expenses/${id}`)
+    } catch (e: any) {
+      runInAction(() => {
+        if (snapshot) this.expenses.push(snapshot)
+        this.error = e.message
+      })
+    }
   }
 }

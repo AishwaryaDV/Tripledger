@@ -104,7 +104,7 @@ export const MOCK_NOTES: Note[] = [
   },
   {
     id: 'note-2', tripId: 'trip-1', authorId: 'user-2', authorName: 'Priya',
-    content: 'I'll handle the dinner reservation deposits. Deduct from my balance when settling.',
+    content: "I'll handle the dinner reservation deposits. Deduct from my balance when settling.",
     createdAt: '2026-03-15T09:30:00Z',
   },
   {

@@ -1,5 +1,6 @@
 // src/components/shared/Calculator.tsx
 import { useState } from 'react'
+import { Calculator as CalcIcon } from 'lucide-react'
 
 const Calculator = () => {
   const [isOpen, setIsOpen] = useState(false)
@@ -112,9 +113,9 @@ const Calculator = () => {
         onClick={() => setIsOpen(v => !v)}
         title="Calculator"
         aria-label="Toggle calculator"
-        className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition-all flex items-center justify-center text-lg font-bold select-none"
+        className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition-all flex items-center justify-center select-none"
       >
-        ⊞
+        <CalcIcon size={20} />
       </button>
 
       {/* Calculator panel */}

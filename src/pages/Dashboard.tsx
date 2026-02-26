@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
+import { Plus, Link2 } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
 import TripCard from '@/components/trip/TripCard'
 import { TripCardSkeleton } from '@/components/shared/Skeleton'
@@ -68,17 +69,19 @@ const Dashboard = observer(() => {
         <div className="flex gap-2 shrink-0">
           <button
             onClick={() => { setShowConnect(v => !v); setConnectError(null); setConnectCode('') }}
-            className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+            className={`px-4 py-2 rounded-lg border text-sm font-medium transition-colors flex items-center gap-1.5 ${
               showConnect ? 'bg-muted' : 'hover:bg-muted'
             }`}
           >
+            <Link2 size={15} />
             Connect
           </button>
           <button
             onClick={() => navigate('/trips/new')}
-            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5"
           >
-            + New Trip
+            <Plus size={15} />
+            New Trip
           </button>
         </div>
       </div>

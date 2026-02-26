@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { observer } from 'mobx-react-lite'
+import { ArrowLeft, UserRound } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
 import SplitEditor from '@/components/expense/SplitEditor'
 import type { ExpenseSplit, SplitType, ExpenseCategory } from '@/types'
@@ -26,38 +27,62 @@ const CATEGORIES: { value: ExpenseCategory; label: string }[] = [
 ]
 
 const AddExpense = observer(() => {
-  const { id } = useParams<{ id: string }>()
+  const { id, expenseId } = useParams<{ id: string; expenseId?: string }>()
+  const isEditing = !!expenseId
   const navigate = useNavigate()
   const { trips, expenses, auth, currency } = useStore()
 
   const [splits, setSplits] = useState<ExpenseSplit[]>([])
   const [splitType, setSplitType] = useState<SplitType>('equal')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSelfExpense, setIsSelfExpense] = useState(false)
 
   const trip = trips.currentTrip
+  const currentUserId = auth.currentUser?.id ?? ''
 
-  const { register, handleSubmit, watch, formState: { errors } } = useForm<ExpenseFormValues>({
+  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<ExpenseFormValues>({
     defaultValues: {
       currency: trip?.baseCurrency ?? 'INR',
       expenseDate: new Date().toISOString().split('T')[0],
       category: 'food',
-      paidBy: auth.currentUser?.id ?? '',
+      paidBy: currentUserId,
     }
   })
 
   const watchedAmount = watch('amount')
   const watchedCurrency = watch('currency')
 
-  // Fetch trip if not already loaded
+  // Fetch trip + expenses if not already loaded
   useEffect(() => {
     if (!id) return
     if (!trips.currentTrip) trips.fetchTrip(id)
-  }, [id, trips])
+    if (isEditing) expenses.fetchExpenses(id)
+  }, [id]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Fetch rates when trip is known
   useEffect(() => {
     if (trip) currency.fetchRates(trip.baseCurrency)
-  }, [trip?.baseCurrency, currency])
+  }, [trip?.baseCurrency]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Pre-fill form for edit mode once expenses are loaded
+  useEffect(() => {
+    if (!isEditing || !expenseId || expenses.expenses.length === 0) return
+    const expense = expenses.expenses.find(e => e.id === expenseId)
+    if (!expense) return
+    reset({
+      title: expense.title,
+      amount: expense.amount,
+      currency: expense.currency,
+      expenseDate: expense.expenseDate,
+      category: expense.category,
+      paidBy: expense.paidBy,
+      notes: expense.notes ?? '',
+    })
+    setSplitType(expense.splitType)
+    setSplits(expense.splits)
+    // Detect self expense: single split owned by payer
+    setIsSelfExpense(expense.splits.length === 1 && expense.splits[0].userId === expense.paidBy)
+  }, [isEditing, expenseId, expenses.expenses.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSplitChange = (newSplits: ExpenseSplit[], newSplitType: SplitType) => {
     setSplits(newSplits)
@@ -71,20 +96,30 @@ const AddExpense = observer(() => {
     const rate = currency.getRate(data.currency) ?? 1
     const amountBase = currency.convert(Number(data.amount), data.currency) ?? Number(data.amount)
 
-    await expenses.addExpense(id, {
+    const finalSplits: ExpenseSplit[] = isSelfExpense
+      ? [{ userId: currentUserId, amountOwed: amountBase, isSettled: false }]
+      : splits
+
+    const payload = {
       title: data.title,
       amount: Number(data.amount),
       currency: data.currency,
       amountBase,
       exchangeRate: rate,
       category: data.category,
-      splitType,
-      splits,
-      paidBy: data.paidBy,
+      splitType: isSelfExpense ? ('exact' as SplitType) : splitType,
+      splits: finalSplits,
+      paidBy: isSelfExpense ? currentUserId : data.paidBy,
       expenseDate: data.expenseDate,
       notes: data.notes || undefined,
       tripId: id,
-    })
+    }
+
+    if (isEditing && expenseId) {
+      await expenses.editExpense(expenseId, payload)
+    } else {
+      await expenses.addExpense(id, payload)
+    }
 
     setIsSubmitting(false)
     navigate(`/trips/${id}`)
@@ -105,14 +140,29 @@ const AddExpense = observer(() => {
       <button
         type="button"
         onClick={() => navigate(`/trips/${id}`)}
-        className="text-sm text-muted-foreground hover:text-foreground mb-6 flex items-center gap-1 transition-colors"
+        className="text-sm text-muted-foreground hover:text-foreground mb-6 flex items-center gap-1.5 transition-colors"
       >
-        ← Back to {trip.name}
+        <ArrowLeft size={15} />
+        Back to {trip.name}
       </button>
 
-      <h2 className="text-3xl font-bold mb-8">Add Expense</h2>
+      <h2 className="text-3xl font-bold mb-8">{isEditing ? 'Edit Expense' : 'Add Expense'}</h2>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+
+        {/* Self expense toggle */}
+        <label className="flex items-center gap-2.5 cursor-pointer select-none w-fit">
+          <input
+            type="checkbox"
+            checked={isSelfExpense}
+            onChange={e => setIsSelfExpense(e.target.checked)}
+            className="w-4 h-4 rounded accent-primary"
+          />
+          <span className="text-sm flex items-center gap-1.5 text-muted-foreground">
+            <UserRound size={14} />
+            Personal expense — just for me
+          </span>
+        </label>
 
         {/* Title */}
         <div>
@@ -196,33 +246,44 @@ const AddExpense = observer(() => {
           </div>
         </div>
 
-        {/* Paid by */}
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Paid by</label>
-          <select
-            {...register('paidBy', { required: true })}
-            className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-          >
-            {trip.members.map(m => (
-              <option key={m.userId} value={m.userId}>{m.displayName}</option>
-            ))}
-          </select>
-        </div>
+        {/* Paid by — hidden when self expense */}
+        {!isSelfExpense && (
+          <div>
+            <label className="block text-sm font-medium mb-1.5">Paid by</label>
+            <select
+              {...register('paidBy', { required: true })}
+              className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              {trip.members.map(m => (
+                <option key={m.userId} value={m.userId}>{m.displayName}</option>
+              ))}
+            </select>
+          </div>
+        )}
 
-        {/* Split Editor */}
+        {/* Split section */}
         <div>
           <label className="block text-sm font-medium mb-3">Split</label>
-          <SplitEditor
-            members={trip.members}
-            totalAmount={Number(watchedAmount) || 0}
-            currency={watchedCurrency || trip.baseCurrency}
-            onChange={onSplitChange}
-          />
+          {isSelfExpense ? (
+            <div className="rounded-lg border bg-muted/30 px-4 py-3 text-sm text-muted-foreground flex items-center gap-2">
+              <UserRound size={15} />
+              Only you — this won't affect anyone else's balance.
+            </div>
+          ) : (
+            <SplitEditor
+              members={trip.members}
+              totalAmount={Number(watchedAmount) || 0}
+              currency={watchedCurrency || trip.baseCurrency}
+              onChange={onSplitChange}
+            />
+          )}
         </div>
 
         {/* Notes */}
         <div>
-          <label className="block text-sm font-medium mb-1.5">Notes <span className="text-muted-foreground font-normal">(optional)</span></label>
+          <label className="block text-sm font-medium mb-1.5">
+            Notes <span className="text-muted-foreground font-normal">(optional)</span>
+          </label>
           <textarea
             {...register('notes')}
             placeholder="Any extra details..."
@@ -238,7 +299,9 @@ const AddExpense = observer(() => {
             disabled={isSubmitting}
             className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
-            {isSubmitting ? 'Adding...' : 'Add Expense'}
+            {isSubmitting
+              ? (isEditing ? 'Saving...' : 'Adding...')
+              : (isEditing ? 'Save Changes' : 'Add Expense')}
           </button>
           <button
             type="button"
