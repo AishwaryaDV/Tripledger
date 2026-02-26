@@ -62,6 +62,13 @@ export const mockHandlers = {
     return { ...trip }
   },
 
+  async settleTrip(id: string): Promise<Trip> {
+    await delay()
+    const trip = mutableTrips.find(t => t.id === id)!
+    trip.isSettled = true
+    return { ...trip }
+  },
+
   async getExpenses(tripId: string): Promise<Expense[]> {
     await delay()
     return mutableExpenses.filter(e => e.tripId === tripId)

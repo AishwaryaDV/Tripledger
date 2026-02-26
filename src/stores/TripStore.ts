@@ -79,6 +79,21 @@ export class TripStore {
     }
   }
 
+  async settleTrip(id: string) {
+    try {
+      const updated = USE_MOCK
+        ? await mockHandlers.settleTrip(id)
+        : (await api.patch<Trip>(`/trips/${id}`, { isSettled: true })).data
+      runInAction(() => {
+        if (this.currentTrip?.id === id) this.currentTrip = updated
+        const idx = this.trips.findIndex(t => t.id === id)
+        if (idx >= 0) this.trips[idx] = updated
+      })
+    } catch (e: any) {
+      runInAction(() => { this.error = e.message })
+    }
+  }
+
   async createTrip(payload: { name: string; description?: string; circleType: string; currencies: string[]; baseCurrency: string }) {
     const creator = this.root.auth.currentUser
     if (!creator) throw new Error('Not logged in')

@@ -2,9 +2,11 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
+import { ArrowLeft, CheckCircle2, AlertTriangle, PartyPopper } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { BalanceRowSkeleton } from '@/components/shared/Skeleton'
+import CustomSelect from '@/components/shared/CustomSelect'
 import type { SettlementSuggestion } from '@/types'
 
 type Tab = 'suggestions' | 'activity'
@@ -93,21 +95,25 @@ const Settle = observer(() => {
       <button
         type="button"
         onClick={() => navigate(`/trips/${id}`)}
-        className="text-sm text-muted-foreground hover:text-foreground mb-6 flex items-center gap-1 transition-colors"
+        className="text-sm text-muted-foreground hover:text-foreground mb-6 flex items-center gap-1.5 transition-colors"
       >
-        ← Back to {trip.name}
+        <ArrowLeft size={15} />
+        Back to {trip.name}
       </button>
 
       <h2 className="text-3xl font-bold mb-8">Settle Up</h2>
 
       {/* Notification banner */}
       {notification && (
-        <div className={`mb-6 px-4 py-3 rounded-lg text-sm font-medium border ${
+        <div className={`mb-6 px-4 py-3 rounded-lg text-sm font-medium border flex items-start gap-2.5 ${
           notification.isPartial
             ? 'bg-yellow-50 border-yellow-200 text-yellow-800'
             : 'bg-green-50 border-green-200 text-green-700'
         }`}>
-          {notification.isPartial ? '⚡ ' : '✓ '}
+          {notification.isPartial
+            ? <AlertTriangle size={16} className="shrink-0 mt-0.5" />
+            : <CheckCircle2 size={16} className="shrink-0 mt-0.5" />
+          }
           {notification.msg}
         </div>
       )}
@@ -162,6 +168,26 @@ const Settle = observer(() => {
           })}
         </div>
       </div>
+
+      {/* Mark as Settled banner — shown when no outstanding suggestions */}
+      {!trip.isSettled && balances.suggestions.length === 0 && balances.balances.length > 0 && (
+        <div className="mb-6 rounded-xl border border-green-200 bg-green-50 p-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <PartyPopper size={20} className="text-green-600 shrink-0" />
+            <div>
+              <p className="text-sm font-semibold text-green-800">Everyone is settled up!</p>
+              <p className="text-xs text-green-700 mt-0.5">You can now mark this circle as settled.</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={async () => { await trips.settleTrip(id!); navigate(`/trips/${id}`) }}
+            className="shrink-0 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
+          >
+            Mark Settled
+          </button>
+        </div>
+      )}
 
       {/* Tabs */}
       <div className="flex border-b mb-6">
@@ -256,17 +282,13 @@ const Settle = observer(() => {
                           </p>
                         )}
                       </div>
-                      <div className="w-36">
+                      <div>
                         <label className="block text-xs font-medium mb-1">Method</label>
-                        <select
+                        <CustomSelect
                           value={formMethod}
-                          onChange={e => setFormMethod(e.target.value)}
-                          className="w-full border rounded-md px-2.5 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
-                        >
-                          {METHODS.map(m => (
-                            <option key={m} value={m}>{m}</option>
-                          ))}
-                        </select>
+                          onChange={setFormMethod}
+                          options={METHODS.map(m => ({ value: m, label: m }))}
+                        />
                       </div>
                     </div>
 
@@ -322,9 +344,13 @@ const Settle = observer(() => {
                       <span className="text-sm font-medium">{getName(s.fromUserId)}</span>
                       <span className="text-xs text-muted-foreground">paid</span>
                       <span className="text-sm font-medium">{getName(s.toUserId)}</span>
-                      {s.isPartial && (
+                      {s.isPartial ? (
                         <span className="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full font-medium border border-yellow-200">
                           Partial
+                        </span>
+                      ) : (
+                        <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-medium border border-green-200">
+                          Paid
                         </span>
                       )}
                     </div>
@@ -344,9 +370,6 @@ const Settle = observer(() => {
                     }`}>
                       {formatCurrency(s.amount, s.currency)}
                     </span>
-                    {s.isPartial && (
-                      <p className="text-xs text-yellow-600 mt-0.5">partial</p>
-                    )}
                   </div>
                 </div>
               ))
