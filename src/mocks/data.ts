@@ -110,6 +110,27 @@ export const MOCK_EXPENSES: Expense[] = [
       { userId: 'user-2', amountOwed: 118.85, isSettled: true },
     ],
   },
+  // Dubai (trip-2) — Priya paid for everything, You owe her
+  {
+    id: 'exp-5', tripId: 'trip-2', paidBy: 'user-2',
+    title: 'Hotel Atlantis', amount: 1200, currency: 'AED',
+    amountBase: 1200, exchangeRate: 1, category: 'accommodation',
+    splitType: 'equal', expenseDate: '2026-05-10',
+    splits: [
+      { userId: 'user-1', amountOwed: 600, isSettled: false },
+      { userId: 'user-2', amountOwed: 600, isSettled: true },
+    ],
+  },
+  {
+    id: 'exp-6', tripId: 'trip-2', paidBy: 'user-2',
+    title: 'Burj Khalifa tickets', amount: 500, currency: 'AED',
+    amountBase: 500, exchangeRate: 1, category: 'activities',
+    splitType: 'equal', expenseDate: '2026-05-11',
+    splits: [
+      { userId: 'user-1', amountOwed: 250, isSettled: false },
+      { userId: 'user-2', amountOwed: 250, isSettled: true },
+    ],
+  },
 ]
 
 // Per-trip balances and suggestions

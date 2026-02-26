@@ -32,7 +32,7 @@ export class BalanceStore {
   }
 
   async fetchBalances(tripId: string) {
-    runInAction(() => { this.isLoading = true })
+    runInAction(() => { this.isLoading = true; this.balances = []; this.suggestions = [] })
     try {
       if (USE_MOCK) {
         const { balances, suggestions } = await mockHandlers.getBalances(tripId)
