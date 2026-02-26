@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
-import { ArrowLeft, Plus, Copy, Check, RefreshCw, CreditCard, Pencil, Trash2, Plane, User, Home, PartyPopper, UtensilsCrossed, Car, BedDouble, Ticket, Package } from 'lucide-react'
+import { ArrowLeft, Plus, Copy, Check, RefreshCw, CreditCard, Pencil, Trash2, Plane, User, Home, PartyPopper, UtensilsCrossed, Car, BedDouble, Ticket, Package, X } from 'lucide-react'
 import CustomSelect from '@/components/shared/CustomSelect'
 import type { CircleType, ExpenseCategory } from '@/types'
 
@@ -46,7 +46,7 @@ const TripDetail = observer(() => {
   const [activeTab, setActiveTab] = useState<Tab>('expenses')
   const [confirmReopen, setConfirmReopen] = useState<'reopen' | 'add' | null>(null)
   const [codeCopied, setCodeCopied] = useState(false)
-  const [categoryFilter, setCategoryFilter] = useState<ExpenseCategory | 'all'>('all')
+  const [categoryFilter, setCategoryFilter] = useState<ExpenseCategory[]>([])
   const [paidByFilter, setPaidByFilter] = useState<string>('all')
   const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
   const [selfFilter, setSelfFilter] = useState(false)
@@ -322,7 +322,7 @@ const TripDetail = observer(() => {
 
         const currentUserId = auth.currentUser?.id
         const filtered = expenses.expenses
-          .filter(e => categoryFilter === 'all' || e.category === categoryFilter)
+          .filter(e => categoryFilter.length === 0 || categoryFilter.includes(e.category))
           .filter(e => paidByFilter === 'all' || e.paidBy === paidByFilter)
           .filter(e => !selfFilter || (e.splits.length === 1 && e.splits[0].userId === currentUserId))
           .sort((a, b) => {
@@ -332,7 +332,7 @@ const TripDetail = observer(() => {
             return a.amountBase - b.amountBase // lowest
           })
 
-        const isFiltered = categoryFilter !== 'all' || paidByFilter !== 'all' || selfFilter
+        const isFiltered = categoryFilter.length > 0 || paidByFilter !== 'all' || selfFilter
 
         return (
           <div className="space-y-3">
@@ -342,9 +342,9 @@ const TripDetail = observer(() => {
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-medium text-muted-foreground shrink-0">Filters</span>
                 <button
-                  onClick={() => setCategoryFilter('all')}
+                  onClick={() => setCategoryFilter([])}
                   className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
-                    categoryFilter === 'all'
+                    categoryFilter.length === 0 && !selfFilter
                       ? 'bg-foreground text-background border-foreground'
                       : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground'
                   }`}
@@ -353,11 +353,13 @@ const TripDetail = observer(() => {
                 </button>
                 {CATEGORY_FILTERS.map(f => {
                   const Icon = f.icon
-                  const isActive = categoryFilter === f.value
+                  const isActive = categoryFilter.includes(f.value)
                   return (
                     <button
                       key={f.value}
-                      onClick={() => setCategoryFilter(isActive ? 'all' : f.value)}
+                      onClick={() => setCategoryFilter(prev =>
+                        isActive ? prev.filter(c => c !== f.value) : [...prev, f.value]
+                      )}
                       className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                         isActive
                           ? 'bg-foreground text-background border-foreground'
@@ -380,6 +382,15 @@ const TripDetail = observer(() => {
                   <User size={11} />
                   Self
                 </button>
+                {isFiltered && (
+                  <button
+                    onClick={() => { setCategoryFilter([]); setPaidByFilter('all'); setSelfFilter(false) }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium border border-destructive/40 text-destructive hover:bg-destructive/10 transition-colors"
+                  >
+                    <X size={10} />
+                    Clear
+                  </button>
+                )}
               </div>
 
               {/* Paid by + Sort row */}
@@ -406,14 +417,6 @@ const TripDetail = observer(() => {
                   ]}
                 />
 
-                {isFiltered && (
-                  <button
-                    onClick={() => { setCategoryFilter('all'); setPaidByFilter('all'); setSelfFilter(false) }}
-                    className="text-xs text-muted-foreground hover:text-foreground ml-1 underline transition-colors"
-                  >
-                    Clear
-                  </button>
-                )}
               </div>
             </div>
 
