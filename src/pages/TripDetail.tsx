@@ -373,7 +373,7 @@ const TripDetail = observer(() => {
                 <select
                   value={sortOrder}
                   onChange={e => setSortOrder(e.target.value as SortOrder)}
-                  className="text-xs border rounded-lg px-2 py-1 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="border rounded-lg px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="newest">Newest first</option>
                   <option value="oldest">Oldest first</option>
@@ -385,7 +385,7 @@ const TripDetail = observer(() => {
                 <select
                   value={paidByFilter}
                   onChange={e => setPaidByFilter(e.target.value)}
-                  className="text-xs border rounded-lg px-2 py-1 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="border rounded-lg px-3 py-1.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="all">Anyone</option>
                   {trip.members.map(m => (
