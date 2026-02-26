@@ -2,8 +2,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
-import { ArrowLeft, Plus, Copy, Check, RefreshCw, CreditCard, Pencil, Trash2, Plane, User, Home, PartyPopper } from 'lucide-react'
-import type { CircleType } from '@/types'
+import { ArrowLeft, Plus, Copy, Check, RefreshCw, CreditCard, Pencil, Trash2, Plane, User, Home, PartyPopper, UtensilsCrossed, Car, BedDouble, Ticket, Package } from 'lucide-react'
+import type { CircleType, ExpenseCategory } from '@/types'
 
 const CIRCLE_TYPE_CONFIG: Record<CircleType, { label: string; icon: React.ElementType; style: string }> = {
   trip:      { label: 'Trip',      icon: Plane,       style: 'bg-blue-100 text-blue-700' },
@@ -11,6 +11,16 @@ const CIRCLE_TYPE_CONFIG: Record<CircleType, { label: string; icon: React.Elemen
   household: { label: 'Household', icon: Home,        style: 'bg-green-100 text-green-700' },
   event:     { label: 'Event',     icon: PartyPopper, style: 'bg-amber-100 text-amber-700' },
 }
+
+const CATEGORY_FILTERS: { value: ExpenseCategory; label: string; icon: React.ElementType }[] = [
+  { value: 'food',          label: 'Food',          icon: UtensilsCrossed },
+  { value: 'transport',     label: 'Transport',     icon: Car },
+  { value: 'accommodation', label: 'Stay',          icon: BedDouble },
+  { value: 'activities',    label: 'Activities',    icon: Ticket },
+  { value: 'other',         label: 'Other',         icon: Package },
+]
+
+type SortOrder = 'newest' | 'oldest' | 'highest' | 'lowest'
 import { useStore } from '@/hooks/useStore'
 import ExpenseCard from '@/components/expense/ExpenseCard'
 import BalanceSummary from '@/components/trip/BalanceSummary'
@@ -35,6 +45,9 @@ const TripDetail = observer(() => {
   const [activeTab, setActiveTab] = useState<Tab>('expenses')
   const [confirmReopen, setConfirmReopen] = useState<'reopen' | 'add' | null>(null)
   const [codeCopied, setCodeCopied] = useState(false)
+  const [categoryFilter, setCategoryFilter] = useState<ExpenseCategory | 'all'>('all')
+  const [paidByFilter, setPaidByFilter] = useState<string>('all')
+  const [sortOrder, setSortOrder] = useState<SortOrder>('newest')
   const [newNote, setNewNote] = useState('')
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [editingContent, setEditingContent] = useState('')
@@ -290,8 +303,8 @@ const TripDetail = observer(() => {
       </div>
 
       {/* Tab content */}
-      {activeTab === 'expenses' && (
-        expenses.expenses.length === 0 ? (
+      {activeTab === 'expenses' && (() => {
+        if (expenses.expenses.length === 0) return (
           <div className="rounded-xl border border-dashed p-8 text-center space-y-3">
             <p className="text-muted-foreground text-sm">No expenses yet.</p>
             {!trip.isSettled && (
@@ -303,21 +316,122 @@ const TripDetail = observer(() => {
               </button>
             )}
           </div>
-        ) : (
-          <div className="space-y-2">
-            {expenses.expenses.map(expense => (
-              <ExpenseCard
-                key={expense.id}
-                expense={expense}
-                members={trip.members}
-                baseCurrency={trip.baseCurrency}
-                onEdit={() => navigate(`/trips/${id}/expenses/${expense.id}/edit`)}
-                onDelete={() => expenses.deleteExpense(expense.id)}
-              />
-            ))}
+        )
+
+        const filtered = expenses.expenses
+          .filter(e => categoryFilter === 'all' || e.category === categoryFilter)
+          .filter(e => paidByFilter === 'all' || e.paidBy === paidByFilter)
+          .sort((a, b) => {
+            if (sortOrder === 'newest') return new Date(b.expenseDate).getTime() - new Date(a.expenseDate).getTime()
+            if (sortOrder === 'oldest') return new Date(a.expenseDate).getTime() - new Date(b.expenseDate).getTime()
+            if (sortOrder === 'highest') return b.amountBase - a.amountBase
+            return a.amountBase - b.amountBase // lowest
+          })
+
+        const isFiltered = categoryFilter !== 'all' || paidByFilter !== 'all'
+
+        return (
+          <div className="space-y-3">
+            {/* Filter + sort bar */}
+            <div className="space-y-2">
+              {/* Category chips */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-medium text-muted-foreground shrink-0">Filters</span>
+                <button
+                  onClick={() => setCategoryFilter('all')}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                    categoryFilter === 'all'
+                      ? 'bg-foreground text-background border-foreground'
+                      : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground'
+                  }`}
+                >
+                  All
+                </button>
+                {CATEGORY_FILTERS.map(f => {
+                  const Icon = f.icon
+                  const isActive = categoryFilter === f.value
+                  return (
+                    <button
+                      key={f.value}
+                      onClick={() => setCategoryFilter(isActive ? 'all' : f.value)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                        isActive
+                          ? 'bg-foreground text-background border-foreground'
+                          : 'border-border text-muted-foreground hover:border-foreground hover:text-foreground'
+                      }`}
+                    >
+                      <Icon size={11} />
+                      {f.label}
+                    </button>
+                  )
+                })}
+              </div>
+
+              {/* Paid by + Sort row */}
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-medium text-muted-foreground shrink-0">Sort</span>
+                <select
+                  value={sortOrder}
+                  onChange={e => setSortOrder(e.target.value as SortOrder)}
+                  className="text-xs border rounded-lg px-2 py-1 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="newest">Newest first</option>
+                  <option value="oldest">Oldest first</option>
+                  <option value="highest">Highest amount</option>
+                  <option value="lowest">Lowest amount</option>
+                </select>
+
+                <span className="text-xs font-medium text-muted-foreground shrink-0 ml-2">Paid by</span>
+                <select
+                  value={paidByFilter}
+                  onChange={e => setPaidByFilter(e.target.value)}
+                  className="text-xs border rounded-lg px-2 py-1 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="all">Anyone</option>
+                  {trip.members.map(m => (
+                    <option key={m.userId} value={m.userId}>{m.displayName}</option>
+                  ))}
+                </select>
+
+                {isFiltered && (
+                  <button
+                    onClick={() => { setCategoryFilter('all'); setPaidByFilter('all') }}
+                    className="text-xs text-muted-foreground hover:text-foreground ml-1 underline transition-colors"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Results */}
+            {filtered.length === 0 ? (
+              <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
+                No expenses match your filters.
+              </div>
+            ) : (
+              <>
+                <p className="text-xs text-muted-foreground">
+                  {filtered.length} of {expenses.expenses.length} expense{expenses.expenses.length !== 1 ? 's' : ''}
+                  {isFiltered && ' · filtered'}
+                </p>
+                <div className="space-y-2">
+                  {filtered.map(expense => (
+                    <ExpenseCard
+                      key={expense.id}
+                      expense={expense}
+                      members={trip.members}
+                      baseCurrency={trip.baseCurrency}
+                      onEdit={() => navigate(`/trips/${id}/expenses/${expense.id}/edit`)}
+                      onDelete={() => expenses.deleteExpense(expense.id)}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
           </div>
         )
-      )}
+      })()}
 
       {activeTab === 'balances' && (
         <BalanceSummary balances={balances.balances} baseCurrency={trip.baseCurrency} />
