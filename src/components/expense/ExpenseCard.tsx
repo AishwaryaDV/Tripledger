@@ -151,17 +151,17 @@ const ExpenseCard = ({ expense, members, baseCurrency, onEdit, onDelete }: Expen
 
             {/* Split pills */}
             {expense.splits.length > 0 && (
-              <div className="flex flex-row flex-wrap gap-1 mt-2">
+              <div className="flex flex-nowrap overflow-x-auto gap-1 mt-2 -mx-1 px-1 pb-0.5" style={{ scrollbarWidth: 'none' }}>
                 {visibleSplits.map(s => (
                   <span
                     key={s.userId}
-                    className="inline-flex shrink-0 whitespace-nowrap bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs font-medium"
+                    className="shrink-0 whitespace-nowrap bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs font-medium"
                   >
                     {getMemberName(s.userId)} −{formatCurrency(s.amountOwed, baseCurrency)}
                   </span>
                 ))}
                 {extraCount > 0 && (
-                  <span className="inline-flex shrink-0 whitespace-nowrap bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs font-medium">
+                  <span className="shrink-0 whitespace-nowrap bg-muted text-muted-foreground rounded-full px-2 py-0.5 text-xs font-medium">
                     +{extraCount} more
                   </span>
                 )}
