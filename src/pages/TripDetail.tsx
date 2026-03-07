@@ -34,7 +34,7 @@ type Tab = 'expenses' | 'balances' | 'suggestions' | 'spending' | 'notes'
 const TABS: { key: Tab; label: string }[] = [
   { key: 'expenses',    label: 'Expenses' },
   { key: 'balances',    label: 'Balances' },
-  { key: 'suggestions', label: 'Suggested Payments' },
+  { key: 'suggestions', label: 'Suggestions' },
   { key: 'spending',    label: 'Spending' },
   { key: 'notes',       label: 'Notes' },
 ]
@@ -282,12 +282,12 @@ const TripDetail = observer(() => {
       </div>
 
       {/* Tabs — equally distributed, scroll on mobile */}
-      <div className="flex border-b mb-6 overflow-x-auto scrollbar-none">
+      <div className="flex border-b mb-6 overflow-x-auto scrollbar-none gap-1">
         {TABS.map(tab => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 min-w-max py-2 px-2 text-sm font-medium transition-colors relative whitespace-nowrap ${
+            className={`flex-1 min-w-max py-2.5 px-4 text-sm font-medium transition-colors relative whitespace-nowrap ${
               activeTab === tab.key
                 ? 'text-primary'
                 : 'text-muted-foreground hover:text-foreground'

@@ -8,7 +8,7 @@ const FEATURE_TABS: { key: FeatureTab; label: string }[] = [
   { key: 'split',      label: 'Split Expenses' },
   { key: 'currencies', label: 'Multi-Currency' },
   { key: 'settle',     label: 'Settle Up' },
-  { key: 'trips',      label: 'Trip Tools' },
+  { key: 'trips',      label: 'Circle Tools' },
 ]
 
 const FEATURES: Record<FeatureTab, { heading: string; description: string; points: string[] }> = {
@@ -24,9 +24,9 @@ const FEATURES: Record<FeatureTab, { heading: string; description: string; point
   },
   currencies: {
     heading: 'Travel across currencies, not spreadsheets',
-    description: 'Pick up to 3 currencies per trip and designate one as your base. Live rates keep everything accurate.',
+    description: 'Pick up to 3 currencies per circle and designate one as your base. Live rates keep everything accurate.',
     points: [
-      'Choose from 15 common travel currencies per trip',
+      'Choose from 15 common travel currencies per circle',
       'Live exchange rates via exchangerate-api — refreshes every 4 hours',
       'Inline conversion hint as you type (e.g. $40 = ₹3,320)',
       'All balances calculated in base currency automatically',
@@ -43,12 +43,12 @@ const FEATURES: Record<FeatureTab, { heading: string; description: string; point
     ],
   },
   trips: {
-    heading: 'Everything to run a trip',
-    description: 'From the moment you create a trip to the final settle-up, all the tools you need in one place.',
+    heading: 'Everything to run a circle',
+    description: 'From the moment you create a circle to the final settle-up, all the tools you need in one place.',
     points: [
-      'Create trips with a shareable 6-character join code',
+      'Create circles with a shareable 6-character join code',
       'Others join instantly by entering the code — no signup needed',
-      'Per-trip notes visible to all members, editable only by the author',
+      'Per-circle notes visible to all members, editable only by the author',
       'Built-in calculator for quick on-the-go math',
     ],
   },
@@ -146,7 +146,7 @@ const Landing = () => {
         <div className="container mx-auto px-4 py-12 text-center max-w-lg">
           <h3 className="text-xl font-bold mb-2">Ready to start?</h3>
           <p className="text-muted-foreground text-sm mb-6">
-            Create your first trip in under a minute. No sign-up required to explore.
+            Create your first circle in under a minute. No sign-up required to explore.
           </p>
           <button
             onClick={() => navigate('/dashboard')}
