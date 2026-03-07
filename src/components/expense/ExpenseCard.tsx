@@ -21,6 +21,14 @@ const CATEGORY_ICONS: Record<string, React.ElementType> = {
   other:         Package,
 }
 
+const CATEGORY_LABELS: Record<string, string> = {
+  food:          'Food',
+  transport:     'Transport',
+  accommodation: 'Stay',
+  activities:    'Activities',
+  other:         'Other',
+}
+
 interface DeleteModalProps {
   expense: Expense
   baseCurrency: string
@@ -128,9 +136,9 @@ const ExpenseCard = ({ expense, members, baseCurrency, onEdit, onDelete }: Expen
         <div className="flex items-start gap-3">
 
           {/* Category badge with icon */}
-          <div className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full shrink-0 capitalize mt-0.5 ${categoryStyle}`}>
+          <div className={`flex items-center gap-1 text-xs font-medium px-2.5 py-1 rounded-full shrink-0 mt-0.5 ${categoryStyle}`}>
             <CategoryIcon size={11} />
-            <span>{expense.category}</span>
+            <span>{CATEGORY_LABELS[expense.category] ?? expense.category}</span>
           </div>
 
           {/* Middle: title + meta + pills */}
@@ -181,7 +189,7 @@ const ExpenseCard = ({ expense, members, baseCurrency, onEdit, onDelete }: Expen
               <button
                 onClick={() => setShowDeleteModal(true)}
                 title="Delete expense"
-                className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-destructive transition-colors"
+                className="p-1 rounded hover:bg-muted text-destructive transition-colors"
               >
                 <Trash2 size={13} />
               </button>

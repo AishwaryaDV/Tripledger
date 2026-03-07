@@ -162,17 +162,52 @@ const TripDetail = observer(() => {
           </div>
 
           {/* Member avatars */}
-          <div className="flex -space-x-2 shrink-0">
-            {trip.members.slice(0, 4).map(member => (
-              <div
-                key={member.userId}
-                title={member.displayName}
-                className="w-9 h-9 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-xs font-semibold border-2 border-background"
-              >
-                {member.displayName.charAt(0).toUpperCase()}
-              </div>
-            ))}
-          </div>
+          {(() => {
+            const MEMBER_COLORS = ['#818cf8','#f472b6','#34d399','#fb923c','#60a5fa','#a78bfa','#facc15','#2dd4bf']
+            const maxMobile = 3
+            const maxDesktop = 5
+            const total = trip.members.length
+            return (
+              <>
+                {/* Mobile: show up to 3 */}
+                <div className="flex -space-x-2 shrink-0 sm:hidden">
+                  {trip.members.slice(0, maxMobile).map((member, i) => (
+                    <div
+                      key={member.userId}
+                      title={member.displayName}
+                      style={{ backgroundColor: MEMBER_COLORS[i % MEMBER_COLORS.length] }}
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold border-2 border-background text-white"
+                    >
+                      {member.displayName.charAt(0).toUpperCase()}
+                    </div>
+                  ))}
+                  {total > maxMobile && (
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold border-2 border-background bg-muted text-muted-foreground">
+                      +{total - maxMobile}
+                    </div>
+                  )}
+                </div>
+                {/* Desktop: show up to 5 */}
+                <div className="hidden sm:flex -space-x-2 shrink-0">
+                  {trip.members.slice(0, maxDesktop).map((member, i) => (
+                    <div
+                      key={member.userId}
+                      title={member.displayName}
+                      style={{ backgroundColor: MEMBER_COLORS[i % MEMBER_COLORS.length] }}
+                      className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold border-2 border-background text-white"
+                    >
+                      {member.displayName.charAt(0).toUpperCase()}
+                    </div>
+                  ))}
+                  {total > maxDesktop && (
+                    <div className="w-9 h-9 rounded-full flex items-center justify-center text-xs font-semibold border-2 border-background bg-muted text-muted-foreground">
+                      +{total - maxDesktop}
+                    </div>
+                  )}
+                </div>
+              </>
+            )
+          })()}
         </div>
 
         {/* Action buttons */}
