@@ -1,5 +1,5 @@
 // src/components/expense/SplitEditor.tsx
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { TripMember, ExpenseSplit, SplitType } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 
@@ -8,6 +8,8 @@ interface SplitEditorProps {
   totalAmount: number
   currency: string
   onChange: (splits: ExpenseSplit[], splitType: SplitType) => void
+  initialSplits?: ExpenseSplit[]
+  initialSplitType?: SplitType
 }
 
 type ModeValues = Record<string, number>
@@ -19,18 +21,45 @@ const MODES: { key: SplitType; label: string }[] = [
   { key: 'shares',     label: 'Shares' },
 ]
 
-const SplitEditor = ({ members, totalAmount, currency, onChange }: SplitEditorProps) => {
-  const [mode, setMode] = useState<SplitType>('equal')
+const SplitEditor = ({ members, totalAmount, currency, onChange, initialSplits, initialSplitType }: SplitEditorProps) => {
+  const [mode, setMode] = useState<SplitType>(initialSplitType ?? 'equal')
 
   // Equal mode — track who's included
-  const [included, setIncluded] = useState<Set<string>>(
-    new Set(members.map(m => m.userId))
-  )
+  const [included, setIncluded] = useState<Set<string>>(() => {
+    if (initialSplits && initialSplits.length > 0 && initialSplitType === 'equal') {
+      return new Set(initialSplits.filter(s => s.amountOwed > 0).map(s => s.userId))
+    }
+    return new Set(members.map(m => m.userId))
+  })
 
   // Exact / Percentage / Shares — per-member numeric values
-  const [values, setValues] = useState<ModeValues>(
-    Object.fromEntries(members.map(m => [m.userId, 0]))
-  )
+  const [values, setValues] = useState<ModeValues>(() => {
+    if (initialSplits && initialSplits.length > 0 && initialSplitType && initialSplitType !== 'equal') {
+      return Object.fromEntries(members.map(m => {
+        const split = initialSplits.find(s => s.userId === m.userId)
+        if (!split) return [m.userId, 0]
+        if (initialSplitType === 'percentage' || initialSplitType === 'shares') {
+          return [m.userId, split.shareValue ?? 0]
+        }
+        return [m.userId, split.amountOwed]
+      }))
+    }
+    return Object.fromEntries(members.map(m => [m.userId, 0]))
+  })
+
+  // Auto-fill exact mode when amount is entered after switching to exact with no values
+  const prevTotalRef = useRef(0)
+  useEffect(() => {
+    const prevTotal = prevTotalRef.current
+    prevTotalRef.current = totalAmount
+    if (mode === 'exact' && prevTotal === 0 && totalAmount > 0) {
+      const sum = members.reduce((s, m) => s + (values[m.userId] ?? 0), 0)
+      if (sum === 0) {
+        const share = parseFloat((totalAmount / members.length).toFixed(2))
+        setValues(Object.fromEntries(members.map(m => [m.userId, share])))
+      }
+    }
+  }, [totalAmount]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Recompute and notify parent whenever inputs change
   useEffect(() => {

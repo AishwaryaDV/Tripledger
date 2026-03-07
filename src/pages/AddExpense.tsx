@@ -34,6 +34,7 @@ const AddExpense = observer(() => {
 
   const [splits, setSplits] = useState<ExpenseSplit[]>([])
   const [splitType, setSplitType] = useState<SplitType>('equal')
+  const [splitKey, setSplitKey] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSelfExpense, setIsSelfExpense] = useState(false)
 
@@ -80,8 +81,8 @@ const AddExpense = observer(() => {
     })
     setSplitType(expense.splitType)
     setSplits(expense.splits)
-    // Detect self expense: single split owned by payer
     setIsSelfExpense(expense.splits.length === 1 && expense.splits[0].userId === expense.paidBy)
+    setSplitKey(k => k + 1) // remount SplitEditor with pre-filled data
   }, [isEditing, expenseId, expenses.expenses.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSplitChange = (newSplits: ExpenseSplit[], newSplitType: SplitType) => {
@@ -271,10 +272,13 @@ const AddExpense = observer(() => {
             </div>
           ) : (
             <SplitEditor
+              key={splitKey}
               members={trip.members}
               totalAmount={Number(watchedAmount) || 0}
               currency={watchedCurrency || trip.baseCurrency}
               onChange={onSplitChange}
+              initialSplits={isEditing ? splits : undefined}
+              initialSplitType={isEditing ? splitType : undefined}
             />
           )}
         </div>
