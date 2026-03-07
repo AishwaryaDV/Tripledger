@@ -14,6 +14,7 @@ import {
   BarChart, Bar, XAxis, YAxis, ReferenceLine,
   ResponsiveContainer,
 } from 'recharts'
+import { toJS } from 'mobx'
 import { useStore } from '@/hooks/useStore'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import type { CircleType, ExpenseCategory } from '@/types'
@@ -36,6 +37,8 @@ const CATEGORY_CONFIG: Record<ExpenseCategory, { label: string; icon: React.Elem
 }
 
 const CATEGORY_ORDER: ExpenseCategory[] = ['food', 'transport', 'accommodation', 'activities', 'other']
+
+const MEMBER_COLORS = ['#818cf8', '#f472b6', '#34d399', '#fb923c', '#60a5fa', '#a78bfa', '#facc15', '#2dd4bf']
 
 // ── Tooltip shared style ──────────────────────────────────────────────────────
 
@@ -64,7 +67,7 @@ const TripSummary = observer(() => {
   }, [id, trips, expenses, balances])
 
   const trip        = trips.currentTrip
-  const allExpenses = expenses.expenses
+  const allExpenses = toJS(expenses.expenses)
 
   if (trips.isLoading || expenses.isLoading || !trip) {
     return (
@@ -117,10 +120,10 @@ const TripSummary = observer(() => {
     }))
 
   // Per-person chart data
-  const memberContributions = trip.members
+  const memberContributions = toJS(trip.members)
     .map(member => {
       const paid      = allExpenses.filter(e => e.paidBy === member.userId).reduce((s, e) => s + e.amountBase, 0)
-      const net       = balances.balances.find(b => b.userId === member.userId)?.netAmount ?? 0
+      const net       = toJS(balances.balances).find(b => b.userId === member.userId)?.netAmount ?? 0
       return { member, paid, fairShare: avgPerPerson, net, name: member.displayName }
     })
     .sort((a, b) => b.paid - a.paid)
@@ -361,6 +364,12 @@ const TripSummary = observer(() => {
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-4">Spending by Day</h3>
               <ResponsiveContainer width="100%" height={160}>
                 <BarChart data={dailyData} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
+                  <defs>
+                    <linearGradient id="dailyGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="0%" stopColor="#818cf8" stopOpacity={0.95} />
+                      <stop offset="100%" stopColor="#c7d2fe" stopOpacity={0.5} />
+                    </linearGradient>
+                  </defs>
                   <XAxis
                     dataKey="date"
                     tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
@@ -373,7 +382,7 @@ const TripSummary = observer(() => {
                     formatter={(v: number) => [formatCurrency(v, trip.baseCurrency), 'Spend']}
                     cursor={{ fill: 'hsl(var(--muted))', radius: 4 }}
                   />
-                  <Bar dataKey="total" fill="hsl(var(--primary))" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="total" fill="url(#dailyGradient)" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -406,7 +415,11 @@ const TripSummary = observer(() => {
                       formatter={(v: number) => [formatCurrency(v, trip.baseCurrency), 'Paid']}
                       cursor={{ fill: 'hsl(var(--muted))', radius: 4 }}
                     />
-                    <Bar dataKey="paid" name="Paid" fill="hsl(var(--primary))" radius={[0, 4, 4, 0]} />
+                    <Bar dataKey="paid" name="Paid" radius={[0, 4, 4, 0]}>
+                      {memberContributions.map((_, i) => (
+                        <Cell key={i} fill={MEMBER_COLORS[i % MEMBER_COLORS.length]} />
+                      ))}
+                    </Bar>
                     {avgPerPerson > 0 && (
                       <ReferenceLine
                         x={avgPerPerson}
@@ -423,15 +436,16 @@ const TripSummary = observer(() => {
 
             {/* Per-person cards */}
             <div className="space-y-3">
-              {memberContributions.map(({ member, paid, fairShare, net }) => {
+              {memberContributions.map(({ member, paid, fairShare, net }, i) => {
                 const pct    = totalSpend > 0 ? (paid / totalSpend) * 100 : 0
                 const isOwed = net > 0
                 const owes   = net < 0
+                const color  = MEMBER_COLORS[i % MEMBER_COLORS.length]
                 return (
                   <div key={member.userId} className="rounded-lg border bg-muted/20 p-3">
                     <div className="flex items-center justify-between gap-2 mb-2">
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-full bg-primary/10 text-primary flex items-center justify-center text-xs font-semibold shrink-0">
+                        <div className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 text-white" style={{ backgroundColor: color }}>
                           {member.displayName.charAt(0).toUpperCase()}
                         </div>
                         <span className="text-sm font-medium">{member.displayName}</span>
@@ -461,7 +475,7 @@ const TripSummary = observer(() => {
                       </div>
                     </div>
                     <div className="h-1 rounded-full bg-muted overflow-hidden">
-                      <div className="h-full rounded-full bg-primary/60" style={{ width: `${pct}%` }} />
+                      <div className="h-full rounded-full opacity-70" style={{ width: `${pct}%`, backgroundColor: color }} />
                     </div>
                   </div>
                 )
