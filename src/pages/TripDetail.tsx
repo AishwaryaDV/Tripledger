@@ -76,7 +76,7 @@ const TripDetail = observer(() => {
     }
   }, [trips.currentTrip?.baseCurrency, currency])
 
-  if (trips.isLoading || expenses.isLoading) {
+  if (trips.isLoading || expenses.isLoading || (trips.currentTrip && trips.currentTrip.id !== id)) {
     return (
       <div className="w-full max-w-3xl mx-auto space-y-3 pt-4">
         <BalanceRowSkeleton />
