@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
-import { ArrowLeft, Plus, Copy, Check, RefreshCw, CreditCard, Pencil, Trash2, Plane, User, Home, PartyPopper, UtensilsCrossed, Car, BedDouble, Ticket, Package, X } from 'lucide-react'
+import { ArrowLeft, Plus, Copy, Check, RefreshCw, CreditCard, Pencil, Trash2, Plane, User, Home, PartyPopper, UtensilsCrossed, Car, BedDouble, Ticket, Package, X, FileText } from 'lucide-react'
 import CustomSelect from '@/components/shared/CustomSelect'
 import type { CircleType, ExpenseCategory } from '@/types'
 
@@ -228,7 +228,7 @@ const TripDetail = observer(() => {
             )}
           </div>
         ) : (
-          <div className="flex gap-3 mt-5">
+          <div className="flex gap-3 mt-5 flex-wrap">
             <button
               onClick={() => navigate(`/trips/${id}/add`)}
               className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5"
@@ -242,6 +242,13 @@ const TripDetail = observer(() => {
             >
               <CreditCard size={15} />
               Settle Up
+            </button>
+            <button
+              onClick={() => navigate(`/trips/${id}/summary`)}
+              className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors flex items-center gap-1.5"
+            >
+              <FileText size={15} />
+              Summary
             </button>
           </div>
         )}
