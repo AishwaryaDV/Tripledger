@@ -40,7 +40,7 @@ const Layout = observer(() => {
       </header>
 
       {/* Page Content */}
-      <main className="container mx-auto px-4 py-6">
+      <main className="container mx-auto px-5 py-7 sm:px-4 sm:py-6">
         <Outlet />
       </main>
 

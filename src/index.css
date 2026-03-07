@@ -67,3 +67,10 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Slightly larger base font on mobile for readability */
+@media (max-width: 639px) {
+  html {
+    font-size: 17px;
+  }
+}
