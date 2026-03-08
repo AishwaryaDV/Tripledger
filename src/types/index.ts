@@ -35,6 +35,8 @@ export interface Trip {
   isSettled: boolean
   createdAt: string
   joinCode: string
+  startDate?: string
+  endDate?: string
 }
 
 export interface ExpenseSplit {

@@ -1,4 +1,5 @@
 // src/components/trip/BalanceSummary.tsx
+import { Scale } from 'lucide-react'
 import type { Balance } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 
@@ -9,8 +10,9 @@ interface BalanceSummaryProps {
 
 const BalanceSummary = ({ balances, baseCurrency }: BalanceSummaryProps) => {
   if (balances.length === 0) return (
-    <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
-      No balances yet. Add an expense to get started.
+    <div className="rounded-xl border border-dashed p-8 text-center space-y-2">
+      <Scale size={24} className="mx-auto text-muted-foreground/50" />
+      <p className="text-muted-foreground text-sm">No balances yet — add an expense to get started.</p>
     </div>
   )
 

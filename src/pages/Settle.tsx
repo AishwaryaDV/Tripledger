@@ -3,6 +3,8 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
 import { ArrowLeft, CheckCircle2, AlertTriangle, PartyPopper } from 'lucide-react'
+
+const MEMBER_COLORS = ['#818cf8','#f472b6','#34d399','#fb923c','#60a5fa','#a78bfa','#facc15','#2dd4bf']
 import { useStore } from '@/hooks/useStore'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { BalanceRowSkeleton } from '@/components/shared/Skeleton'
@@ -130,11 +132,10 @@ const Settle = observer(() => {
                 }`}
               >
                 <div className="flex items-center gap-2">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
-                    isMe
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-muted-foreground'
-                  }`}>
+                  <div
+                    style={{ backgroundColor: MEMBER_COLORS[(trip?.members.findIndex(m => m.userId === b.userId) ?? 0) % MEMBER_COLORS.length] }}
+                    className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 text-white"
+                  >
                     {b.displayName.charAt(0).toUpperCase()}
                   </div>
                   <span className={`text-sm font-medium ${isMe ? 'text-primary' : ''}`}>

@@ -28,7 +28,7 @@ export const mockHandlers = {
     return mutableTrips.find(t => t.id === id)!
   },
 
-  async createTrip(payload: { name: string; description?: string; circleType: string; currencies: string[]; baseCurrency: string }, creator: TripMember): Promise<Trip> {
+  async createTrip(payload: { name: string; description?: string; circleType: string; currencies: string[]; baseCurrency: string; startDate?: string; endDate?: string }, creator: TripMember): Promise<Trip> {
     await delay(500)
     const newTrip: Trip = {
       id: 'trip-' + Date.now(),
@@ -37,6 +37,8 @@ export const mockHandlers = {
       circleType: (payload.circleType as Trip['circleType']) ?? 'trip',
       currencies: payload.currencies,
       baseCurrency: payload.baseCurrency,
+      startDate: payload.startDate,
+      endDate: payload.endDate,
       members: [creator],
       isSettled: false,
       createdAt: new Date().toISOString(),

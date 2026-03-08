@@ -1,4 +1,5 @@
 // src/components/trip/SettleSuggestions.tsx
+import { PartyPopper } from 'lucide-react'
 import type { SettlementSuggestion, TripMember } from '@/types'
 import { formatCurrency } from '@/lib/utils'
 
@@ -10,7 +11,10 @@ interface SettleSuggestionsProps {
 const SettleSuggestions = ({ suggestions, members }: SettleSuggestionsProps) => {
   if (suggestions.length === 0) {
     return (
-      <p className="text-sm text-muted-foreground">Everyone is settled up!</p>
+      <div className="rounded-xl border border-dashed p-8 text-center space-y-2">
+        <PartyPopper size={24} className="mx-auto text-muted-foreground/50" />
+        <p className="text-muted-foreground text-sm">Everyone is settled up!</p>
+      </div>
     )
   }
 

@@ -22,6 +22,8 @@ const CATEGORY_FILTERS: { value: ExpenseCategory; label: string; icon: React.Ele
 ]
 
 type SortOrder = 'newest' | 'oldest' | 'highest' | 'lowest'
+
+const MEMBER_COLORS = ['#818cf8','#f472b6','#34d399','#fb923c','#60a5fa','#a78bfa','#facc15','#2dd4bf']
 import { useStore } from '@/hooks/useStore'
 import ExpenseCard from '@/components/expense/ExpenseCard'
 import BalanceSummary from '@/components/trip/BalanceSummary'
@@ -144,6 +146,15 @@ const TripDetail = observer(() => {
               <span>{trip.currencies.join(' · ')}</span>
               <span>·</span>
               <span>Base: {trip.baseCurrency}</span>
+              {trip.startDate && (
+                <>
+                  <span>·</span>
+                  <span>
+                    {formatDate(trip.startDate)}
+                    {trip.endDate && ` – ${formatDate(trip.endDate)}`}
+                  </span>
+                </>
+              )}
             </div>
 
             {/* Join code */}
@@ -216,13 +227,13 @@ const TripDetail = observer(() => {
             {/* Settled banner */}
             <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 flex items-center justify-between gap-4">
               <p className="text-sm text-amber-700">
-                This trip is settled. You can reopen it to make changes.
+                This circle is settled. You can reopen it to make changes.
               </p>
               <button
                 onClick={() => setConfirmReopen('reopen')}
                 className="text-sm font-medium text-amber-700 hover:text-amber-900 shrink-0 transition-colors"
               >
-                Reopen Trip
+                Reopen Circle
               </button>
             </div>
             <button
@@ -238,8 +249,8 @@ const TripDetail = observer(() => {
               <div className="rounded-lg border bg-card p-4 space-y-3">
                 <p className="text-sm">
                   {confirmReopen === 'add'
-                    ? 'This trip is settled. Adding an expense will reopen it — balances will update. Continue?'
-                    : 'Reopening this trip will mark it as active again. Continue?'}
+                    ? 'This circle is settled. Adding an expense will reopen it — balances will update. Continue?'
+                    : 'Reopening this circle will mark it as active again. Continue?'}
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -530,9 +541,10 @@ const TripDetail = observer(() => {
                 >
                   <div className="flex items-center justify-between mb-2">
                     <div className="flex items-center gap-2">
-                      <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 ${
-                        isMe ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                      }`}>
+                      <div
+                        style={{ backgroundColor: MEMBER_COLORS[trip.members.findIndex(m => m.userId === member.userId) % MEMBER_COLORS.length] }}
+                        className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold shrink-0 text-white"
+                      >
                         {member.displayName.charAt(0).toUpperCase()}
                       </div>
                       <span className={`text-sm font-medium ${isMe ? 'text-primary' : ''}`}>
@@ -617,7 +629,11 @@ const TripDetail = observer(() => {
             </div>
 
             {/* Notes list */}
-            {sorted.length === 0 ? (
+            {notes.isLoading ? (
+              <div className="space-y-2">
+                {[1, 2].map(i => <BalanceRowSkeleton key={i} />)}
+              </div>
+            ) : sorted.length === 0 ? (
               <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
                 No notes yet. Add one above.
               </div>
@@ -649,7 +665,7 @@ const TripDetail = observer(() => {
                         <button
                           onClick={() => notes.deleteNote(note.id)}
                           title="Delete note"
-                          className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-destructive transition-colors"
+                          className="p-1 rounded hover:bg-muted text-destructive transition-colors"
                         >
                           <Trash2 size={13} />
                         </button>

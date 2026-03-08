@@ -23,6 +23,8 @@ const CreateTrip = observer(() => {
   const [description, setDescription] = useState('')
   const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>(['INR'])
   const [baseCurrency, setBaseCurrency] = useState('INR')
+  const [startDate, setStartDate] = useState('')
+  const [endDate, setEndDate] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [createdTrip, setCreatedTrip] = useState<Trip | null>(null)
@@ -55,6 +57,8 @@ const CreateTrip = observer(() => {
         circleType,
         currencies: selectedCurrencies,
         baseCurrency,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
       })
       setCreatedTrip(trip)
     } catch (err: any) {
@@ -221,6 +225,33 @@ const CreateTrip = observer(() => {
             placeholder={selectedType.description}
             className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
           />
+        </div>
+
+        {/* Date range */}
+        <div className="flex gap-3">
+          <div className="flex-1">
+            <label className="block text-sm font-medium mb-1.5">
+              Start date <span className="text-muted-foreground font-normal">(optional)</span>
+            </label>
+            <input
+              type="date"
+              value={startDate}
+              onChange={e => { setStartDate(e.target.value); if (endDate && e.target.value > endDate) setEndDate('') }}
+              className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+          <div className="flex-1">
+            <label className="block text-sm font-medium mb-1.5">
+              End date <span className="text-muted-foreground font-normal">(optional)</span>
+            </label>
+            <input
+              type="date"
+              value={endDate}
+              min={startDate || undefined}
+              onChange={e => setEndDate(e.target.value)}
+              className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
         </div>
 
         {/* Currency picker */}

@@ -15,6 +15,7 @@ export const MOCK_TRIPS: Trip[] = [
     description: 'Beach trip with the squad',
     createdAt: '2026-03-01T00:00:00Z',
     joinCode: 'GOA26X',
+    startDate: '2026-03-15', endDate: '2026-03-20',
     members: [
       { userId: 'user-1', displayName: 'You', role: 'owner' },
       { userId: 'user-2', displayName: 'Priya', role: 'member' },
@@ -28,6 +29,7 @@ export const MOCK_TRIPS: Trip[] = [
     description: 'Long weekend in the desert',
     createdAt: '2026-05-10T00:00:00Z',
     joinCode: 'DXB26Z',
+    startDate: '2026-05-10', endDate: '2026-05-14',
     members: [
       { userId: 'user-1', displayName: 'You', role: 'owner' },
       { userId: 'user-2', displayName: 'Priya', role: 'member' },
