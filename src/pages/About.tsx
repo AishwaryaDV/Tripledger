@@ -28,9 +28,9 @@ const About = () => {
         <section>
           <h2 className="text-3xl font-bold mb-4">About TripLedger</h2>
           <p className="text-muted-foreground leading-relaxed">
-            TripLedger is a group travel expense tracker built for trips where multiple people
-            spend money on shared costs across different currencies. It handles the maths so
-            you can focus on the trip.
+            TripLedger is a shared expense tracker built around the concept of <span className="font-medium text-foreground">circles</span> — groups of people splitting costs together.
+            Whether it's a trip abroad, a shared household, a one-off event, or personal expense tracking,
+            TripLedger handles the maths, the currencies, and the settlements so you don't have to.
           </p>
         </section>
 
@@ -39,12 +39,14 @@ const About = () => {
           <h3 className="text-xl font-bold mb-4">Features</h3>
           <div className="space-y-3">
             {[
-              ['Expense Splitting', 'Equal, exact, percentage, and shares — with cross-mode conversion when switching methods.'],
-              ['Multi-Currency', 'Up to 3 currencies per trip with a base currency for all balance math. Live rates via exchangerate-api refreshed every 4 hours with a manual override.'],
-              ['Settlement Engine', 'Minimum-transaction suggestions to settle the trip with as few transfers as possible. Partial payments tracked separately in the activity log.'],
-              ['Join Codes', 'Each trip gets a 6-character alphanumeric code. Share it for instant joins — no email invites needed.'],
-              ['Trip Notes', 'Per-trip notes visible to all members. Only the author can edit or delete their own notes.'],
-              ['Settled Trip Handling', 'Settled trips are clearly marked and greyed out. You can reopen and add an expense or re-settle at any time.'],
+              ['Circle Types', 'Four circle types — Trip, Household, Event, and Personal — each with its own context. Create one in under a minute and share a 6-character join code for instant member onboarding.'],
+              ['Expense Splitting', 'Four split modes: equal, exact, percentage, and shares — with smart cross-mode value conversion when you switch. Self expenses let you log personal items without affecting anyone else\'s balance.'],
+              ['Multi-Currency', 'Up to 3 currencies per circle with a designated base currency for all balance calculations. Live rates via ExchangeRate API refresh every 4 hours, with inline conversion hints as you type.'],
+              ['Settlement Engine', 'Debt-simplification algorithm minimises the number of transfers needed to fully settle a circle. Record full or partial payments, with outstanding amounts tracked separately in the activity log.'],
+              ['Trip Summary', 'Per-circle financial overview with a category donut chart, daily spend bar chart, and per-person contribution breakdown. Export as CSV or plain text for record-keeping.'],
+              ['Filters & Sorting', 'Multi-select category filters, paid-by filter, self-expense filter, and sort by date or amount — all combinable to find any expense instantly.'],
+              ['Circle Notes', 'Shared notes visible to all members. Only the author can edit or delete their own notes, keeping the record honest.'],
+              ['Settled Circle Handling', 'Settled circles are clearly marked. Reopen at any time to add expenses or re-settle — balances recalculate automatically.'],
             ].map(([title, desc]) => (
               <div key={title} className="rounded-lg border bg-card p-4">
                 <p className="font-semibold text-sm mb-1">{title}</p>
@@ -61,26 +63,18 @@ const About = () => {
             {[
               ['Frontend', 'React 18 + TypeScript + Vite'],
               ['State', 'MobX 6 — class-based stores with makeAutoObservable'],
-              ['UI', 'shadcn/ui + Tailwind CSS v3 (slate base)'],
+              ['UI', 'shadcn/ui + Tailwind CSS v3'],
               ['Routing', 'React Router v6 with protected routes'],
               ['Forms', 'React Hook Form'],
-              ['Backend (planned)', 'Supabase — Auth, Postgres, Realtime'],
-              ['Exchange Rates', 'exchangerate-api.com v4 free tier, cached in localStorage'],
+              ['Charts', 'Recharts — donut, bar, and per-person visualisations'],
+              ['Backend', 'FastAPI (Python)'],
+              ['Exchange Rates', 'ExchangeRate API v4 free tier, cached in localStorage'],
             ].map(([label, value]) => (
               <div key={label} className="flex gap-4">
                 <span className="text-muted-foreground w-36 shrink-0">{label}</span>
                 <span>{value}</span>
               </div>
             ))}
-          </div>
-        </section>
-
-        {/* Docs placeholder */}
-        <section>
-          <h3 className="text-xl font-bold mb-4">Documentation</h3>
-          <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm space-y-2">
-            <p className="font-medium">Full documentation coming soon.</p>
-            <p>API references, data models, and integration guides will live here.</p>
           </div>
         </section>
 
