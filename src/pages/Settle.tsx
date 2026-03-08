@@ -326,8 +326,20 @@ const Settle = observer(() => {
                 >
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
+                      <span
+                        className="w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-semibold text-white shrink-0"
+                        style={{ backgroundColor: MEMBER_COLORS[(trip?.members.findIndex(m => m.userId === s.fromUserId) ?? 0) % MEMBER_COLORS.length] }}
+                      >
+                        {getName(s.fromUserId).charAt(0).toUpperCase()}
+                      </span>
                       <span className="text-sm font-medium">{getName(s.fromUserId)}</span>
                       <span className="text-xs text-muted-foreground">paid</span>
+                      <span
+                        className="w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-semibold text-white shrink-0"
+                        style={{ backgroundColor: MEMBER_COLORS[(trip?.members.findIndex(m => m.userId === s.toUserId) ?? 0) % MEMBER_COLORS.length] }}
+                      >
+                        {getName(s.toUserId).charAt(0).toUpperCase()}
+                      </span>
                       <span className="text-sm font-medium">{getName(s.toUserId)}</span>
                       {s.isPartial ? (
                         <span className="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full font-medium border border-yellow-200">
