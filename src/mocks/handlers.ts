@@ -18,6 +18,13 @@ const generateJoinCode = () =>
 const delay = (ms = 300) => new Promise(res => setTimeout(res, ms))
 
 export const mockHandlers = {
+  async getTripByCode(code: string): Promise<Trip> {
+    await delay()
+    const trip = mutableTrips.find(t => t.joinCode === code.toUpperCase())
+    if (!trip) throw new Error('Invalid join code. Double-check and try again.')
+    return { ...trip }
+  },
+
   async getTrips(): Promise<Trip[]> {
     await delay()
     return [...mutableTrips]

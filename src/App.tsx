@@ -10,6 +10,7 @@ import CreateTrip from './pages/CreateTrip'
 import Login from './pages/Login'
 import Landing from './pages/Landing'
 import About from './pages/About'
+import InviteJoin from './pages/InviteJoin'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/about" element={<About />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/join/:code" element={<InviteJoin />} />
 
         {/* Protected routes with Layout */}
         <Route

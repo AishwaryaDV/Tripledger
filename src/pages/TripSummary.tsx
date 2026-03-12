@@ -7,7 +7,7 @@ import {
   Plane, User, Home, PartyPopper,
   UtensilsCrossed, Car, BedDouble, Ticket, Package,
   Wallet, Users, CalendarDays, TrendingUp, Tag,
-  Clock, CheckCircle2,
+  Clock, CheckCircle2, AlertTriangle,
 } from 'lucide-react'
 import {
   PieChart, Pie, Cell, Tooltip,
@@ -73,6 +73,31 @@ const TripSummary = observer(() => {
     return (
       <div className="w-full max-w-3xl mx-auto pt-4 space-y-4">
         {[1, 2, 3].map(i => <div key={i} className="h-28 rounded-xl bg-muted animate-pulse" />)}
+      </div>
+    )
+  }
+
+  if (trips.error || expenses.error) {
+    return (
+      <div className="w-full max-w-3xl mx-auto pt-8 space-y-3">
+        <button
+          onClick={() => navigate(`/trips/${id}`)}
+          className="text-sm text-muted-foreground hover:text-foreground mb-2 flex items-center gap-1.5 transition-colors"
+        >
+          <ArrowLeft size={15} /> Back
+        </button>
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 flex items-center justify-between gap-3 text-sm">
+          <div className="flex items-center gap-2 text-destructive">
+            <AlertTriangle size={15} className="shrink-0" />
+            <span>{trips.error ?? expenses.error}</span>
+          </div>
+          <button
+            onClick={() => { trips.fetchTrip(id!); expenses.fetchExpenses(id!) }}
+            className="text-xs font-medium text-primary hover:opacity-70 shrink-0 transition-opacity"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     )
   }

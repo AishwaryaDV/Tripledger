@@ -110,6 +110,12 @@ export class TripStore {
     }
   }
 
+  async fetchTripByCode(code: string): Promise<Trip> {
+    return USE_MOCK
+      ? await mockHandlers.getTripByCode(code)
+      : (await api.get<Trip>(`/trips/by-code/${code}`)).data
+  }
+
   async joinTrip(code: string) {
     const user = this.root.auth.currentUser
     if (!user) throw new Error('Not logged in')

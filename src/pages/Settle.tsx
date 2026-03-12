@@ -3,10 +3,10 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
 import { ArrowLeft, CheckCircle2, AlertTriangle, PartyPopper } from 'lucide-react'
-
-const MEMBER_COLORS = ['#818cf8','#f472b6','#34d399','#fb923c','#60a5fa','#a78bfa','#facc15','#2dd4bf']
 import { useStore } from '@/hooks/useStore'
 import { formatCurrency, formatDate } from '@/lib/utils'
+
+const MEMBER_COLORS = ['#818cf8','#f472b6','#34d399','#fb923c','#60a5fa','#a78bfa','#facc15','#2dd4bf']
 import { BalanceRowSkeleton } from '@/components/shared/Skeleton'
 import type { SettlementSuggestion } from '@/types'
 
@@ -21,6 +21,7 @@ const Settle = observer(() => {
   const { id } = useParams<{ id: string }>()
   const navigate = useNavigate()
   const { trips, balances, auth } = useStore()
+
 
   const [activeTab, setActiveTab] = useState<Tab>('suggestions')
   const [openFormIndex, setOpenFormIndex] = useState<number | null>(null)
@@ -80,6 +81,25 @@ const Settle = observer(() => {
     return (
       <div className="w-full max-w-3xl mx-auto space-y-3 pt-4">
         {[1, 2, 3].map(i => <BalanceRowSkeleton key={i} />)}
+      </div>
+    )
+  }
+
+  if (trips.error) {
+    return (
+      <div className="w-full max-w-3xl mx-auto pt-8 space-y-3">
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 flex items-center justify-between gap-3 text-sm">
+          <div className="flex items-center gap-2 text-destructive">
+            <AlertTriangle size={15} className="shrink-0" />
+            <span>{trips.error}</span>
+          </div>
+          <button
+            onClick={() => { trips.fetchTrip(id!); balances.fetchBalances(id!); balances.fetchSettlements(id!) }}
+            className="text-xs font-medium text-primary hover:opacity-70 shrink-0 transition-opacity"
+          >
+            Retry
+          </button>
+        </div>
       </div>
     )
   }
@@ -221,13 +241,13 @@ const Settle = observer(() => {
             balances.suggestions.map((s, i) => (
               <div key={i} className="rounded-lg border bg-card overflow-hidden">
                 {/* Suggestion row */}
-                <div className="flex items-center justify-between p-3">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 gap-2">
                   <div className="text-sm">
                     <span className="font-medium">{getName(s.fromUserId)}</span>
                     <span className="text-muted-foreground mx-2">→</span>
                     <span className="font-medium">{getName(s.toUserId)}</span>
                   </div>
-                  <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-between sm:justify-end gap-3">
                     <span className="text-sm font-semibold">
                       {formatCurrency(s.amount, s.currency)}
                     </span>

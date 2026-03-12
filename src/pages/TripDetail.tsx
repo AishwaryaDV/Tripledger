@@ -158,14 +158,14 @@ const TripDetail = observer(() => {
             </div>
 
             {/* Join code */}
-            <div className="flex items-center gap-2 mt-3">
-              <span className="text-xs text-muted-foreground">Invite code:</span>
-              <span className="text-xs font-mono font-semibold tracking-widest bg-muted px-2 py-0.5 rounded">
+            <div className="flex items-center gap-2 mt-3 flex-wrap">
+              <span className="text-xs text-muted-foreground shrink-0">Invite code:</span>
+              <span className="text-xs font-mono font-semibold tracking-widest bg-muted px-2 py-0.5 rounded shrink-0">
                 {trip.joinCode}
               </span>
               <button
                 onClick={() => copyJoinCode(trip.joinCode)}
-                className="text-xs text-primary hover:opacity-70 transition-opacity font-medium flex items-center gap-1"
+                className="text-xs text-primary hover:opacity-70 transition-opacity font-medium flex items-center gap-1 shrink-0"
               >
                 {codeCopied ? <><Check size={12} />Copied!</> : <><Copy size={12} />Copy</>}
               </button>
@@ -225,13 +225,13 @@ const TripDetail = observer(() => {
         {trip.isSettled ? (
           <div className="mt-5 space-y-3">
             {/* Settled banner */}
-            <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 flex items-center justify-between gap-4">
+            <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <p className="text-sm text-amber-700">
                 This circle is settled. You can reopen it to make changes.
               </p>
               <button
                 onClick={() => setConfirmReopen('reopen')}
-                className="text-sm font-medium text-amber-700 hover:text-amber-900 shrink-0 transition-colors"
+                className="text-sm font-medium text-amber-700 hover:text-amber-900 shrink-0 transition-colors self-start sm:self-auto"
               >
                 Reopen Circle
               </button>
@@ -274,27 +274,30 @@ const TripDetail = observer(() => {
             )}
           </div>
         ) : (
-          <div className="flex gap-3 mt-5 flex-wrap">
+          <div className="grid grid-cols-3 sm:flex gap-2 mt-5">
             <button
               onClick={() => navigate(`/trips/${id}/add`)}
-              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5"
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"
             >
               <Plus size={15} />
-              Add Expense
+              <span className="hidden sm:inline">Add Expense</span>
+              <span className="sm:hidden">Add</span>
             </button>
             <button
               onClick={() => navigate(`/trips/${id}/settle`)}
-              className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors flex items-center gap-1.5"
+              className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-1.5"
             >
               <CreditCard size={15} />
-              Settle Up
+              <span className="hidden sm:inline">Settle Up</span>
+              <span className="sm:hidden">Settle</span>
             </button>
             <button
               onClick={() => navigate(`/trips/${id}/summary`)}
-              className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors flex items-center gap-1.5"
+              className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-1.5"
             >
               <FileText size={15} />
-              Summary
+              <span className="hidden sm:inline">Summary</span>
+              <span className="sm:hidden">Summary</span>
             </button>
           </div>
         )}
@@ -447,29 +450,31 @@ const TripDetail = observer(() => {
               </div>
 
               {/* Paid by + Sort row */}
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-medium text-muted-foreground shrink-0">Sort</span>
-                <CustomSelect
-                  value={sortOrder}
-                  onChange={v => setSortOrder(v as SortOrder)}
-                  options={[
-                    { value: 'newest',  label: 'Newest first' },
-                    { value: 'oldest',  label: 'Oldest first' },
-                    { value: 'highest', label: 'Highest amount' },
-                    { value: 'lowest',  label: 'Lowest amount' },
-                  ]}
-                />
-
-                <span className="text-xs font-medium text-muted-foreground shrink-0 ml-2">Paid by</span>
-                <CustomSelect
-                  value={paidByFilter}
-                  onChange={setPaidByFilter}
-                  options={[
-                    { value: 'all', label: 'Anyone' },
-                    ...trip.members.map(m => ({ value: m.userId, label: m.displayName })),
-                  ]}
-                />
-
+              <div className="flex flex-wrap gap-x-4 gap-y-2 items-center">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-muted-foreground shrink-0">Sort</span>
+                  <CustomSelect
+                    value={sortOrder}
+                    onChange={v => setSortOrder(v as SortOrder)}
+                    options={[
+                      { value: 'newest',  label: 'Newest first' },
+                      { value: 'oldest',  label: 'Oldest first' },
+                      { value: 'highest', label: 'Highest amount' },
+                      { value: 'lowest',  label: 'Lowest amount' },
+                    ]}
+                  />
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-medium text-muted-foreground shrink-0">Paid by</span>
+                  <CustomSelect
+                    value={paidByFilter}
+                    onChange={setPaidByFilter}
+                    options={[
+                      { value: 'all', label: 'Anyone' },
+                      ...trip.members.map(m => ({ value: m.userId, label: m.displayName })),
+                    ]}
+                  />
+                </div>
               </div>
             </div>
 
