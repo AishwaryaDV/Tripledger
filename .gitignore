@@ -12,6 +12,17 @@ dist
 dist-ssr
 *.local
 
+# Backend secrets — never commit
+backend/.env
+*.env
+
+# Python
+backend/venv/
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+.pytest_cache/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

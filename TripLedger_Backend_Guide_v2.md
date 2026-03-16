@@ -147,16 +147,61 @@ Understanding this flow is important. It explains what happens every time a user
 
 ### 4.1 The full flow step by step
 
+There are two sign-in paths — Google OAuth and email/password. Both end up at the same place: a Supabase JWT in the frontend, which the backend verifies on every request.
+
+**Path A — Google OAuth:**
+
 | # | Where | What happens |
 |---|---|---|
-| 1 | Browser (React) | User clicks 'Login with Google'. Supabase JS SDK opens Google OAuth popup. |
-| 2 | Supabase Auth | Google confirms identity. Supabase creates a user record and issues a JWT (access_token). |
-| 3 | Browser (React) | Supabase JS SDK stores the JWT in localStorage. `AuthStore.currentUser` is set. |
-| 4 | Browser (React) | User does something (e.g. loads circles). Axios interceptor grabs JWT from Supabase, adds `Authorization: Bearer <jwt>` header to every request. |
-| 5 | FastAPI | Request arrives. `get_current_user` dependency extracts the JWT from the header. |
-| 6 | FastAPI | PyJWT verifies the JWT signature using `SUPABASE_JWT_SECRET`. If valid, extracts `user_id` and `email`. |
-| 7 | FastAPI | Upserts user into local `users` table (in case they're new). Returns `User` object to the route handler. |
-| 8 | FastAPI | Route handler runs with verified `current_user`. Returns data. If JWT is invalid or missing → 401 Unauthorized. |
+| 1 | Browser (React) | User clicks 'Continue with Google'. Supabase JS SDK opens Google OAuth popup. |
+| 2 | Supabase Auth | Google confirms identity. Supabase creates a user record and issues a JWT. |
+| 3 | Browser (React) | Supabase JS SDK stores the JWT. `AuthStore.currentUser` is set. Frontend calls `POST /auth/me` to upsert the user in the local DB. |
+| 4 | FastAPI (`POST /auth/me`) | Verifies JWT, upserts user into `users` table with `email` and `display_name` from Google profile. |
+
+**Path B — Email + Password signup (new user):**
+
+| # | Where | What happens |
+|---|---|---|
+| 1 | Browser (React) | User fills out signup form: display_name, email, password, confirm password. |
+| 2 | Browser (React) | Frontend calls `supabase.auth.signUp({ email, password })` — Supabase creates the auth record and issues a JWT. No custom backend endpoint for signup itself. |
+| 3 | Browser (React) | Frontend immediately calls `POST /auth/me` with the JWT **and** `{ display_name }` in the body — this is how the backend saves their chosen display name. |
+| 4 | FastAPI (`POST /auth/me`) | Verifies JWT, upserts user into `users` table. If new user, also saves `display_name` from the request body. |
+
+**Path C — Email + Password login (returning user):**
+
+| # | Where | What happens |
+|---|---|---|
+| 1 | Browser (React) | User enters email + password. Frontend calls `supabase.auth.signInWithPassword({ email, password })`. |
+| 2 | Supabase Auth | Validates credentials. Issues a JWT. |
+| 3 | Browser (React) | JWT stored. `AuthStore.currentUser` set. Frontend calls `POST /auth/me` to confirm user exists in local DB. |
+| 4 | FastAPI | Normal protected requests proceed from here. |
+
+**Shared: every protected request after login:**
+
+| # | Where | What happens |
+|---|---|---|
+| 1 | Browser (React) | User does something (e.g. loads circles). Axios interceptor grabs JWT from Supabase, adds `Authorization: Bearer <jwt>` header to every request. |
+| 2 | FastAPI | Request arrives. `get_current_user` dependency extracts the JWT from the header. |
+| 3 | FastAPI | PyJWT verifies the JWT signature using `SUPABASE_JWT_SECRET`. If valid, extracts `user_id` and `email`. |
+| 4 | FastAPI | Route handler runs with verified `current_user`. Returns data. If JWT is invalid or missing → 401 Unauthorized. |
+
+**POST /auth/me** — called by the frontend after every login/signup to upsert the user:
+
+```json
+// Request body (display_name only required on first signup — optional on login)
+{ "display_name": "Rishav" }
+
+// Response
+{
+  "id": "uuid",
+  "email": "rishav@example.com",
+  "display_name": "Rishav",
+  "avatar_url": null,
+  "default_currency": "INR"
+}
+```
+
+> On Google signup, `display_name` comes from the Google profile — pass it from `session.user.user_metadata.full_name`. On email signup, it comes from the form field the user filled in.
 
 ### 4.2 The auth dependency in code
 
@@ -321,18 +366,27 @@ One row per person per expense. If an expense has 4 members, there are 4 rows he
 
 ## 6. API Endpoints
 
-All endpoints require `Authorization: Bearer <jwt>` header. Base URL: `https://api.tripledger.com` (or `http://localhost:8000` locally).
+All endpoints require `Authorization: Bearer <jwt>` header unless marked **public**. Base URL: `https://api.tripledger.com` (or `http://localhost:8000` locally).
 
-### 6.1 Trips / Circles
+### 6.0 Auth
 
 | Method | Endpoint | Body | Returns |
 |---|---|---|---|
-| GET | `/trips` | — | `Trip[]` |
-| POST | `/trips` | See body below | `Trip` |
-| GET | `/trips/{id}` | — | `Trip` (with members) |
-| PATCH | `/trips/{id}` | `{ is_settled: bool }` | `Trip` |
-| DELETE | `/trips/{id}` | — | 204 |
-| POST | `/trips/join` | `{ code: string }` | `Trip` |
+| POST | `/auth/me` | `{ display_name?: string }` | `UserResponse` |
+
+> Called by the frontend immediately after any login or signup. Upserts the user into the local `users` table using the JWT. `display_name` is optional on login but should be sent on first signup (email/password flow). For Google login, extract the name from `session.user.user_metadata.full_name`.
+
+### 6.1 Trips / Circles
+
+| Method | Endpoint | Auth required | Body | Returns |
+|---|---|---|---|---|
+| GET | `/trips` | Yes | — | `Trip[]` |
+| POST | `/trips` | Yes | See body below | `Trip` |
+| GET | `/trips/{id}` | Yes | — | `Trip` (with members) |
+| PATCH | `/trips/{id}` | Yes | `{ is_settled: bool }` | `Trip` |
+| DELETE | `/trips/{id}` | Yes | — | 204 |
+| POST | `/trips/join` | Yes | `{ code: string }` | `Trip` |
+| GET | `/trips/by-code/{code}` | **No** | — | `TripPreview` |
 
 **POST /trips body:**
 ```json
@@ -350,6 +404,45 @@ All endpoints require `Authorization: Bearer <jwt>` header. Base URL: `https://a
 > `join_code` is auto-generated by the backend on creation. Do not accept it from the client.
 
 > `POST /trips/join` looks up the circle by `join_code`, adds the current user as a member (role: `member`), and returns the full `Trip` object.
+
+**GET /trips/by-code/{code} — PUBLIC endpoint:**
+
+This endpoint powers the `/join/:code` deep-link page. It returns a lightweight circle preview so unauthenticated users can see what circle they've been invited to before they log in. No JWT required.
+
+```python
+# Example router implementation (trips.py)
+# Note: no Depends(get_current_user) — this route is intentionally public
+@router.get('/trips/by-code/{code}', response_model=TripPreview)
+async def get_trip_by_code(code: str, db = Depends(get_db)):
+    trip = await db.execute(
+        select(Trip).where(func.upper(Trip.join_code) == code.upper())
+    )
+    trip = trip.scalar_one_or_none()
+    if not trip:
+        raise HTTPException(status_code=404, detail='Invalid join code. Double-check and try again.')
+    return trip
+```
+
+**TripPreview response schema** (what the public endpoint returns — no expenses, no balances):
+```json
+{
+  "id": "uuid",
+  "name": "Goa 2026",
+  "description": "Beach trip",
+  "circle_type": "trip",
+  "currencies": ["INR", "USD"],
+  "join_code": "XK9F2A",
+  "is_settled": false,
+  "members": [
+    { "userId": "uuid", "displayName": "Rishav" },
+    { "userId": "uuid", "displayName": "Priya" }
+  ]
+}
+```
+
+> `TripPreview` intentionally omits balances, expenses, `base_currency`, `created_by`, and timestamps — only what the join screen needs. Define a separate Pydantic `TripPreview` schema rather than reusing `TripResponse`.
+
+> **Security note:** `GET /trips/by-code/{code}` skips the `get_current_user` dependency. RLS is bypassed here since you're using the service key on the backend. Only return the preview fields — never full member details or financial data.
 
 ### 6.2 Expenses
 
