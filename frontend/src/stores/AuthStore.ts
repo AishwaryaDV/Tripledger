@@ -24,7 +24,8 @@ export class AuthStore {
     if (session?.user) {
       const user = await this.syncWithBackend(
         session.user,
-        session.user.user_metadata?.full_name
+        session.user.user_metadata?.full_name,
+        session.access_token
       )
       runInAction(() => {
         this.currentUser = user
@@ -39,7 +40,8 @@ export class AuthStore {
       if (session?.user) {
         const user = await this.syncWithBackend(
           session.user,
-          session.user.user_metadata?.full_name
+          session.user.user_metadata?.full_name,
+          session.access_token
         )
         runInAction(() => { this.currentUser = user })
       } else {
