@@ -4,6 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import jwt
 from jwt import PyJWKClient
+import ssl
+import certifi
 
 from app.config import settings
 from app.database import get_db
@@ -11,8 +13,12 @@ from app.models.user import User
 
 security = HTTPBearer()
 
-# Fetches and caches Supabase's public keys — handles RS256 automatically
-_jwks_client = PyJWKClient(f"{settings.SUPABASE_URL}/auth/v1/.well-known/jwks.json")
+# Use certifi SSL certs — fixes Mac SSL certificate verification issues
+_ssl_context = ssl.create_default_context(cafile=certifi.where())
+_jwks_client = PyJWKClient(
+    f"{settings.SUPABASE_URL}/auth/v1/.well-known/jwks.json",
+    ssl_context=_ssl_context,
+)
 
 
 async def get_current_user(
@@ -25,7 +31,7 @@ async def get_current_user(
         payload = jwt.decode(
             token,
             signing_key.key,
-            algorithms=["RS256", "HS256"],
+            algorithms=["ES256", "RS256", "HS256"],
             options={"verify_aud": False},
         )
     except jwt.ExpiredSignatureError:
