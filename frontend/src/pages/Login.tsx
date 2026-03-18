@@ -5,6 +5,7 @@ import {
   Eye, EyeOff, ArrowRight, Mail, Lock, User,
   Plane, Home, PartyPopper, ShieldCheck,
 } from 'lucide-react'
+import { useStore } from '@/hooks/useStore'
 
 type Mode = 'login' | 'signup'
 
@@ -27,6 +28,7 @@ const FEATURES = [
 const Login = () => {
   const navigate = useNavigate()
   const location = useLocation()
+  const { auth } = useStore()
   const redirectTo = (location.state as any)?.redirectTo ?? '/dashboard'
 
   const [mode, setMode] = useState<Mode>('login')
@@ -49,18 +51,27 @@ const Login = () => {
     if (!email.trim())    { setError('Email is required.'); return }
     if (!password)        { setError('Password is required.'); return }
     if (mode === 'signup') {
-      if (!displayName.trim())         { setError('Display name is required.'); return }
-      if (password.length < 8)         { setError('Password must be at least 8 characters.'); return }
-      if (password !== confirmPassword) { setError("Passwords don't match."); return }
+      if (!displayName.trim())          { setError('Display name is required.'); return }
+      if (password.length < 8)          { setError('Password must be at least 8 characters.'); return }
+      if (password !== confirmPassword)  { setError("Passwords don't match."); return }
     }
     setIsSubmitting(true)
-    // TODO: replace with auth.loginWithEmail() / auth.signUp()
-    setTimeout(() => { setIsSubmitting(false); navigate(redirectTo, { replace: true }) }, 800)
+    try {
+      if (mode === 'login') {
+        await auth.loginWithEmail(email, password)
+      } else {
+        await auth.signUp(email, password, displayName)
+      }
+      navigate(redirectTo, { replace: true })
+    } catch (err: any) {
+      setError(err.message ?? 'Something went wrong.')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const handleGoogle = () => {
-    // TODO: replace with auth.loginWithGoogle()
-    navigate(redirectTo, { replace: true })
+    auth.loginWithGoogle()
   }
 
   return (
