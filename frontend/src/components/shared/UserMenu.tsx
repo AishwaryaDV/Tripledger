@@ -1,6 +1,7 @@
 // src/components/shared/UserMenu.tsx
 import { useState, useRef, useEffect } from 'react'
 import { observer } from 'mobx-react-lite'
+import { useNavigate } from 'react-router-dom'
 import { Settings, LogOut, X, ChevronDown, User, Lock } from 'lucide-react'
 import { toast } from 'sonner'
 import { useStore } from '../../hooks/useStore'
@@ -133,6 +134,7 @@ const SettingsModal = observer(({ onClose }: { onClose: () => void }) => {
 // ── User Menu ─────────────────────────────────────────────────────────────────
 const UserMenu = observer(() => {
   const { auth } = useStore()
+  const navigate = useNavigate()
   const [open, setOpen] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
@@ -154,6 +156,7 @@ const UserMenu = observer(() => {
   const handleLogout = async () => {
     setOpen(false)
     await auth.logout()
+    navigate('/login', { replace: true })
     toast.success('Logged out.')
   }
 

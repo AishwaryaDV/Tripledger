@@ -3,12 +3,16 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 import jwt
+from jwt import PyJWKClient
 
 from app.config import settings
 from app.database import get_db
 from app.models.user import User
 
 security = HTTPBearer()
+
+# Fetches and caches Supabase's public keys — handles RS256 automatically
+_jwks_client = PyJWKClient(f"{settings.SUPABASE_URL}/auth/v1/.well-known/jwks.json")
 
 
 async def get_current_user(
@@ -17,16 +21,17 @@ async def get_current_user(
 ) -> User:
     token = credentials.credentials
     try:
+        signing_key = _jwks_client.get_signing_key_from_jwt(token)
         payload = jwt.decode(
             token,
-            settings.SUPABASE_JWT_SECRET,
-            algorithms=["HS256"],
+            signing_key.key,
+            algorithms=["RS256", "HS256"],
             options={"verify_aud": False},
         )
     except jwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.InvalidTokenError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+    except jwt.InvalidTokenError as e:
+        raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
 
     user_id: str = payload.get("sub")
     email: str = payload.get("email", "")
