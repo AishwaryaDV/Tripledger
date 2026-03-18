@@ -17,10 +17,12 @@ api.interceptors.request.use(async (config) => {
 })
 
 // If we get a 401 (token expired) — log the user out
+// Skip /auth/me since it can 401 during signup before the session is cached
 api.interceptors.response.use(
   res => res,
   async (error) => {
-    if (error.response?.status === 401) {
+    const url = error.config?.url ?? ''
+    if (error.response?.status === 401 && !url.includes('/auth/me')) {
       await supabase.auth.signOut()
       window.location.href = '/login'
     }

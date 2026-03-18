@@ -66,8 +66,8 @@ export class AuthStore {
       runInAction(() => { this.error = error.message })
       throw new Error(error.message)
     }
-    if (data.user) {
-      const user = await this.syncWithBackend(data.user)
+    if (data.user && data.session) {
+      const user = await this.syncWithBackend(data.user, undefined, data.session.access_token)
       runInAction(() => { this.currentUser = user })
     }
   }
@@ -79,8 +79,8 @@ export class AuthStore {
       runInAction(() => { this.error = error.message })
       throw new Error(error.message)
     }
-    if (data.user) {
-      const user = await this.syncWithBackend(data.user, displayName)
+    if (data.user && data.session) {
+      const user = await this.syncWithBackend(data.user, displayName, data.session.access_token)
       runInAction(() => { this.currentUser = user })
     }
   }
@@ -91,9 +91,10 @@ export class AuthStore {
   }
 
   // Calls POST /auth/me — upserts the user in our DB and returns their profile
-  private async syncWithBackend(supabaseUser: any, displayName?: string): Promise<User> {
+  private async syncWithBackend(supabaseUser: any, displayName?: string, accessToken?: string): Promise<User> {
     try {
-      const { data } = await api.post('/auth/me', { display_name: displayName ?? null })
+      const headers = accessToken ? { Authorization: `Bearer ${accessToken}` } : undefined
+      const { data } = await api.post('/auth/me', { display_name: displayName ?? null }, { headers })
       return {
         id: data.id,
         email: data.email,
