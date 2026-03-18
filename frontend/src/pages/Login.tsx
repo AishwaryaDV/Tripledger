@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   Eye, EyeOff, ArrowRight, Mail, Lock, User,
-  Plane, Home, PartyPopper, ShieldCheck,
+  Plane, Home, PartyPopper, ShieldCheck, Loader2,
 } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
 import { toast } from 'sonner'
@@ -255,7 +255,7 @@ const Login = () => {
               className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50 flex items-center justify-center gap-2"
             >
               {isSubmitting
-                ? (mode === 'login' ? 'Signing in...' : 'Creating account...')
+                ? <><Loader2 size={15} className="animate-spin" />{mode === 'login' ? 'Signing in...' : 'Creating account...'}</>
                 : <>{mode === 'login' ? 'Sign in' : 'Create account'}<ArrowRight size={15} /></>
               }
             </button>
