@@ -6,6 +6,7 @@ import {
   Plane, Home, PartyPopper, ShieldCheck,
 } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
+import { toast } from 'sonner'
 
 type Mode = 'login' | 'signup'
 
@@ -59,8 +60,10 @@ const Login = () => {
     try {
       if (mode === 'login') {
         await auth.loginWithEmail(email, password)
+        toast.success('Welcome back!')
       } else {
         await auth.signUp(email, password, displayName)
+        toast.success(`Welcome to TripLedger, ${displayName}!`)
       }
       navigate(redirectTo, { replace: true })
     } catch (err: any) {
