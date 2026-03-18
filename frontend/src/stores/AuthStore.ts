@@ -87,6 +87,25 @@ export class AuthStore {
     }
   }
 
+  async updateDisplayName(name: string) {
+    const { error } = await supabase.auth.updateUser({ data: { full_name: name } })
+    if (error) throw new Error(error.message)
+    const { data: { session } } = await supabase.auth.getSession()
+    if (session) {
+      await api.post('/auth/me', { display_name: name }, {
+        headers: { Authorization: `Bearer ${session.access_token}` }
+      })
+    }
+    runInAction(() => {
+      if (this.currentUser) this.currentUser = { ...this.currentUser, displayName: name }
+    })
+  }
+
+  async updatePassword(newPassword: string) {
+    const { error } = await supabase.auth.updateUser({ password: newPassword })
+    if (error) throw new Error(error.message)
+  }
+
   async logout() {
     await supabase.auth.signOut()
     runInAction(() => { this.currentUser = null })
