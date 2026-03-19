@@ -5,7 +5,7 @@ from fastapi import HTTPException
 
 from app.models.trip import Trip, TripMember
 from app.models.user import User
-from app.schemas.trip import TripCreate, TripResponse, TripPreview, MemberResponse
+from app.schemas.trip import TripCreate, TripResponse, MemberResponse
 
 
 def _generate_join_code() -> str:
@@ -26,14 +26,15 @@ def _build_trip_response(trip: Trip) -> TripResponse:
         id=trip.id,
         name=trip.name,
         description=trip.description,
-        circle_type=trip.circle_type,
+        circleType=trip.circle_type,
         currencies=trip.currencies or [],
-        base_currency=trip.base_currency,
-        join_code=trip.join_code,
-        is_settled=trip.is_settled,
-        start_date=str(trip.start_date) if trip.start_date else None,
-        end_date=str(trip.end_date) if trip.end_date else None,
-        created_by=trip.created_by,
+        baseCurrency=trip.base_currency,
+        joinCode=trip.join_code,
+        isSettled=trip.is_settled,
+        startDate=str(trip.start_date) if trip.start_date else None,
+        endDate=str(trip.end_date) if trip.end_date else None,
+        createdBy=trip.created_by,
+        createdAt=str(trip.created_at) if trip.created_at else None,
         members=members,
     )
 
@@ -46,13 +47,13 @@ async def create_trip(db: AsyncSession, current_user: User, data: TripCreate) ->
         id=str(uuid.uuid4()),
         name=data.name,
         description=data.description,
-        circle_type=data.circle_type,
+        circle_type=data.circleType,
         currencies=data.currencies,
-        base_currency=data.base_currency,
+        base_currency=data.baseCurrency,
         join_code=join_code,
         is_settled=False,
-        start_date=data.start_date,
-        end_date=data.end_date,
+        start_date=data.startDate,
+        end_date=data.endDate,
         created_by=current_user.id,
     )
     db.add(trip)
@@ -102,19 +103,14 @@ async def get_trip(db: AsyncSession, trip_id: str, current_user: User) -> TripRe
     return _build_trip_response(trip)
 
 
-async def get_trip_by_code(db: AsyncSession, join_code: str) -> TripPreview:
+async def get_trip_by_code(db: AsyncSession, join_code: str) -> TripResponse:
     result = await db.execute(select(Trip).where(Trip.join_code == join_code.upper()))
     trip = result.scalar_one_or_none()
 
     if not trip:
         raise HTTPException(status_code=404, detail="Invalid join code")
 
-    return TripPreview(
-        id=trip.id,
-        name=trip.name,
-        circle_type=trip.circle_type,
-        member_count=len(trip.members),
-    )
+    return _build_trip_response(trip)
 
 
 async def join_trip(db: AsyncSession, trip_id: str, current_user: User) -> TripResponse:

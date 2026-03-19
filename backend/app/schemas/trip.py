@@ -5,11 +5,11 @@ from typing import Optional
 class TripCreate(BaseModel):
     name: str
     description: Optional[str] = None
-    circle_type: str = "trip"
+    circleType: str = "trip"
     currencies: list[str] = ["USD"]
-    base_currency: str = "USD"
-    start_date: Optional[str] = None
-    end_date: Optional[str] = None
+    baseCurrency: str = "USD"
+    startDate: Optional[str] = None
+    endDate: Optional[str] = None
 
 
 class MemberResponse(BaseModel):
@@ -17,30 +17,18 @@ class MemberResponse(BaseModel):
     displayName: str
     role: str
 
-    class Config:
-        from_attributes = True
-
 
 class TripResponse(BaseModel):
     id: str
     name: str
-    description: Optional[str]
-    circle_type: str
+    description: Optional[str] = None
+    circleType: str
     currencies: list[str]
-    base_currency: str
-    join_code: str
-    is_settled: bool
-    start_date: Optional[str]
-    end_date: Optional[str]
-    created_by: str
+    baseCurrency: str
+    joinCode: str
+    isSettled: bool
+    startDate: Optional[str] = None
+    endDate: Optional[str] = None
+    createdBy: str
+    createdAt: Optional[str] = None
     members: list[MemberResponse] = []
-
-    class Config:
-        from_attributes = True
-
-
-class TripPreview(BaseModel):
-    id: str
-    name: str
-    circle_type: str
-    member_count: int

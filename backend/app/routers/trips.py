@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.trip import TripCreate, TripResponse, TripPreview
+from app.schemas.trip import TripCreate, TripResponse
 from app.services import trips as trip_service
 
 router = APIRouter(prefix="/trips", tags=["trips"])
@@ -27,12 +27,12 @@ async def list_trips(
     return await trip_service.list_trips(db, current_user)
 
 
-@router.get("/by-code/{join_code}", response_model=TripPreview)
+@router.get("/by-code/{join_code}", response_model=TripResponse)
 async def get_trip_by_code(
     join_code: str,
     db: AsyncSession = Depends(get_db),
 ):
-    """Public endpoint — no auth required. Returns preview for join screen."""
+    """Public endpoint — no auth required. Returns trip for join screen."""
     return await trip_service.get_trip_by_code(db, join_code)
 
 
