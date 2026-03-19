@@ -39,7 +39,7 @@ const InviteJoin = () => {
     setIsJoining(true)
     setJoinError(null)
     try {
-      const trip = await trips.joinTrip(code)
+      const trip = await trips.joinTrip(preview!.id)
       navigate(`/trips/${trip.id}`)
     } catch (err: any) {
       setJoinError(err.message ?? 'Something went wrong.')
