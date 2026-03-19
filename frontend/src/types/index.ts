@@ -33,7 +33,8 @@ export interface Trip {
   baseCurrency: Currency
   members: TripMember[]
   isSettled: boolean
-  createdAt: string
+  createdAt?: string
+  createdBy?: string
   joinCode: string
   startDate?: string
   endDate?: string

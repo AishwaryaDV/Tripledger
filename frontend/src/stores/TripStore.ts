@@ -1,11 +1,8 @@
 // src/stores/TripStore.ts
 import { makeAutoObservable, runInAction } from 'mobx'
 import { api } from '../lib/api'
-import { mockHandlers } from '../mocks/handlers'
 import type { Trip } from '../types'
 import type { RootStore } from './RootStore'
-
-const USE_MOCK = true
 
 export class TripStore {
   trips: Trip[] = []
@@ -20,7 +17,6 @@ export class TripStore {
     makeAutoObservable(this)
   }
 
-  // Computed — trips the current user is part of
   get myTrips() {
     const uid = this.root.auth.currentUser?.id
     return this.trips.filter(t => t.members.some(m => m.userId === uid))
@@ -35,9 +31,7 @@ export class TripStore {
 
     runInAction(() => { this.isLoading = true })
     try {
-      const data = USE_MOCK
-        ? await mockHandlers.getTrips() // mock
-        : (await api.get<Trip[]>('/trips')).data // real
+      const { data } = await api.get<Trip[]>('/trips')
       runInAction(() => { this.trips = data; this.lastFetched = Date.now() })
     } catch (e: any) {
       runInAction(() => { this.error = e.message })
@@ -49,9 +43,7 @@ export class TripStore {
   async fetchTrip(id: string) {
     runInAction(() => { this.isLoading = true })
     try {
-      const data = USE_MOCK
-        ? await mockHandlers.getTrip(id)
-        : (await api.get<Trip>(`/trips/${id}`)).data
+      const { data } = await api.get<Trip>(`/trips/${id}`)
       runInAction(() => {
         this.currentTrip = data
         const idx = this.trips.findIndex(t => t.id === id)
@@ -66,13 +58,11 @@ export class TripStore {
 
   async reopenTrip(id: string) {
     try {
-      const updated = USE_MOCK
-        ? await mockHandlers.reopenTrip(id)
-        : (await api.patch<Trip>(`/trips/${id}`, { isSettled: false })).data
+      const { data } = await api.patch<Trip>(`/trips/${id}`, { isSettled: false })
       runInAction(() => {
-        if (this.currentTrip?.id === id) this.currentTrip = updated
+        if (this.currentTrip?.id === id) this.currentTrip = data
         const idx = this.trips.findIndex(t => t.id === id)
-        if (idx >= 0) this.trips[idx] = updated
+        if (idx >= 0) this.trips[idx] = data
       })
     } catch (e: any) {
       runInAction(() => { this.error = e.message })
@@ -81,13 +71,11 @@ export class TripStore {
 
   async settleTrip(id: string) {
     try {
-      const updated = USE_MOCK
-        ? await mockHandlers.settleTrip(id)
-        : (await api.patch<Trip>(`/trips/${id}`, { isSettled: true })).data
+      const { data } = await api.patch<Trip>(`/trips/${id}`, { isSettled: true })
       runInAction(() => {
-        if (this.currentTrip?.id === id) this.currentTrip = updated
+        if (this.currentTrip?.id === id) this.currentTrip = data
         const idx = this.trips.findIndex(t => t.id === id)
-        if (idx >= 0) this.trips[idx] = updated
+        if (idx >= 0) this.trips[idx] = data
       })
     } catch (e: any) {
       runInAction(() => { this.error = e.message })
@@ -95,13 +83,8 @@ export class TripStore {
   }
 
   async createTrip(payload: { name: string; description?: string; circleType: string; currencies: string[]; baseCurrency: string; startDate?: string; endDate?: string }) {
-    const creator = this.root.auth.currentUser
-    if (!creator) throw new Error('Not logged in')
-    const creatorMember = { userId: creator.id, displayName: creator.displayName, role: 'owner' as const }
     try {
-      const data = USE_MOCK
-        ? await mockHandlers.createTrip(payload, creatorMember)
-        : (await api.post<Trip>('/trips', payload)).data
+      const { data } = await api.post<Trip>('/trips', payload)
       runInAction(() => { this.trips.push(data) })
       return data
     } catch (e: any) {
@@ -111,19 +94,14 @@ export class TripStore {
   }
 
   async fetchTripByCode(code: string): Promise<Trip> {
-    return USE_MOCK
-      ? await mockHandlers.getTripByCode(code)
-      : (await api.get<Trip>(`/trips/by-code/${code}`)).data
+    const { data } = await api.get<Trip>(`/trips/by-code/${code}`)
+    return data
   }
 
-  async joinTrip(code: string) {
-    const user = this.root.auth.currentUser
-    if (!user) throw new Error('Not logged in')
-    const joiner = { userId: user.id, displayName: user.displayName, role: 'member' as const }
+  // Takes tripId (from the preview fetched by fetchTripByCode)
+  async joinTrip(tripId: string) {
     try {
-      const data = USE_MOCK
-        ? await mockHandlers.joinTrip(code, joiner)
-        : (await api.post<Trip>(`/trips/join`, { code })).data
+      const { data } = await api.post<Trip>(`/trips/${tripId}/join`)
       runInAction(() => {
         const idx = this.trips.findIndex(t => t.id === data.id)
         if (idx >= 0) this.trips[idx] = data
