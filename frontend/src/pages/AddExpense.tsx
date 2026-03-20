@@ -117,7 +117,7 @@ const AddExpense = observer(() => {
     }
 
     if (isEditing && expenseId) {
-      await expenses.editExpense(expenseId, payload)
+      await expenses.editExpense(id, expenseId, payload)
     } else {
       await expenses.addExpense(id, payload)
     }

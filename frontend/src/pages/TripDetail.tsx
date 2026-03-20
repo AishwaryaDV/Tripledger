@@ -497,7 +497,7 @@ const TripDetail = observer(() => {
                       members={trip.members}
                       baseCurrency={trip.baseCurrency}
                       onEdit={() => navigate(`/trips/${id}/expenses/${expense.id}/edit`)}
-                      onDelete={() => expenses.deleteExpense(expense.id)}
+                      onDelete={() => expenses.deleteExpense(id!, expense.id)}
                     />
                   ))}
                 </div>
