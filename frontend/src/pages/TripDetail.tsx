@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
 import { ArrowLeft, Plus, Copy, Check, RefreshCw, CreditCard, Pencil, Trash2, Plane, User, Home, PartyPopper, UtensilsCrossed, Car, BedDouble, Ticket, Package, X, FileText } from 'lucide-react'
 import CustomSelect from '@/components/shared/CustomSelect'
+import ConfirmModal from '@/components/shared/ConfirmModal'
 import type { CircleType, ExpenseCategory } from '@/types'
 
 const CIRCLE_TYPE_CONFIG: Record<CircleType, { label: string; icon: React.ElementType; style: string }> = {
@@ -56,6 +57,7 @@ const TripDetail = observer(() => {
   const [editingNoteId, setEditingNoteId] = useState<string | null>(null)
   const [editingContent, setEditingContent] = useState('')
   const [isAddingNote, setIsAddingNote] = useState(false)
+  const [deleteExpenseId, setDeleteExpenseId] = useState<string | null>(null)
 
   const copyJoinCode = (code: string) => {
     navigator.clipboard.writeText(code)
@@ -78,7 +80,8 @@ const TripDetail = observer(() => {
     }
   }, [trips.currentTrip?.baseCurrency, currency])
 
-  if (trips.isLoading || expenses.isLoading || (trips.currentTrip && trips.currentTrip.id !== id)) {
+  const tripReady = trips.currentTrip?.id === id
+  if ((!tripReady && trips.isLoading) || expenses.isLoading) {
     return (
       <div className="w-full max-w-3xl mx-auto space-y-3 pt-4">
         <BalanceRowSkeleton />
@@ -105,6 +108,7 @@ const TripDetail = observer(() => {
   if (!trip) return null
 
   return (
+    <>
     <div className="w-full max-w-3xl mx-auto">
 
       {/* Back button */}
@@ -497,7 +501,7 @@ const TripDetail = observer(() => {
                       members={trip.members}
                       baseCurrency={trip.baseCurrency}
                       onEdit={() => navigate(`/trips/${id}/expenses/${expense.id}/edit`)}
-                      onDelete={() => expenses.deleteExpense(id!, expense.id)}
+                      onDelete={() => setDeleteExpenseId(expense.id)}
                     />
                   ))}
                 </div>
@@ -713,6 +717,21 @@ const TripDetail = observer(() => {
       })()}
 
     </div>
+
+    {deleteExpenseId && (
+      <ConfirmModal
+        title="Delete expense?"
+        description="This will permanently remove the expense and all its splits. This cannot be undone."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={async () => {
+          await expenses.deleteExpense(id!, deleteExpenseId)
+          setDeleteExpenseId(null)
+        }}
+        onCancel={() => setDeleteExpenseId(null)}
+      />
+    )}
+    </>
   )
 })
 
