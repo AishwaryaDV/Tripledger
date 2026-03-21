@@ -4,7 +4,7 @@ import { supabase } from './supabase'
 
 export const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL, // e.g. https://api.tripleder.com
-  timeout: 10_000,
+  timeout: 30_000,
 })
 
 // Before every request — grab fresh JWT from Supabase and attach it

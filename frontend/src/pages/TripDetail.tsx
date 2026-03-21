@@ -602,7 +602,7 @@ const TripDetail = observer(() => {
 
         const saveEdit = async () => {
           if (!editingNoteId || !editingContent.trim()) return
-          await notes.editNote(editingNoteId, editingContent.trim())
+          await notes.editNote(id!, editingNoteId, editingContent.trim())
           setEditingNoteId(null)
           setEditingContent('')
         }
@@ -668,7 +668,7 @@ const TripDetail = observer(() => {
                           <Pencil size={13} />
                         </button>
                         <button
-                          onClick={() => notes.deleteNote(note.id)}
+                          onClick={() => notes.deleteNote(id!, note.id)}
                           title="Delete note"
                           className="p-1 rounded hover:bg-muted text-destructive transition-colors"
                         >

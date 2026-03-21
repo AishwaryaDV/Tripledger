@@ -1,10 +1,8 @@
 // src/stores/NoteStore.ts
 import { makeAutoObservable, runInAction } from 'mobx'
-import { mockHandlers } from '../mocks/handlers'
+import { api } from '../lib/api'
 import type { Note } from '../types'
 import type { RootStore } from './RootStore'
-
-const USE_MOCK = true
 
 export class NoteStore {
   notes: Note[] = []
@@ -19,8 +17,8 @@ export class NoteStore {
   async fetchNotes(tripId: string) {
     runInAction(() => { this.isLoading = true })
     try {
-      const data = USE_MOCK ? await mockHandlers.getNotes(tripId) : []
-      runInAction(() => { this.notes = data })
+      const res = await api.get<Note[]>(`/trips/${tripId}/notes`)
+      runInAction(() => { this.notes = res.data })
     } finally {
       runInAction(() => { this.isLoading = false })
     }
@@ -36,36 +34,34 @@ export class NoteStore {
     }
     runInAction(() => { this.notes = [optimistic, ...this.notes] })
     try {
-      const confirmed = USE_MOCK
-        ? await mockHandlers.addNote(tripId, user.id, user.displayName, content)
-        : optimistic
+      const res = await api.post<Note>(`/trips/${tripId}/notes`, { content })
       runInAction(() => {
-        this.notes = this.notes.map(n => n.id === optimistic.id ? confirmed : n)
+        this.notes = this.notes.map(n => n.id === optimistic.id ? res.data : n)
       })
     } catch {
       runInAction(() => { this.notes = this.notes.filter(n => n.id !== optimistic.id) })
     }
   }
 
-  async editNote(noteId: string, content: string) {
+  async editNote(tripId: string, noteId: string, content: string) {
     const original = this.notes.find(n => n.id === noteId)
     if (!original) return
     runInAction(() => {
       this.notes = this.notes.map(n => n.id === noteId ? { ...n, content, updatedAt: new Date().toISOString() } : n)
     })
     try {
-      const confirmed = USE_MOCK ? await mockHandlers.editNote(noteId, content) : original
-      runInAction(() => { this.notes = this.notes.map(n => n.id === noteId ? confirmed : n) })
+      const res = await api.put<Note>(`/trips/${tripId}/notes/${noteId}`, { content })
+      runInAction(() => { this.notes = this.notes.map(n => n.id === noteId ? res.data : n) })
     } catch {
       runInAction(() => { this.notes = this.notes.map(n => n.id === noteId ? original : n) })
     }
   }
 
-  async deleteNote(noteId: string) {
+  async deleteNote(tripId: string, noteId: string) {
     const original = [...this.notes]
     runInAction(() => { this.notes = this.notes.filter(n => n.id !== noteId) })
     try {
-      if (USE_MOCK) await mockHandlers.deleteNote(noteId)
+      await api.delete(`/trips/${tripId}/notes/${noteId}`)
     } catch {
       runInAction(() => { this.notes = original })
     }
