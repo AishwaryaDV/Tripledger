@@ -11,9 +11,10 @@ interface CustomSelectProps {
   value: string
   onChange: (value: string) => void
   options: SelectOption[]
+  className?: string
 }
 
-const CustomSelect = ({ value, onChange, options }: CustomSelectProps) => {
+const CustomSelect = ({ value, onChange, options, className = '' }: CustomSelectProps) => {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -36,11 +37,11 @@ const CustomSelect = ({ value, onChange, options }: CustomSelectProps) => {
   const selected = options.find(o => o.value === value)
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className={`relative inline-block ${className}`}>
       <button
         type="button"
         onClick={() => setOpen(v => !v)}
-        className={`flex items-center gap-2 border rounded-lg pl-3 pr-2.5 py-1.5 text-xs bg-background transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
+        className={`w-full flex items-center gap-2 border rounded-lg pl-3 pr-2.5 py-1.5 text-xs bg-background transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
           open ? 'border-primary ring-2 ring-primary' : 'hover:border-primary/50'
         }`}
       >

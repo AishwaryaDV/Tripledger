@@ -256,6 +256,7 @@ const AddExpense = observer(() => {
               value={watch('paidBy')}
               onChange={v => setValue('paidBy', v, { shouldValidate: true })}
               options={trip.members.map(m => ({ value: m.userId, label: m.displayName }))}
+              className="w-48"
             />
           </div>
         )}

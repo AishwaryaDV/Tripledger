@@ -119,7 +119,7 @@ const Login = () => {
       <div className="flex-1 flex flex-col justify-center px-6 sm:px-10 py-6 overflow-hidden">
 
         {/* Mobile logo */}
-        <div className="sm:hidden mb-4 text-center">
+        <div className="sm:hidden mb-8 text-center">
           <h1 className="text-2xl font-bold text-primary">TripLedger</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Split expenses, not friendships.</p>
         </div>
