@@ -112,4 +112,5 @@ export class TripStore {
       throw e
     }
   }
+
 }

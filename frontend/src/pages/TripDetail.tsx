@@ -32,7 +32,7 @@ import SettleSuggestions from '@/components/trip/SettleSuggestions'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { ExpenseCardSkeleton, BalanceRowSkeleton } from '@/components/shared/Skeleton'
 
-type Tab = 'expenses' | 'balances' | 'suggestions' | 'spending' | 'notes'
+type Tab = 'expenses' | 'balances' | 'suggestions' | 'spending' | 'notes' | 'members'
 
 const TABS: { key: Tab; label: string }[] = [
   { key: 'expenses',    label: 'Expenses' },
@@ -40,6 +40,7 @@ const TABS: { key: Tab; label: string }[] = [
   { key: 'suggestions', label: 'Suggestions' },
   { key: 'spending',    label: 'Spending' },
   { key: 'notes',       label: 'Notes' },
+  { key: 'members',     label: 'Members' },
 ]
 
 const TripDetail = observer(() => {
@@ -715,6 +716,41 @@ const TripDetail = observer(() => {
           </div>
         )
       })()}
+
+      {activeTab === 'members' && (
+        <div className="space-y-2">
+          {trip.members.map((member, i) => {
+            const isMe = member.userId === auth.currentUser?.id
+            const color = MEMBER_COLORS[i % MEMBER_COLORS.length]
+            return (
+              <div
+                key={member.userId}
+                className={`flex items-center gap-3 p-3 rounded-lg border ${isMe ? 'bg-primary/5 border-primary/20' : 'bg-card'}`}
+              >
+                <div
+                  style={{ backgroundColor: color }}
+                  className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 text-white"
+                >
+                  {member.displayName.charAt(0).toUpperCase()}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">
+                    {member.displayName}
+                    {isMe && <span className="ml-1.5 text-xs font-normal text-muted-foreground">(you)</span>}
+                  </p>
+                </div>
+                <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${
+                  member.role === 'owner'
+                    ? 'bg-amber-100 text-amber-700'
+                    : 'bg-muted text-muted-foreground'
+                }`}>
+                  {member.role}
+                </span>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
     </div>
 
