@@ -113,14 +113,14 @@ const Calculator = () => {
         onClick={() => setIsOpen(v => !v)}
         title="Calculator"
         aria-label="Toggle calculator"
-        className="fixed bottom-6 right-6 z-50 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition-all flex items-center justify-center select-none"
+        className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-50 w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:opacity-90 transition-all flex items-center justify-center select-none"
       >
         <CalcIcon size={20} />
       </button>
 
       {/* Calculator panel */}
       {isOpen && (
-        <div className="fixed bottom-20 right-6 z-50 w-64 rounded-2xl border bg-background shadow-xl overflow-hidden">
+        <div className="fixed bottom-36 sm:bottom-20 right-4 sm:right-6 z-50 w-64 rounded-2xl border bg-background shadow-xl overflow-hidden">
 
           {/* Display */}
           <div className="bg-muted/40 px-4 pt-4 pb-3 text-right">

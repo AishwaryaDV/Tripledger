@@ -6,6 +6,7 @@ import { observer } from 'mobx-react-lite'
 import { ArrowLeft, UserRound } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
 import SplitEditor from '@/components/expense/SplitEditor'
+import CustomSelect from '@/components/shared/CustomSelect'
 import type { ExpenseSplit, SplitType, ExpenseCategory } from '@/types'
 
 interface ExpenseFormValues {
@@ -41,7 +42,7 @@ const AddExpense = observer(() => {
   const trip = trips.currentTrip
   const currentUserId = auth.currentUser?.id ?? ''
 
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<ExpenseFormValues>({
+  const { register, handleSubmit, watch, reset, setValue, formState: { errors } } = useForm<ExpenseFormValues>({
     defaultValues: {
       currency: trip?.baseCurrency ?? 'INR',
       expenseDate: new Date().toISOString().split('T')[0],
@@ -251,14 +252,11 @@ const AddExpense = observer(() => {
         {!isSelfExpense && (
           <div>
             <label className="block text-sm font-medium mb-1.5">Paid by</label>
-            <select
-              {...register('paidBy', { required: true })}
-              className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              {trip.members.map(m => (
-                <option key={m.userId} value={m.userId}>{m.displayName}</option>
-              ))}
-            </select>
+            <CustomSelect
+              value={watch('paidBy')}
+              onChange={v => setValue('paidBy', v, { shouldValidate: true })}
+              options={trip.members.map(m => ({ value: m.userId, label: m.displayName }))}
+            />
           </div>
         )}
 

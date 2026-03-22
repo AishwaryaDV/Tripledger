@@ -119,7 +119,7 @@ const Login = () => {
       <div className="flex-1 flex flex-col justify-center px-6 sm:px-10 py-6 overflow-hidden">
 
         {/* Mobile logo */}
-        <div className="sm:hidden mb-6 text-center">
+        <div className="sm:hidden mb-4 text-center">
           <h1 className="text-2xl font-bold text-primary">TripLedger</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Split expenses, not friendships.</p>
         </div>
@@ -127,7 +127,7 @@ const Login = () => {
         <div className="w-full max-w-sm mx-auto space-y-4">
 
           {/* Heading */}
-          <div>
+          <div className="mb-1">
             <h2 className="text-2xl font-bold">
               {mode === 'login' ? 'Welcome back' : 'Create account'}
             </h2>
@@ -331,14 +331,14 @@ const Login = () => {
           </p>
 
           {/* Invite code entry */}
-          <div className="border-t pt-4">
+          <div className="border-t pt-5 mt-2">
             {!showCodeInput ? (
               <button
                 type="button"
                 onClick={() => setShowCodeInput(true)}
-                className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5"
+                className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-2 py-1"
               >
-                <Link2 size={13} />
+                <Link2 size={14} />
                 Have an invite code? Join a circle
               </button>
             ) : (

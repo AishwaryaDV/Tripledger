@@ -89,7 +89,7 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
       <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={onClose} />
 
       {/* Drawer */}
-      <div className="fixed right-0 top-0 h-full w-full max-w-sm z-50 bg-card border-l shadow-xl flex flex-col">
+      <div className="fixed right-0 top-0 h-full w-[85vw] max-w-sm z-50 bg-card border-l shadow-xl flex flex-col">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
@@ -295,24 +295,6 @@ const UserMenu = observer(() => {
     <>
       <div className="flex items-center gap-2">
 
-        {/* User identity — display only */}
-        <div className="flex items-center gap-2">
-          <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium leading-none">{displayName}</p>
-            <p className="text-xs text-muted-foreground mt-0.5">{email}</p>
-          </div>
-          {avatarUrl ? (
-            <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-full" />
-          ) : (
-            <div
-              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 text-white"
-              style={{ backgroundColor: avatarColor }}
-            >
-              {initial}
-            </div>
-          )}
-        </div>
-
         {/* Gear icon + dropdown */}
         <div ref={gearRef} className="relative">
           <button
@@ -343,6 +325,22 @@ const UserMenu = observer(() => {
               </button>
             </div>
           )}
+        </div>
+
+        {/* User avatar — right of gear */}
+        {avatarUrl ? (
+          <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-full" />
+        ) : (
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 text-white"
+            style={{ backgroundColor: avatarColor }}
+          >
+            {initial}
+          </div>
+        )}
+        <div className="text-right hidden sm:block">
+          <p className="text-sm font-medium leading-none">{displayName}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{email}</p>
         </div>
 
       </div>

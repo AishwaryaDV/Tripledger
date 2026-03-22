@@ -56,7 +56,7 @@ const JoinCircleModal = ({ isOpen, onClose }: Props) => {
       className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4"
       onClick={e => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="bg-card rounded-xl border shadow-lg w-full max-w-sm">
+      <div className="bg-card rounded-xl border shadow-lg w-full max-w-xs sm:max-w-sm">
         {/* Header */}
         <div className="flex items-center justify-between px-5 pt-5 pb-4 border-b">
           <div className="flex items-center gap-2">
