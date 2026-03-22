@@ -106,6 +106,14 @@ export class AuthStore {
     if (error) throw new Error(error.message)
   }
 
+  async updatePronouns(pronouns: string) {
+    const { error } = await supabase.auth.updateUser({ data: { pronouns } })
+    if (error) throw new Error(error.message)
+    runInAction(() => {
+      if (this.currentUser) this.currentUser = { ...this.currentUser, pronouns }
+    })
+  }
+
   async logout() {
     await supabase.auth.signOut()
     runInAction(() => { this.currentUser = null })
@@ -122,6 +130,7 @@ export class AuthStore {
         displayName: data.display_name ?? supabaseUser.email,
         avatarUrl: data.avatar_url ?? null,
         defaultCurrency: data.default_currency ?? 'USD',
+        pronouns: supabaseUser.user_metadata?.pronouns ?? undefined,
       }
     } catch {
       // If backend is unreachable, fall back to Supabase user data

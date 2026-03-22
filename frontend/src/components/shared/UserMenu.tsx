@@ -2,21 +2,38 @@
 import { useState, useRef, useEffect } from 'react'
 import { observer } from 'mobx-react-lite'
 import { useNavigate } from 'react-router-dom'
-import { Settings, LogOut, X, ChevronDown, User, Lock } from 'lucide-react'
+import { Settings, LogOut, User, Lock, X, Eye, EyeOff, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { useStore } from '../../hooks/useStore'
 
-// ── Settings Modal ────────────────────────────────────────────────────────────
-const SettingsModal = observer(({ onClose }: { onClose: () => void }) => {
-  const { auth } = useStore()
+const PRONOUN_OPTIONS = [
+  '', 'he/him', 'she/her', 'they/them', 'he/they', 'she/they', 'any pronouns', 'prefer not to say',
+]
 
-  const [displayName, setDisplayName] = useState(auth.currentUser?.displayName ?? '')
+const MEMBER_COLORS = ['#818cf8','#f472b6','#34d399','#fb923c','#60a5fa','#a78bfa','#facc15','#2dd4bf']
+
+// ── Profile Drawer ─────────────────────────────────────────────────────────────
+const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
+  const { auth } = useStore()
+  const user = auth.currentUser!
+
+  // Only accept known pronoun values, discard anything that looks wrong (e.g. stale email)
+  const validPronouns = PRONOUN_OPTIONS.includes(user.pronouns ?? '') ? (user.pronouns ?? '') : ''
+
+  const [displayName, setDisplayName] = useState(user.displayName)
+  const [pronouns, setPronouns] = useState(validPronouns)
+  const [showPasswordForm, setShowPasswordForm] = useState(false)
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
+  const [showConfirm, setShowConfirm] = useState(false)
   const [nameLoading, setNameLoading] = useState(false)
+  const [pronounsLoading, setPronounsLoading] = useState(false)
   const [passLoading, setPassLoading] = useState(false)
 
-  // Close on Escape
+  const avatarColor = MEMBER_COLORS[user.displayName.charCodeAt(0) % MEMBER_COLORS.length]
+  const initial = user.displayName.charAt(0).toUpperCase()
+
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', handler)
@@ -36,6 +53,18 @@ const SettingsModal = observer(({ onClose }: { onClose: () => void }) => {
     }
   }
 
+  const handleUpdatePronouns = async () => {
+    setPronounsLoading(true)
+    try {
+      await auth.updatePronouns(pronouns)
+      toast.success('Pronouns updated.')
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to update pronouns.')
+    } finally {
+      setPronounsLoading(false)
+    }
+  }
+
   const handleUpdatePassword = async () => {
     if (newPassword.length < 8) { toast.error('Password must be at least 8 characters.'); return }
     if (newPassword !== confirmPassword) { toast.error("Passwords don't match."); return }
@@ -45,6 +74,7 @@ const SettingsModal = observer(({ onClose }: { onClose: () => void }) => {
       toast.success('Password updated.')
       setNewPassword('')
       setConfirmPassword('')
+      setShowPasswordForm(false)
     } catch (err: any) {
       toast.error(err.message ?? 'Failed to update password.')
     } finally {
@@ -53,40 +83,57 @@ const SettingsModal = observer(({ onClose }: { onClose: () => void }) => {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <>
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={onClose} />
 
-      {/* Modal */}
-      <div className="relative z-10 w-full max-w-sm bg-card rounded-xl border shadow-lg">
+      {/* Drawer */}
+      <div className="fixed right-0 top-0 h-full w-full max-w-sm z-50 bg-card border-l shadow-xl flex flex-col">
 
         {/* Header */}
-        <div className="flex items-center justify-between px-5 py-4 border-b">
-          <h2 className="text-base font-semibold">Account Settings</h2>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors">
+        <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
+          <h2 className="text-base font-semibold">My Profile</h2>
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded hover:bg-muted">
             <X size={16} />
           </button>
         </div>
 
-        <div className="p-5 space-y-6">
+        {/* Scrollable content */}
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
 
-          {/* Update display name */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <User size={14} className="text-muted-foreground" />
-              Update display name
+          {/* Avatar + identity */}
+          <div className="flex items-center gap-4">
+            <div
+              className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold text-white shrink-0"
+              style={{ backgroundColor: avatarColor }}
+            >
+              {initial}
             </div>
+            <div className="min-w-0">
+              <p className="font-semibold truncate">{user.displayName}</p>
+              {validPronouns && <p className="text-xs text-muted-foreground mt-0.5">{validPronouns}</p>}
+              <p className="text-xs text-muted-foreground truncate mt-0.5">{user.email}</p>
+            </div>
+          </div>
+
+          <div className="border-t" />
+
+          {/* Display name */}
+          <div className="space-y-1.5">
+            <label className="flex items-center gap-2 text-sm font-medium">
+              <User size={13} className="text-muted-foreground" />
+              Display name
+            </label>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={displayName}
                 onChange={e => setDisplayName(e.target.value)}
-                placeholder="Display name"
                 className="flex-1 border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
               />
               <button
                 onClick={handleUpdateName}
-                disabled={nameLoading || !displayName.trim()}
+                disabled={nameLoading || !displayName.trim() || displayName === user.displayName}
                 className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
               >
                 {nameLoading ? 'Saving...' : 'Save'}
@@ -94,40 +141,124 @@ const SettingsModal = observer(({ onClose }: { onClose: () => void }) => {
             </div>
           </div>
 
+          {/* Pronouns dropdown */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium flex items-center gap-1">
+              Pronouns
+              <span className="text-xs text-muted-foreground font-normal">(optional)</span>
+            </label>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <select
+                  value={pronouns}
+                  onChange={e => setPronouns(e.target.value)}
+                  className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary appearance-none pr-8"
+                >
+                  <option value="">Select pronouns</option>
+                  {PRONOUN_OPTIONS.filter(p => p).map(p => (
+                    <option key={p} value={p}>{p}</option>
+                  ))}
+                </select>
+                <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
+              </div>
+              <button
+                onClick={handleUpdatePronouns}
+                disabled={pronounsLoading || pronouns === validPronouns}
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {pronounsLoading ? 'Saving...' : 'Save'}
+              </button>
+            </div>
+          </div>
+
+          {/* Email — read only */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-muted-foreground">Email</label>
+            <p className="text-sm px-3 py-2 border rounded-lg bg-muted/30 text-muted-foreground">{user.email}</p>
+          </div>
+
           <div className="border-t" />
 
-          {/* Change password */}
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Lock size={14} className="text-muted-foreground" />
-              Change password
+          {/* Password */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <label className="flex items-center gap-2 text-sm font-medium">
+                <Lock size={13} className="text-muted-foreground" />
+                Password
+              </label>
+              {!showPasswordForm && (
+                <button
+                  onClick={() => setShowPasswordForm(true)}
+                  className="text-xs text-primary hover:opacity-70 transition-opacity font-medium"
+                >
+                  Change password
+                </button>
+              )}
             </div>
-            <input
-              type="password"
-              value={newPassword}
-              onChange={e => setNewPassword(e.target.value)}
-              placeholder="New password (min. 8 chars)"
-              className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <input
-              type="password"
-              value={confirmPassword}
-              onChange={e => setConfirmPassword(e.target.value)}
-              placeholder="Confirm new password"
-              className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-            <button
-              onClick={handleUpdatePassword}
-              disabled={passLoading || !newPassword}
-              className="w-full py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-            >
-              {passLoading ? 'Updating...' : 'Update password'}
-            </button>
+
+            {!showPasswordForm ? (
+              <p className="text-sm px-3 py-2 border rounded-lg bg-muted/30 text-muted-foreground tracking-widest">••••••••</p>
+            ) : (
+              <div className="space-y-2">
+                <div className="relative">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    placeholder="New password (min. 8 chars)"
+                    className="w-full border rounded-lg px-3 pr-10 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                    {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
+                  </button>
+                </div>
+                <div className="relative">
+                  <input
+                    type={showConfirm ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder="Confirm new password"
+                    className="w-full border rounded-lg px-3 pr-10 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <button type="button" onClick={() => setShowConfirm(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                    {showConfirm ? <EyeOff size={13} /> : <Eye size={13} />}
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleUpdatePassword}
+                    disabled={passLoading || !newPassword}
+                    className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    {passLoading ? 'Updating...' : 'Update password'}
+                  </button>
+                  <button
+                    onClick={() => { setShowPasswordForm(false); setNewPassword(''); setConfirmPassword('') }}
+                    className="px-4 py-2 rounded-lg border text-sm hover:bg-muted transition-colors"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
         </div>
+
+        {/* Footer */}
+        <div className="shrink-0 border-t px-5 py-4">
+          <a
+            href="https://tripledger.app/terms"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-blue-500 hover:text-blue-600 hover:underline transition-colors"
+          >
+            Terms & Conditions
+          </a>
+        </div>
+
       </div>
-    </div>
+    </>
   )
 })
 
@@ -135,14 +266,13 @@ const SettingsModal = observer(({ onClose }: { onClose: () => void }) => {
 const UserMenu = observer(() => {
   const { auth } = useStore()
   const navigate = useNavigate()
-  const [open, setOpen] = useState(false)
-  const [showSettings, setShowSettings] = useState(false)
-  const ref = useRef<HTMLDivElement>(null)
+  const [gearOpen, setGearOpen] = useState(false)
+  const [showProfile, setShowProfile] = useState(false)
+  const gearRef = useRef<HTMLDivElement>(null)
 
-  // Close dropdown on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
+      if (gearRef.current && !gearRef.current.contains(e.target as Node)) setGearOpen(false)
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -152,9 +282,10 @@ const UserMenu = observer(() => {
 
   const { displayName, email, avatarUrl } = auth.currentUser
   const initial = displayName.charAt(0).toUpperCase()
+  const avatarColor = MEMBER_COLORS[displayName.charCodeAt(0) % MEMBER_COLORS.length]
 
   const handleLogout = async () => {
-    setOpen(false)
+    setGearOpen(false)
     await auth.logout()
     navigate('/login', { replace: true })
     toast.success('Logged out.')
@@ -162,12 +293,10 @@ const UserMenu = observer(() => {
 
   return (
     <>
-      <div ref={ref} className="relative">
-        {/* Trigger */}
-        <button
-          onClick={() => setOpen(v => !v)}
-          className="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-muted transition-colors"
-        >
+      <div className="flex items-center gap-2">
+
+        {/* User identity — display only */}
+        <div className="flex items-center gap-2">
           <div className="text-right hidden sm:block">
             <p className="text-sm font-medium leading-none">{displayName}</p>
             <p className="text-xs text-muted-foreground mt-0.5">{email}</p>
@@ -175,49 +304,50 @@ const UserMenu = observer(() => {
           {avatarUrl ? (
             <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-full" />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold shrink-0">
+            <div
+              className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 text-white"
+              style={{ backgroundColor: avatarColor }}
+            >
               {initial}
             </div>
           )}
-          <ChevronDown size={14} className={`text-muted-foreground transition-transform shrink-0 ${open ? 'rotate-180' : ''}`} />
-        </button>
+        </div>
 
-        {/* Dropdown */}
-        {open && (
-          <div className="absolute right-0 top-full mt-2 w-52 bg-card rounded-xl border shadow-lg z-40 py-1 overflow-hidden">
+        {/* Gear icon + dropdown */}
+        <div ref={gearRef} className="relative">
+          <button
+            onClick={() => setGearOpen(v => !v)}
+            className={`p-1.5 rounded-lg hover:bg-muted transition-colors ${gearOpen ? 'bg-muted' : ''}`}
+          >
+            <Settings size={16} className="text-muted-foreground" />
+          </button>
 
-            {/* User info header */}
-            <div className="px-4 py-3 border-b">
-              <p className="text-sm font-semibold truncate">{displayName}</p>
-              <p className="text-xs text-muted-foreground truncate">{email}</p>
+          {gearOpen && (
+            <div className="absolute right-0 top-full mt-2 w-44 bg-card rounded-xl border shadow-lg z-40 py-1 overflow-hidden">
+              <button
+                onClick={() => { setGearOpen(false); setShowProfile(true) }}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors text-left"
+              >
+                <User size={14} className="text-muted-foreground" />
+                My Profile
+              </button>
+
+              <div className="border-t mx-2 my-1" />
+
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors text-left text-destructive"
+              >
+                <LogOut size={14} />
+                Log out
+              </button>
             </div>
+          )}
+        </div>
 
-            {/* Settings */}
-            <button
-              onClick={() => { setOpen(false); setShowSettings(true) }}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors text-left"
-            >
-              <Settings size={14} className="text-muted-foreground" />
-              Settings
-            </button>
-
-            <div className="border-t mx-2 my-1" />
-
-            {/* Logout */}
-            <button
-              onClick={handleLogout}
-              className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors text-left text-destructive"
-            >
-              <LogOut size={14} />
-              Log out
-            </button>
-
-          </div>
-        )}
       </div>
 
-      {/* Settings modal */}
-      {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      {showProfile && <ProfileDrawer onClose={() => setShowProfile(false)} />}
     </>
   )
 })

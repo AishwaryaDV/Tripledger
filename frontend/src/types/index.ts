@@ -15,6 +15,7 @@ export interface User {
   displayName: string
   avatarUrl?: string
   defaultCurrency: Currency
+  pronouns?: string
 }
 
 export interface TripMember {
