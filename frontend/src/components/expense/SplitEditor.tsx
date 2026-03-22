@@ -297,7 +297,7 @@ const SplitEditor = ({ members, totalAmount, currency, onChange, initialSplits, 
                 step="0.01"
                 value={values[m.userId] ?? 0}
                 onChange={e => setValue(m.userId, parseFloat(e.target.value) || 0)}
-                className="w-28 text-right text-sm border rounded-md px-2 py-1 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                className="w-24 text-right text-sm border rounded-md px-2 py-1 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
               />
             </div>
           ))}
@@ -336,7 +336,7 @@ const SplitEditor = ({ members, totalAmount, currency, onChange, initialSplits, 
                   step="0.1"
                   value={values[m.userId] ?? 0}
                   onChange={e => setValue(m.userId, parseFloat(e.target.value) || 0)}
-                  className="w-20 text-right text-sm border rounded-md px-2 py-1 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-16 text-right text-sm border rounded-md px-2 py-1 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
                 />
                 <span className="text-sm text-muted-foreground">%</span>
               </div>
@@ -371,7 +371,7 @@ const SplitEditor = ({ members, totalAmount, currency, onChange, initialSplits, 
                     step="1"
                     value={share}
                     onChange={e => setValue(m.userId, parseInt(e.target.value) || 0)}
-                    className="w-20 text-right text-sm border rounded-md px-2 py-1 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                    className="w-16 text-right text-sm border rounded-md px-2 py-1 bg-background focus:outline-none focus:ring-1 focus:ring-primary"
                   />
                   <span className="text-xs text-muted-foreground">shares</span>
                 </div>
