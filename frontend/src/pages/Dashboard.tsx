@@ -1,8 +1,8 @@
 // src/pages/Dashboard.tsx
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
-import { Plus, Link2, Plane, User, Home, PartyPopper } from 'lucide-react'
+import { Plus, Link2, Plane, User, Home, PartyPopper, X } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
 import TripCard from '@/components/trip/TripCard'
 import { TripCardSkeleton } from '@/components/shared/Skeleton'
@@ -19,11 +19,14 @@ const CIRCLE_FILTERS: { value: CircleType; label: string; icon: React.ElementTyp
 ]
 
 const Dashboard = observer(() => {
-  const { trips } = useStore()
+  const { trips, auth } = useStore()
   const navigate = useNavigate()
+  const location = useLocation()
   const [activeTab, setActiveTab] = useState<Tab>('active')
   const [typeFilter, setTypeFilter] = useState<CircleType | 'all'>('all')
   const [showJoinModal, setShowJoinModal] = useState(false)
+  const [showWelcome, setShowWelcome] = useState(() => !!(location.state as any)?.welcome)
+  const welcomeName = (location.state as any)?.name ?? auth.currentUser?.displayName ?? 'there'
 
   useEffect(() => {
     trips.fetchTrips()
@@ -56,6 +59,35 @@ const Dashboard = observer(() => {
 
   return (
     <div className="w-full max-w-3xl mx-auto">
+
+      {/* Welcome banner — new signups only */}
+      {showWelcome && (
+        <div className="mb-6 rounded-xl border border-primary/20 bg-primary/5 px-5 py-4 flex items-start justify-between gap-4">
+          <div>
+            <p className="font-semibold text-primary">Welcome to TripLedger, {welcomeName}! 👋</p>
+            <p className="text-sm text-muted-foreground mt-0.5">
+              Create your first circle to start tracking expenses, or join one with an invite code.
+            </p>
+            <div className="flex gap-2 mt-3">
+              <button
+                onClick={() => navigate('/trips/new')}
+                className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                Create a circle
+              </button>
+              <button
+                onClick={() => setShowJoinModal(true)}
+                className="px-4 py-1.5 rounded-lg border text-sm font-medium hover:bg-muted transition-colors"
+              >
+                Join with code
+              </button>
+            </div>
+          </div>
+          <button onClick={() => setShowWelcome(false)} className="text-muted-foreground hover:text-foreground transition-colors shrink-0 mt-0.5">
+            <X size={16} />
+          </button>
+        </div>
+      )}
 
       {/* Header */}
       <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
@@ -153,13 +185,36 @@ const Dashboard = observer(() => {
 
       {/* Circle List */}
       {displayedTrips.length === 0 ? (
-        <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
-          {typeFilter !== 'all'
-            ? `No ${CIRCLE_FILTERS.find(f => f.value === typeFilter)?.label.toLowerCase()} circles here.`
-            : activeTab === 'active'
-            ? 'No active circles. Create one to get started!'
-            : 'No settled circles yet.'}
-        </div>
+        typeFilter === 'all' && activeTab === 'active' && trips.activeTrips.length === 0 ? (
+          <div className="rounded-xl border border-dashed p-10 text-center space-y-4">
+            <p className="text-lg font-semibold">No circles yet</p>
+            <p className="text-sm text-muted-foreground max-w-xs mx-auto">
+              A circle is a group where you track expenses together — for a trip, household, event, or anything else.
+            </p>
+            <div className="flex gap-2 justify-center flex-wrap">
+              <button
+                onClick={() => navigate('/trips/new')}
+                className="px-5 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5"
+              >
+                <Plus size={14} />
+                Create a circle
+              </button>
+              <button
+                onClick={() => setShowJoinModal(true)}
+                className="px-5 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors flex items-center gap-1.5"
+              >
+                <Link2 size={14} />
+                Join with code
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
+            {typeFilter !== 'all'
+              ? `No ${CIRCLE_FILTERS.find(f => f.value === typeFilter)?.label.toLowerCase()} circles here.`
+              : 'No settled circles yet.'}
+          </div>
+        )
       ) : (
         <div className="space-y-3">
           {displayedTrips.map(trip => (

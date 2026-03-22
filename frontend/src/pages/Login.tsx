@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   Eye, EyeOff, ArrowRight, Mail, Lock, User,
-  Plane, Home, PartyPopper, ShieldCheck, Loader2,
+  Plane, Home, PartyPopper, ShieldCheck, Loader2, Link2,
 } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
 import { toast } from 'sonner'
@@ -33,6 +33,8 @@ const Login = () => {
   const redirectTo = (location.state as any)?.redirectTo ?? '/dashboard'
 
   const [mode, setMode] = useState<Mode>('login')
+  const [showCodeInput, setShowCodeInput] = useState(false)
+  const [inviteCode, setInviteCode] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -61,11 +63,11 @@ const Login = () => {
       if (mode === 'login') {
         await auth.loginWithEmail(email, password)
         toast.success('Welcome back!')
+        navigate(redirectTo, { replace: true })
       } else {
         await auth.signUp(email, password, displayName)
-        toast.success(`Welcome to TripLedger, ${displayName}!`)
+        navigate('/dashboard', { replace: true, state: { welcome: true, name: displayName } })
       }
-      navigate(redirectTo, { replace: true })
     } catch (err: any) {
       setError(err.message ?? 'Something went wrong.')
     } finally {
@@ -272,6 +274,45 @@ const Login = () => {
               {mode === 'login' ? 'Sign up' : 'Log in'}
             </button>
           </p>
+
+          {/* Invite code entry */}
+          <div className="border-t pt-4">
+            {!showCodeInput ? (
+              <button
+                type="button"
+                onClick={() => setShowCodeInput(true)}
+                className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors flex items-center justify-center gap-1.5"
+              >
+                <Link2 size={13} />
+                Have an invite code? Join a circle
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground text-center">Enter your invite code</p>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={inviteCode}
+                    onChange={e => setInviteCode(e.target.value.toUpperCase())}
+                    placeholder="ABC123"
+                    maxLength={6}
+                    className="flex-1 border rounded-lg px-3 py-2 text-sm font-mono tracking-widest bg-background focus:outline-none focus:ring-2 focus:ring-primary text-center uppercase"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { if (inviteCode.trim().length >= 6) navigate(`/join/${inviteCode.trim()}`) }}
+                    disabled={inviteCode.trim().length < 6}
+                    className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                  >
+                    Join
+                  </button>
+                </div>
+                <button type="button" onClick={() => { setShowCodeInput(false); setInviteCode('') }} className="w-full text-xs text-muted-foreground hover:text-foreground transition-colors">
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
 
         </div>
       </div>
