@@ -4,6 +4,7 @@ import { observer } from 'mobx-react-lite'
 import { useNavigate } from 'react-router-dom'
 import { Settings, LogOut, User, Lock, X, Eye, EyeOff, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
+import { Link } from 'react-router-dom'
 import { useStore } from '../../hooks/useStore'
 
 const PRONOUN_OPTIONS = [
@@ -247,14 +248,13 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
 
         {/* Footer */}
         <div className="shrink-0 border-t px-5 py-4">
-          <a
-            href="https://tripledger.app/terms"
-            target="_blank"
-            rel="noopener noreferrer"
+          <Link
+            to="/terms"
+            onClick={onClose}
             className="text-xs text-blue-500 hover:text-blue-600 hover:underline transition-colors"
           >
             Terms & Conditions
-          </a>
+          </Link>
         </div>
 
       </div>

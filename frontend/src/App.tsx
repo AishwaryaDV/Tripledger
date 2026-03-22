@@ -11,6 +11,7 @@ import Login from './pages/Login'
 import Landing from './pages/Landing'
 import About from './pages/About'
 import InviteJoin from './pages/InviteJoin'
+import Terms from './pages/Terms'
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         {/* Public routes */}
         <Route path="/" element={<Landing />} />
         <Route path="/about" element={<About />} />
+        <Route path="/terms" element={<Terms />} />
         <Route path="/login" element={<Login />} />
         <Route path="/join/:code" element={<InviteJoin />} />
 

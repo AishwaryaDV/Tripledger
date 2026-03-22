@@ -19,7 +19,7 @@ async def auth_me(
     Called by the frontend after every login/signup.
     Upserts the user and saves display_name if provided.
     """
-    if body.display_name and not current_user.display_name:
+    if body.display_name:
         current_user.display_name = body.display_name
         await db.commit()
         await db.refresh(current_user)
