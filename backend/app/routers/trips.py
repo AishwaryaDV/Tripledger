@@ -4,7 +4,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.trip import TripCreate, TripResponse
+from app.schemas.trip import TripCreate, TripPatch, TripResponse
 from app.services import trips as trip_service
 
 router = APIRouter(prefix="/trips", tags=["trips"])
@@ -52,6 +52,19 @@ async def join_trip(
     current_user: User = Depends(get_current_user),
 ):
     return await trip_service.join_trip(db, trip_id, current_user)
+
+
+@router.patch("/{trip_id}", response_model=TripResponse)
+async def patch_trip(
+    trip_id: str,
+    data: TripPatch,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    if data.isSettled is None:
+        from fastapi import HTTPException as _HTTPException
+        raise _HTTPException(status_code=400, detail="Nothing to update")
+    return await trip_service.patch_trip(db, trip_id, current_user, data.isSettled)
 
 
 @router.delete("/{trip_id}/members/me", status_code=204)

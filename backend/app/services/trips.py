@@ -166,6 +166,24 @@ async def leave_trip(db: AsyncSession, trip_id: str, current_user: User) -> None
     await db.commit()
 
 
+async def patch_trip(db: AsyncSession, trip_id: str, current_user: User, is_settled: bool) -> TripResponse:
+    result = await db.execute(select(Trip).where(Trip.id == trip_id))
+    trip = result.scalar_one_or_none()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    member_result = await db.execute(
+        select(TripMember).where(TripMember.trip_id == trip_id, TripMember.user_id == current_user.id)
+    )
+    if not member_result.scalar_one_or_none():
+        raise HTTPException(status_code=403, detail="Not a member of this trip")
+
+    trip.is_settled = is_settled
+    await db.commit()
+    await db.refresh(trip)
+    return _build_trip_response(trip)
+
+
 async def delete_trip(db: AsyncSession, trip_id: str, current_user: User) -> None:
     result = await db.execute(select(Trip).where(Trip.id == trip_id))
     trip = result.scalar_one_or_none()

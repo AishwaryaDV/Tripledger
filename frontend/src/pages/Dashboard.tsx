@@ -29,7 +29,7 @@ const Dashboard = observer(() => {
     trips.fetchTrips()
   }, [trips])
 
-  if (trips.isLoading) {
+  if (trips.isLoading && trips.trips.length === 0) {
     return (
       <div className="w-full max-w-3xl mx-auto space-y-3 pt-4">
         {[1, 2, 3].map(i => <TripCardSkeleton key={i} />)}

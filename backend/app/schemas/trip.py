@@ -12,6 +12,10 @@ class TripCreate(BaseModel):
     endDate: Optional[str] = None
 
 
+class TripPatch(BaseModel):
+    isSettled: Optional[bool] = None
+
+
 class MemberResponse(BaseModel):
     userId: str
     displayName: str

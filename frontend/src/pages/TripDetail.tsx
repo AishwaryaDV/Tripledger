@@ -718,31 +718,25 @@ const TripDetail = observer(() => {
       })()}
 
       {activeTab === 'members' && (
-        <div className="space-y-2">
+        <div className="space-y-3">
           {trip.members.map((member, i) => {
             const isMe = member.userId === auth.currentUser?.id
             const color = MEMBER_COLORS[i % MEMBER_COLORS.length]
             return (
-              <div
-                key={member.userId}
-                className={`flex items-center gap-3 p-3 rounded-lg border ${isMe ? 'bg-primary/5 border-primary/20' : 'bg-card'}`}
-              >
+              <div key={member.userId} className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground w-5 shrink-0 text-right">{i + 1}.</span>
                 <div
                   style={{ backgroundColor: color }}
-                  className="w-9 h-9 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 text-white"
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 text-white"
                 >
                   {member.displayName.charAt(0).toUpperCase()}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium truncate">
-                    {member.displayName}
-                    {isMe && <span className="ml-1.5 text-xs font-normal text-muted-foreground">(you)</span>}
-                  </p>
-                </div>
+                <p className="text-sm font-medium flex-1 min-w-0 truncate">
+                  {member.displayName}
+                  {isMe && <span className="ml-1.5 text-xs font-normal text-muted-foreground">(you)</span>}
+                </p>
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${
-                  member.role === 'owner'
-                    ? 'bg-amber-100 text-amber-700'
-                    : 'bg-muted text-muted-foreground'
+                  member.role === 'owner' ? 'bg-amber-100 text-amber-700' : 'bg-muted text-muted-foreground'
                 }`}>
                   {member.role}
                 </span>
