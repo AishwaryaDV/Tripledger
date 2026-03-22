@@ -119,7 +119,7 @@ const Dashboard = observer(() => {
       <JoinCircleModal isOpen={showJoinModal} onClose={() => setShowJoinModal(false)} />
 
       {/* Tabs */}
-      <div className="flex border-b mb-6 mt-5 sm:mt-2">
+      <div className="flex border-b mb-6 mt-8 sm:mt-3">
         <button
           onClick={() => { setActiveTab('active'); setTypeFilter('all') }}
           className={`flex-1 py-2 text-sm font-medium transition-colors relative ${

@@ -89,7 +89,7 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
       <div className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm" onClick={onClose} />
 
       {/* Drawer */}
-      <div className="fixed right-0 top-0 h-full w-[75vw] max-w-xs z-50 bg-card border-l shadow-xl flex flex-col">
+      <div className="fixed right-0 top-0 h-full w-full max-w-sm z-50 bg-card border-l shadow-xl flex flex-col">
 
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 border-b shrink-0">
@@ -305,7 +305,7 @@ const UserMenu = observer(() => {
           </button>
 
           {gearOpen && (
-            <div className="absolute left-0 top-full mt-2 w-44 bg-card rounded-xl border shadow-lg z-40 py-1 overflow-hidden">
+            <div className="absolute right-0 top-full mt-2 w-44 bg-card rounded-xl border shadow-lg z-40 py-1 overflow-hidden">
               <button
                 onClick={() => { setGearOpen(false); setShowProfile(true) }}
                 className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors text-left"
