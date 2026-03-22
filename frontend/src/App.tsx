@@ -12,6 +12,7 @@ import Landing from './pages/Landing'
 import About from './pages/About'
 import InviteJoin from './pages/InviteJoin'
 import Terms from './pages/Terms'
+import ResetPassword from './pages/ResetPassword'
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/about" element={<About />} />
         <Route path="/terms" element={<Terms />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/login" element={<Login />} />
         <Route path="/join/:code" element={<InviteJoin />} />
 

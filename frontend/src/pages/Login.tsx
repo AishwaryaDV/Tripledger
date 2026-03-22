@@ -33,6 +33,10 @@ const Login = () => {
   const redirectTo = (location.state as any)?.redirectTo ?? '/dashboard'
 
   const [mode, setMode] = useState<Mode>('login')
+  const [showForgot, setShowForgot] = useState(false)
+  const [forgotEmail, setForgotEmail] = useState('')
+  const [forgotSent, setForgotSent] = useState(false)
+  const [forgotLoading, setForgotLoading] = useState(false)
   const [showCodeInput, setShowCodeInput] = useState(false)
   const [inviteCode, setInviteCode] = useState('')
   const [email, setEmail] = useState('')
@@ -239,10 +243,61 @@ const Login = () => {
             )}
 
             {/* Forgot password */}
-            {mode === 'login' && (
+            {mode === 'login' && !showForgot && (
               <div className="flex justify-end -mt-1">
-                <button type="button" className="text-xs text-primary hover:opacity-70 transition-opacity">
+                <button
+                  type="button"
+                  onClick={() => { setShowForgot(true); setForgotEmail(email) }}
+                  className="text-xs text-primary hover:opacity-70 transition-opacity"
+                >
                   Forgot password?
+                </button>
+              </div>
+            )}
+            {mode === 'login' && showForgot && (
+              <div className="rounded-lg border bg-muted/30 p-3 space-y-2 -mt-1">
+                {forgotSent ? (
+                  <p className="text-xs text-green-600 font-medium">
+                    Reset link sent — check your email.
+                  </p>
+                ) : (
+                  <>
+                    <p className="text-xs text-muted-foreground">Enter your email to receive a reset link.</p>
+                    <div className="flex gap-2">
+                      <input
+                        type="email"
+                        value={forgotEmail}
+                        onChange={e => setForgotEmail(e.target.value)}
+                        placeholder="your@email.com"
+                        className="flex-1 border rounded-md px-2.5 py-1.5 text-xs bg-background focus:outline-none focus:ring-1 focus:ring-primary"
+                      />
+                      <button
+                        type="button"
+                        disabled={forgotLoading || !forgotEmail.trim()}
+                        onClick={async () => {
+                          setForgotLoading(true)
+                          try {
+                            await auth.sendPasswordReset(forgotEmail.trim())
+                            setForgotSent(true)
+                          } catch (err: any) {
+                            setError(err.message ?? 'Failed to send reset email.')
+                          } finally {
+                            setForgotLoading(false)
+                          }
+                        }}
+                        className="px-3 py-1.5 rounded-md bg-primary text-primary-foreground text-xs font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                      >
+                        {forgotLoading ? 'Sending...' : 'Send'}
+                      </button>
+                    </div>
+                  </>
+                )}
+                <button
+                  type="button"
+                  onClick={() => { setShowForgot(false); setForgotSent(false) }}
+                  className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  Cancel
                 </button>
               </div>
             )}
