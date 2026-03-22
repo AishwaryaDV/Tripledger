@@ -91,7 +91,12 @@ const Dashboard = observer(() => {
 
       {/* Header */}
       <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
-        <h2 className="text-3xl font-bold">My Circles</h2>
+        <div>
+          <p className="text-sm text-muted-foreground mb-0.5">
+            Hey, {auth.currentUser?.displayName?.split(' ')[0] ?? 'there'} 👋
+          </p>
+          <h2 className="text-3xl font-bold">My Circles</h2>
+        </div>
         <div className="flex gap-2 shrink-0">
           <button
             onClick={() => setShowJoinModal(true)}

@@ -44,3 +44,28 @@ export const BalanceRowSkeleton = () => (
     <Skeleton className="h-4 w-24" />
   </div>
 )
+
+export const NoteRowSkeleton = () => (
+  <div className="p-4 rounded-lg border bg-card space-y-2">
+    <div className="flex items-center gap-2">
+      <Skeleton className="w-6 h-6 rounded-full" />
+      <Skeleton className="h-3.5 w-24" />
+      <Skeleton className="h-3 w-16" />
+    </div>
+    <Skeleton className="h-3.5 w-full" />
+    <Skeleton className="h-3.5 w-3/4" />
+  </div>
+)
+
+export const SpendingRowSkeleton = () => (
+  <div className="p-4 rounded-lg border bg-card space-y-2">
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-2">
+        <Skeleton className="w-7 h-7 rounded-full" />
+        <Skeleton className="h-4 w-24" />
+      </div>
+      <Skeleton className="h-4 w-20" />
+    </div>
+    <Skeleton className="h-1.5 w-full rounded-full" />
+  </div>
+)

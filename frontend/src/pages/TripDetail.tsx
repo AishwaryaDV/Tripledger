@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
-import { ArrowLeft, Plus, Copy, Check, RefreshCw, CreditCard, Pencil, Trash2, Plane, User, Home, PartyPopper, UtensilsCrossed, Car, BedDouble, Ticket, Package, X, FileText } from 'lucide-react'
+import { ArrowLeft, Plus, Copy, Check, RefreshCw, CreditCard, Pencil, Trash2, Plane, User, Home, PartyPopper, UtensilsCrossed, Car, BedDouble, Ticket, Package, X, FileText, BarChart2, StickyNote } from 'lucide-react'
 import CustomSelect from '@/components/shared/CustomSelect'
 import ConfirmModal from '@/components/shared/ConfirmModal'
 import type { CircleType, ExpenseCategory } from '@/types'
@@ -30,7 +30,7 @@ import ExpenseCard from '@/components/expense/ExpenseCard'
 import BalanceSummary from '@/components/trip/BalanceSummary'
 import SettleSuggestions from '@/components/trip/SettleSuggestions'
 import { formatCurrency, formatDate } from '@/lib/utils'
-import { ExpenseCardSkeleton, BalanceRowSkeleton } from '@/components/shared/Skeleton'
+import { ExpenseCardSkeleton, BalanceRowSkeleton, NoteRowSkeleton, SpendingRowSkeleton } from '@/components/shared/Skeleton'
 
 type Tab = 'expenses' | 'balances' | 'suggestions' | 'spending' | 'notes' | 'members'
 
@@ -368,7 +368,8 @@ const TripDetail = observer(() => {
       {/* Tab content */}
       {activeTab === 'expenses' && (() => {
         if (expenses.expenses.length === 0) return (
-          <div className="rounded-xl border border-dashed p-8 text-center space-y-3">
+          <div className="rounded-xl border border-dashed p-8 text-center space-y-2">
+            <Package size={24} className="mx-auto text-muted-foreground/50" />
             <p className="text-muted-foreground text-sm">No expenses yet.</p>
             {!trip.isSettled && (
               <button
@@ -513,20 +514,29 @@ const TripDetail = observer(() => {
       })()}
 
       {activeTab === 'balances' && (
-        <BalanceSummary balances={balances.balances} baseCurrency={trip.baseCurrency} />
+        balances.isLoading
+          ? <div className="space-y-2">{[1,2,3].map(i => <BalanceRowSkeleton key={i} />)}</div>
+          : <BalanceSummary balances={balances.balances} baseCurrency={trip.baseCurrency} />
       )}
 
       {activeTab === 'suggestions' && (
-        <SettleSuggestions suggestions={balances.suggestions} members={trip.members} />
+        balances.isLoading
+          ? <div className="space-y-2">{[1,2].map(i => <BalanceRowSkeleton key={i} />)}</div>
+          : <SettleSuggestions suggestions={balances.suggestions} members={trip.members} />
       )}
 
       {activeTab === 'spending' && (() => {
         const currentUserId = auth.currentUser?.id
         const totalSpend = expenses.totalAmount
 
+        if (expenses.isLoading) return (
+          <div className="space-y-2">{[1,2,3].map(i => <SpendingRowSkeleton key={i} />)}</div>
+        )
+
         if (expenses.expenses.length === 0) return (
-          <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
-            No expenses yet — spending breakdown will appear here.
+          <div className="rounded-xl border border-dashed p-8 text-center space-y-2">
+            <BarChart2 size={24} className="mx-auto text-muted-foreground/50" />
+            <p className="text-muted-foreground text-sm">No expenses yet — spending breakdown will appear here.</p>
           </div>
         )
 
@@ -640,12 +650,13 @@ const TripDetail = observer(() => {
 
             {/* Notes list */}
             {notes.isLoading ? (
-              <div className="space-y-2">
-                {[1, 2].map(i => <BalanceRowSkeleton key={i} />)}
+              <div className="space-y-3">
+                {[1, 2].map(i => <NoteRowSkeleton key={i} />)}
               </div>
             ) : sorted.length === 0 ? (
-              <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
-                No notes yet. Add one above.
+              <div className="rounded-xl border border-dashed p-8 text-center space-y-2">
+                <StickyNote size={24} className="mx-auto text-muted-foreground/50" />
+                <p className="text-muted-foreground text-sm">No notes yet. Add one above.</p>
               </div>
             ) : sorted.map(note => {
               const isOwner = note.authorId === currentUserId
