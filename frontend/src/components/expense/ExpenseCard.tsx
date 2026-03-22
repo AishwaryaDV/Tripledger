@@ -73,7 +73,7 @@ const ExpenseCard = ({ expense, members, baseCurrency, onEdit, onDelete }: Expen
 
           {/* Split pills */}
           {expense.splits.length > 0 && (
-            <div className="flex flex-nowrap overflow-x-auto gap-1.5 mt-2 pb-0.5" style={{ scrollbarWidth: 'none' }}>
+            <div className="flex flex-wrap gap-1.5 mt-2">
               {visibleSplits.map(s => {
                 const color = getMemberColor(s.userId)
                 return (
