@@ -295,6 +295,22 @@ const UserMenu = observer(() => {
     <>
       <div className="flex items-center gap-2">
 
+        {/* User avatar */}
+        {avatarUrl ? (
+          <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-full" />
+        ) : (
+          <div
+            className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 text-white"
+            style={{ backgroundColor: avatarColor }}
+          >
+            {initial}
+          </div>
+        )}
+        <div className="hidden sm:block">
+          <p className="text-sm font-medium leading-none">{displayName}</p>
+          <p className="text-xs text-muted-foreground mt-0.5">{email}</p>
+        </div>
+
         {/* Gear icon + dropdown */}
         <div ref={gearRef} className="relative">
           <button
@@ -325,22 +341,6 @@ const UserMenu = observer(() => {
               </button>
             </div>
           )}
-        </div>
-
-        {/* User avatar — right of gear */}
-        {avatarUrl ? (
-          <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-full" />
-        ) : (
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 text-white"
-            style={{ backgroundColor: avatarColor }}
-          >
-            {initial}
-          </div>
-        )}
-        <div className="text-right hidden sm:block">
-          <p className="text-sm font-medium leading-none">{displayName}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{email}</p>
         </div>
 
       </div>
