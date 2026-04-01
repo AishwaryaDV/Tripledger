@@ -5,14 +5,14 @@ import UserMenu from './UserMenu'
 
 const Layout = observer(() => {
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen flex flex-col">
       {/* Top Navigation Bar */}
-      <header className="border-b bg-card">
+      <header className="bg-primary">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           {/* App Name - Left */}
           <Link to="/dashboard" className="flex items-center gap-1">
-            <img src="/adv-logo.png" alt="adv logo" className="h-10 w-auto dark:invert" />
-            <h1 className="text-2xl font-bold text-primary">TripLedger</h1>
+            <img src="/adv-logo.png" alt="adv logo" className="h-10 w-auto brightness-0 invert" />
+            <h1 className="text-2xl font-bold text-white">TripLedger</h1>
           </Link>
 
           {/* User Menu - Right */}
@@ -26,10 +26,10 @@ const Layout = observer(() => {
       </main>
 
       {/* Footer */}
-      <footer className="border-t bg-card mt-auto">
+      <footer className="bg-primary mt-auto">
         <div className="container mx-auto px-4 py-4 flex items-center justify-center gap-2">
-          <img src="/adv-logo.png" alt="adv logo" className="h-5 w-auto" />
-          <span className="text-xs text-foreground">TripLedger © {new Date().getFullYear()}</span>
+          <img src="/adv-logo.png" alt="adv logo" className="h-5 w-auto invert opacity-70" />
+          <span className="text-xs text-white/70">TripLedger © {new Date().getFullYear()}</span>
         </div>
       </footer>
 

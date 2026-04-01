@@ -307,17 +307,17 @@ const UserMenu = observer(() => {
           </div>
         )}
         <div className="hidden sm:block">
-          <p className="text-sm font-medium leading-none">{displayName}</p>
-          <p className="text-xs text-muted-foreground mt-0.5">{email}</p>
+          <p className="text-sm font-medium leading-none text-white">{displayName}</p>
+          <p className="text-xs text-white/60 mt-0.5">{email}</p>
         </div>
 
         {/* Gear icon + dropdown */}
         <div ref={gearRef} className="relative">
           <button
             onClick={() => setGearOpen(v => !v)}
-            className={`p-1.5 rounded-lg hover:bg-muted transition-colors ${gearOpen ? 'bg-muted' : ''}`}
+            className={`p-1.5 rounded-lg hover:bg-white/10 transition-colors ${gearOpen ? 'bg-white/10' : ''}`}
           >
-            <Settings size={16} className="text-muted-foreground" />
+            <Settings size={16} className="text-white/80" />
           </button>
 
           {gearOpen && (
