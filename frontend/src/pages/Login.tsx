@@ -32,7 +32,7 @@ const Login = () => {
   const { auth } = useStore()
   const redirectTo = (location.state as any)?.redirectTo ?? '/dashboard'
 
-  const [mode, setMode] = useState<Mode>('login')
+  const [mode, setMode] = useState<Mode>((location.state as any)?.tab === 'signup' ? 'signup' : 'login')
   const [showForgot, setShowForgot] = useState(false)
   const [forgotEmail, setForgotEmail] = useState('')
   const [forgotSent, setForgotSent] = useState(false)

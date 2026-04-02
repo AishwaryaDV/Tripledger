@@ -1,7 +1,159 @@
 // src/pages/Landing.tsx
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 
+// ── Onboarding slides ────────────────────────────────────────────────────────
+const SLIDES = [
+  {
+    headline: 'Welcome to\nTripLedger',
+    sub: 'Split expenses with anyone — fairly, instantly, without the awkward follow-ups.',
+    accent: 'from-orange-200 to-amber-100',
+    bg: 'linear-gradient(180deg, hsl(25,70%,84%) 0%, hsl(35,50%,93%) 55%, hsl(40,25%,99%) 100%)',
+  },
+  {
+    headline: 'Track every\nshared expense',
+    sub: 'Add an expense in seconds and we calculate exactly what everyone owes in real time.',
+    accent: 'from-teal-200 to-emerald-100',
+    bg: 'linear-gradient(180deg, hsl(172,45%,82%) 0%, hsl(165,32%,92%) 55%, hsl(160,18%,99%) 100%)',
+  },
+  {
+    headline: 'Any currency,\nno confusion',
+    sub: 'Set a base currency and log in any currency — live rates handle the conversion automatically.',
+    accent: 'from-blue-200 to-sky-100',
+    bg: 'linear-gradient(180deg, hsl(210,60%,82%) 0%, hsl(205,40%,92%) 55%, hsl(200,20%,99%) 100%)',
+  },
+  {
+    headline: 'Settle up\nfairly, fast',
+    sub: 'We calculate the minimum transfers needed so nobody is chasing anyone. Clean slate, every time.',
+    accent: 'from-emerald-200 to-teal-100',
+    bg: 'linear-gradient(180deg, hsl(145,45%,80%) 0%, hsl(152,32%,91%) 55%, hsl(155,18%,99%) 100%)',
+  },
+]
+
+// Box position + animation per slide — all positioning inside cls
+const BOX_CONFIG = [
+  {
+    cls: 'absolute top-1/2 left-1/2 w-72 h-52',  // centered via keyframe translate
+    enterAnim: 'fadeScaleIn 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.6s forwards',
+    floatAnim: 'floatCenter 3s ease-in-out 1.4s infinite',
+  },
+  {
+    cls: 'absolute top-[15%] left-[8%] w-48 h-32',
+    enterAnim: 'slideFromLeft 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.6s forwards',
+    floatAnim: 'float 3s ease-in-out 1.4s infinite',
+  },
+  {
+    cls: 'absolute bottom-[18%] right-[6%] w-48 h-32',
+    enterAnim: 'slideFromRight 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.6s forwards',
+    floatAnim: 'float 3s ease-in-out 1.4s infinite',
+  },
+  {
+    cls: 'absolute top-[20%] right-[10%] w-48 h-32',
+    enterAnim: 'slideFromRight 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.6s forwards',
+    floatAnim: 'float 3s ease-in-out 1.4s infinite',
+  },
+]
+
+// ── Mobile onboarding carousel ───────────────────────────────────────────────
+const MobileOnboarding = () => {
+  const navigate = useNavigate()
+  const [current, setCurrent] = useState(0)
+  const touchStartX = useRef(0)
+  const touchEndX = useRef(0)
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX
+  }
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    touchEndX.current = e.changedTouches[0].clientX
+    const diff = touchStartX.current - touchEndX.current
+    if (diff > 50) setCurrent(c => Math.min(c + 1, SLIDES.length - 1))
+    else if (diff < -50) setCurrent(c => Math.max(c - 1, 0))
+  }
+
+  const slide = SLIDES[current]
+  const isLast = current === SLIDES.length - 1
+
+  return (
+    <div
+      className="fixed inset-0 flex flex-col select-none px-8 transition-all duration-700 overflow-y-auto"
+      style={{ background: slide.bg }}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      {/* Text — top, left justified */}
+      <div key={`text-${current}`} className="pt-16 pb-6">
+        <h1
+          className="text-4xl font-extrabold leading-tight mb-3 whitespace-pre-line"
+          style={{ opacity: 0, animation: 'fadeSlideUp 0.7s ease 0.1s forwards' }}
+        >
+          {slide.headline}
+        </h1>
+        <p
+          className="text-foreground/70 text-lg font-semibold leading-snug"
+          style={{ opacity: 0, animation: 'fadeSlideUp 0.7s ease 0.4s forwards' }}
+        >
+          {slide.sub}
+        </p>
+      </div>
+
+      {/* Animation area */}
+      <div className="flex-1 relative">
+        {(() => {
+          const box = BOX_CONFIG[current]
+          return (
+            <div
+              key={`box-${current}`}
+              className={`bg-white rounded-2xl border border-white/80 ${box.cls}`}
+              style={{ opacity: 0, animation: `${box.enterAnim}, ${box.floatAnim}` }}
+            />
+          )
+        })()}
+      </div>
+
+      {/* Bottom — dots + skip */}
+      <div className="pb-14 flex flex-col items-center gap-4">
+        <div className="flex gap-2">
+          {SLIDES.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => setCurrent(i)}
+              className={`rounded-full transition-all duration-300 ${
+                i === current ? 'w-6 h-2 bg-primary' : 'w-2 h-2 bg-muted-foreground/30'
+              }`}
+            />
+          ))}
+        </div>
+
+        {isLast ? (
+          <div className="w-full flex flex-col gap-3">
+            <button
+              onClick={() => navigate('/login', { state: { tab: 'signup', hint: 'trip' } })}
+              className="w-full py-3.5 rounded-lg bg-primary text-primary-foreground font-semibold text-base hover:opacity-90 transition-opacity"
+            >
+              Add a group trip
+            </button>
+            <button
+              onClick={() => navigate('/login', { state: { tab: 'signup', hint: 'household' } })}
+              className="w-full py-3.5 rounded-lg border-2 border-primary text-primary font-semibold text-base hover:bg-primary/5 transition-colors"
+            >
+              Add your household
+            </button>
+          </div>
+        ) : (
+          <button
+            onClick={() => navigate('/login')}
+            className="text-base font-bold text-primary"
+          >
+            Skip tour
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ── Desktop landing ──────────────────────────────────────────────────────────
 type FeatureTab = 'split' | 'currencies' | 'settle' | 'trips'
 
 const FEATURE_TABS: { key: FeatureTab; label: string }[] = [
@@ -54,15 +206,13 @@ const FEATURES: Record<FeatureTab, { heading: string; description: string; point
   },
 }
 
-const Landing = () => {
+const DesktopLanding = () => {
   const navigate = useNavigate()
   const [activeFeature, setActiveFeature] = useState<FeatureTab>('split')
   const feature = FEATURES[activeFeature]
 
   return (
     <div className="min-h-screen bg-background">
-
-      {/* Nav */}
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-primary">TripLedger</h1>
@@ -75,7 +225,6 @@ const Landing = () => {
         </div>
       </header>
 
-      {/* Hero */}
       <section className="container mx-auto px-4 py-20 text-center max-w-2xl">
         <h2 className="text-5xl font-bold tracking-tight mb-4">
           Split trips,<br />not friendships
@@ -100,20 +249,15 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Features */}
       <section className="container mx-auto px-4 pb-20 max-w-3xl">
         <h3 className="text-2xl font-bold text-center mb-8">Everything you need</h3>
-
-        {/* Feature tabs */}
         <div className="flex border-b mb-8 overflow-x-auto scrollbar-none">
           {FEATURE_TABS.map(tab => (
             <button
               key={tab.key}
               onClick={() => setActiveFeature(tab.key)}
               className={`flex-1 min-w-max py-2.5 px-2 text-sm font-medium transition-colors relative whitespace-nowrap ${
-                activeFeature === tab.key
-                  ? 'text-primary'
-                  : 'text-muted-foreground hover:text-foreground'
+                activeFeature === tab.key ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
               }`}
             >
               {tab.label}
@@ -123,8 +267,6 @@ const Landing = () => {
             </button>
           ))}
         </div>
-
-        {/* Feature content */}
         <div className="rounded-xl border bg-card p-6 space-y-4">
           <div>
             <h4 className="text-xl font-bold mb-2">{feature.heading}</h4>
@@ -141,12 +283,11 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* Footer CTA */}
       <section className="border-t bg-muted/30">
         <div className="container mx-auto px-4 py-12 text-center max-w-lg">
           <h3 className="text-xl font-bold mb-2">Ready to start?</h3>
           <p className="text-muted-foreground text-sm mb-6">
-            Create your first circle in under a minute. No sign-up required to explore.
+            Create your first circle in under a minute.
           </p>
           <button
             onClick={() => navigate('/login')}
@@ -156,9 +297,16 @@ const Landing = () => {
           </button>
         </div>
       </section>
-
     </div>
   )
 }
+
+// ── Entry point — mobile vs desktop ─────────────────────────────────────────
+const Landing = () => (
+  <>
+    <div className="sm:hidden"><MobileOnboarding /></div>
+    <div className="hidden sm:block"><DesktopLanding /></div>
+  </>
+)
 
 export default Landing
