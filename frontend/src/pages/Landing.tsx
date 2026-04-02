@@ -135,7 +135,7 @@ const MobileOnboarding = () => {
             </button>
             <button
               onClick={() => navigate('/login', { state: { tab: 'signup', hint: 'household' } })}
-              className="w-full py-3.5 rounded-lg border-2 border-primary text-primary font-semibold text-base hover:bg-primary/5 transition-colors"
+              className="w-full py-3.5 rounded-lg border border-primary text-primary font-semibold text-base hover:bg-primary/5 transition-colors bg-white/60"
             >
               Add your household
             </button>
