@@ -307,26 +307,26 @@ const UserMenu = observer(() => {
           </div>
         )}
         <div className="hidden sm:block">
-          <p className="text-sm font-medium leading-none text-white">{displayName}</p>
-          <p className="text-xs text-white/60 mt-0.5">{email}</p>
+          <p className="text-sm font-medium leading-none text-foreground">{displayName}</p>
+          <p className="text-xs text-foreground/50 mt-0.5">{email}</p>
         </div>
 
         {/* Gear icon + dropdown */}
         <div ref={gearRef} className="relative">
           <button
             onClick={() => setGearOpen(v => !v)}
-            className={`p-1.5 rounded-lg hover:bg-white/10 transition-colors ${gearOpen ? 'bg-white/10' : ''}`}
+            className={`p-1.5 rounded-lg hover:bg-black/8 transition-colors ${gearOpen ? 'bg-black/8' : ''}`}
           >
-            <Settings size={16} className="text-white/80" />
+            <Settings size={18} strokeWidth={2.5} className="text-foreground/70" />
           </button>
 
           {gearOpen && (
-            <div className="absolute right-0 top-full mt-2 w-44 bg-card rounded-xl border shadow-lg z-40 py-1 overflow-hidden">
+            <div className="absolute right-0 top-full mt-2 w-36 bg-card rounded-xl border shadow-lg z-40 py-1 overflow-hidden">
               <button
                 onClick={() => { setGearOpen(false); setShowProfile(true) }}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors text-left"
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-muted transition-colors text-left"
               >
-                <User size={14} className="text-muted-foreground" />
+                <User size={13} className="text-muted-foreground" />
                 My Profile
               </button>
 
@@ -334,9 +334,9 @@ const UserMenu = observer(() => {
 
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors text-left text-destructive"
+                className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-muted transition-colors text-left text-destructive"
               >
-                <LogOut size={14} />
+                <LogOut size={13} />
                 Log out
               </button>
             </div>
