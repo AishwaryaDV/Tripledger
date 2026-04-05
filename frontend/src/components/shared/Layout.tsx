@@ -10,8 +10,7 @@ const Layout = observer(() => {
       <header>
         <div className="container mx-auto px-4 py-3 flex items-center justify-between">
           {/* App Name - Left */}
-          <Link to="/dashboard" className="flex items-center gap-1">
-            <img src="/adv-logo.png" alt="adv logo" className="h-10 w-auto" />
+          <Link to="/dashboard" className="flex items-center">
             <h1 className="text-2xl font-bold text-foreground">TripLedger</h1>
           </Link>
 

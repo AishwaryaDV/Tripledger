@@ -70,6 +70,11 @@
   }
 }
 
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to   { transform: translateY(0); }
+}
+
 /* Onboarding animations */
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
