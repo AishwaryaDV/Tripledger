@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
-import { ArrowLeft, Plus, Copy, Check, RefreshCw, CreditCard, Pencil, Trash2, Plane, User, Home, PartyPopper, UtensilsCrossed, Car, BedDouble, Ticket, Package, X, FileText, BarChart2, StickyNote } from 'lucide-react'
+import { ArrowLeft, Plus, Copy, Check, RefreshCw, CreditCard, Pencil, Trash2, Plane, User, Home, PartyPopper, UtensilsCrossed, Car, BedDouble, Ticket, Package, X, FileText, BarChart2, StickyNote, MoreHorizontal } from 'lucide-react'
 import CustomSelect from '@/components/shared/CustomSelect'
 import ConfirmModal from '@/components/shared/ConfirmModal'
 import type { CircleType, ExpenseCategory } from '@/types'
@@ -29,6 +29,7 @@ import { useStore } from '@/hooks/useStore'
 import ExpenseCard from '@/components/expense/ExpenseCard'
 import BalanceSummary from '@/components/trip/BalanceSummary'
 import SettleSuggestions from '@/components/trip/SettleSuggestions'
+import MoreOptionsSheet from '@/components/trip/MoreOptionsSheet'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { ExpenseCardSkeleton, BalanceRowSkeleton, NoteRowSkeleton, SpendingRowSkeleton } from '@/components/shared/Skeleton'
 
@@ -59,6 +60,8 @@ const TripDetail = observer(() => {
   const [editingContent, setEditingContent] = useState('')
   const [isAddingNote, setIsAddingNote] = useState(false)
   const [deleteExpenseId, setDeleteExpenseId] = useState<string | null>(null)
+  const [showMoreOptions, setShowMoreOptions] = useState(false)
+  const [showFilterPanel, setShowFilterPanel] = useState(false)
 
   const copyJoinCode = (code: string) => {
     navigator.clipboard.writeText(code)
@@ -241,13 +244,22 @@ const TripDetail = observer(() => {
                 Reopen Circle
               </button>
             </div>
-            <button
-              onClick={() => setConfirmReopen('add')}
-              className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors flex items-center gap-1.5"
-            >
-              <Plus size={15} />
-              Add Expense
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirmReopen('add')}
+                className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors flex items-center gap-1.5"
+              >
+                <Plus size={15} />
+                Add Expense
+              </button>
+              <button
+                onClick={() => setShowMoreOptions(true)}
+                className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors flex items-center gap-1.5"
+              >
+                <MoreHorizontal size={15} />
+                More
+              </button>
+            </div>
 
             {/* Inline confirmation */}
             {confirmReopen && (
@@ -279,10 +291,10 @@ const TripDetail = observer(() => {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-3 sm:flex gap-2 mt-5">
+          <div className="flex gap-2 mt-5">
             <button
               onClick={() => navigate(`/trips/${id}/add`)}
-              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"
+              className="flex-1 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"
             >
               <Plus size={15} />
               <span className="hidden sm:inline">Add Expense</span>
@@ -290,7 +302,7 @@ const TripDetail = observer(() => {
             </button>
             <button
               onClick={() => navigate(`/trips/${id}/settle`)}
-              className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-1.5"
+              className="flex-1 px-3 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-1.5"
             >
               <CreditCard size={15} />
               <span className="hidden sm:inline">Settle Up</span>
@@ -298,11 +310,17 @@ const TripDetail = observer(() => {
             </button>
             <button
               onClick={() => navigate(`/trips/${id}/summary`)}
-              className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-1.5"
+              className="flex-1 px-3 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-1.5"
             >
               <FileText size={15} />
-              <span className="hidden sm:inline">Summary</span>
-              <span className="sm:hidden">Summary</span>
+              Summary
+            </button>
+            <button
+              onClick={() => setShowMoreOptions(true)}
+              className="px-3 py-2 rounded-lg border hover:bg-muted transition-colors flex items-center justify-center"
+              title="More options"
+            >
+              <MoreHorizontal size={18} />
             </button>
           </div>
         )}
@@ -396,11 +414,67 @@ const TripDetail = observer(() => {
 
         const isFiltered = categoryFilter.length > 0 || paidByFilter !== 'all' || selfFilter
 
+        const activeFilterCount = (categoryFilter.length > 0 ? 1 : 0) + (paidByFilter !== 'all' ? 1 : 0) + (sortOrder !== 'newest' ? 1 : 0) + (selfFilter ? 1 : 0)
+
         return (
           <div className="space-y-3">
-            {/* Filter + sort bar */}
-            <div className="space-y-2">
-              {/* Category chips */}
+            {/* ── Mobile filter dropdown ── */}
+            <div className="sm:hidden">
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setShowFilterPanel(v => !v)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium hover:bg-muted transition-colors"
+                >
+                  <BarChart2 size={13} />
+                  Filters
+                  {activeFilterCount > 0 && (
+                    <span className="ml-0.5 bg-primary text-primary-foreground rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">
+                      {activeFilterCount}
+                    </span>
+                  )}
+                </button>
+                {isFiltered && (
+                  <button
+                    onClick={() => { setCategoryFilter([]); setPaidByFilter('all'); setSortOrder('newest'); setSelfFilter(false) }}
+                    className="text-xs text-destructive hover:opacity-70 transition-opacity font-medium"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+
+              {showFilterPanel && (
+                <div className="mt-2 rounded-xl border bg-card p-4 space-y-4">
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-medium text-muted-foreground">Sort</p>
+                    <CustomSelect
+                      value={sortOrder}
+                      onChange={v => setSortOrder(v as SortOrder)}
+                      options={[
+                        { value: 'newest',  label: 'Newest first' },
+                        { value: 'oldest',  label: 'Oldest first' },
+                        { value: 'highest', label: 'Highest amount' },
+                        { value: 'lowest',  label: 'Lowest amount' },
+                      ]}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <p className="text-xs font-medium text-muted-foreground">Paid by</p>
+                    <CustomSelect
+                      value={paidByFilter}
+                      onChange={setPaidByFilter}
+                      options={[
+                        { value: 'all', label: 'Anyone' },
+                        ...trip.members.map(m => ({ value: m.userId, label: m.displayName })),
+                      ]}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* ── Desktop filter bar (pills) ── */}
+            <div className="hidden sm:block space-y-2">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-medium text-muted-foreground shrink-0">Filters</span>
                 <button
@@ -454,8 +528,6 @@ const TripDetail = observer(() => {
                   </button>
                 )}
               </div>
-
-              {/* Paid by + Sort row */}
               <div className="flex flex-wrap gap-x-4 gap-y-2 items-center">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-medium text-muted-foreground shrink-0">Sort</span>
@@ -729,12 +801,18 @@ const TripDetail = observer(() => {
       })()}
 
       {activeTab === 'members' && (
-        <div className="space-y-3">
+        <div className="space-y-2">
           {trip.members.map((member, i) => {
             const isMe = member.userId === auth.currentUser?.id
             const color = MEMBER_COLORS[i % MEMBER_COLORS.length]
+            const memberBalance = balances.balances.find(b => b.userId === member.userId)
+            const net = memberBalance?.netAmount ?? 0
             return (
-              <div key={member.userId} className="flex items-center gap-3">
+              <button
+                key={member.userId}
+                onClick={() => navigate(`/trips/${id}/members/${member.userId}`)}
+                className="w-full flex items-center gap-3 rounded-xl border bg-background px-3 py-2.5 hover:bg-muted transition-colors text-left"
+              >
                 <span className="text-xs text-muted-foreground w-5 shrink-0 text-right">{i + 1}.</span>
                 <div
                   style={{ backgroundColor: color }}
@@ -746,12 +824,17 @@ const TripDetail = observer(() => {
                   {member.displayName}
                   {isMe && <span className="ml-1.5 text-xs font-normal text-muted-foreground">(you)</span>}
                 </p>
+                {net !== 0 && (
+                  <span className={`text-xs font-semibold shrink-0 ${net > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                    {net > 0 ? '+' : ''}{formatCurrency(net, trip.baseCurrency)}
+                  </span>
+                )}
                 <span className={`text-xs px-2 py-0.5 rounded-full font-medium shrink-0 ${
                   member.role === 'owner' ? 'bg-amber-100 text-amber-700' : 'bg-muted text-muted-foreground'
                 }`}>
                   {member.role}
                 </span>
-              </div>
+              </button>
             )
           })}
         </div>
@@ -771,6 +854,10 @@ const TripDetail = observer(() => {
         }}
         onCancel={() => setDeleteExpenseId(null)}
       />
+    )}
+
+    {showMoreOptions && (
+      <MoreOptionsSheet trip={trip} onClose={() => setShowMoreOptions(false)} />
     )}
     </>
   )
