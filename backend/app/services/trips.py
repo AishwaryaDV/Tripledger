@@ -175,8 +175,11 @@ async def patch_trip(db: AsyncSession, trip_id: str, current_user: User, is_sett
     member_result = await db.execute(
         select(TripMember).where(TripMember.trip_id == trip_id, TripMember.user_id == current_user.id)
     )
-    if not member_result.scalar_one_or_none():
+    member = member_result.scalar_one_or_none()
+    if not member:
         raise HTTPException(status_code=403, detail="Not a member of this trip")
+    if member.role != "owner":
+        raise HTTPException(status_code=403, detail="Only the owner can settle or reopen this circle")
 
     trip.is_settled = is_settled
     await db.commit()

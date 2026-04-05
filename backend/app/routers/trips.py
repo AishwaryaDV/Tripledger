@@ -1,11 +1,16 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
+import httpx
 
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
+from app.models.trip import Trip, TripMember
 from app.schemas.trip import TripCreate, TripPatch, TripResponse
 from app.services import trips as trip_service
+from app.services import balances as balance_service
+from app.config import settings
 
 router = APIRouter(prefix="/trips", tags=["trips"])
 
@@ -83,3 +88,67 @@ async def delete_trip(
     current_user: User = Depends(get_current_user),
 ):
     await trip_service.delete_trip(db, trip_id, current_user)
+
+
+@router.post("/{trip_id}/members/{member_id}/remind", status_code=204)
+async def remind_member(
+    trip_id: str,
+    member_id: str,
+    db: AsyncSession = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Send a balance reminder email to a trip member."""
+    # Verify requester is a member of the trip
+    trip = await trip_service.get_trip(db, trip_id, current_user)
+
+    # Verify target is also a member
+    target_member = next((m for m in trip.members if m.userId == member_id), None)
+    if not target_member:
+        raise HTTPException(status_code=404, detail="Member not found in trip")
+
+    # Don't allow reminding yourself
+    if member_id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot remind yourself")
+
+    # Get target user's email
+    result = await db.execute(select(User).where(User.id == member_id))
+    target_user = result.scalar_one_or_none()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Get their balance
+    balances = await balance_service.get_balances(db, trip_id, current_user)
+    member_balance = next((b for b in balances if b.userId == member_id), None)
+    net = member_balance.netAmount if member_balance else 0
+
+    if not settings.RESEND_API_KEY:
+        raise HTTPException(status_code=503, detail="Email service not configured")
+
+    if net >= 0:
+        balance_line = f"you are owed {trip.baseCurrency} {abs(net):.2f}"
+    else:
+        balance_line = f"you owe {trip.baseCurrency} {abs(net):.2f}"
+
+    html = f"""
+    <p>Hi {target_member.displayName},</p>
+    <p><b>{current_user.display_name or current_user.email}</b> sent you a reminder about
+    the circle <b>{trip.name}</b>.</p>
+    <p>Your current balance: <b>{balance_line}</b>.</p>
+    <p>Open TripLedger to view your expenses and settle up.</p>
+    """
+
+    async with httpx.AsyncClient() as client:
+        res = await client.post(
+            "https://api.resend.com/emails",
+            headers={"Authorization": f"Bearer {settings.RESEND_API_KEY}"},
+            json={
+                "from": settings.RESEND_FROM_EMAIL,
+                "to": [target_user.email],
+                "subject": f"Reminder: {trip.name} — balance update",
+                "html": html,
+            },
+        )
+        if res.status_code >= 400:
+            raise HTTPException(status_code=502, detail="Failed to send email")
+
+    return Response(status_code=204)

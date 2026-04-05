@@ -98,6 +98,22 @@ export class TripStore {
     return data
   }
 
+  async leaveTrip(id: string) {
+    await api.delete(`/trips/${id}/members/me`)
+    runInAction(() => {
+      this.trips = this.trips.filter(t => t.id !== id)
+      if (this.currentTrip?.id === id) this.currentTrip = null
+    })
+  }
+
+  async deleteTrip(id: string) {
+    await api.delete(`/trips/${id}`)
+    runInAction(() => {
+      this.trips = this.trips.filter(t => t.id !== id)
+      if (this.currentTrip?.id === id) this.currentTrip = null
+    })
+  }
+
   // Takes tripId (from the preview fetched by fetchTripByCode)
   async joinTrip(tripId: string) {
     try {
