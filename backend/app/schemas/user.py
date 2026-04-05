@@ -13,3 +13,6 @@ class UserResponse(BaseModel):
 
 class AuthMeRequest(BaseModel):
     display_name: str | None = None
+
+class AvatarUpdateRequest(BaseModel):
+    avatar_url: str | None = None

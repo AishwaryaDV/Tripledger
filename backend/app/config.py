@@ -7,9 +7,11 @@ class Settings(BaseSettings):
     SUPABASE_URL: str
     SUPABASE_ANON_KEY: str
     SUPABASE_JWT_SECRET: str
+    SUPABASE_SERVICE_ROLE_KEY: str = ""
     REDIS_URL: str = ""
     EXCHANGE_RATE_API_KEY: str = ""
     RESEND_API_KEY: str = ""
+    RESEND_FROM_EMAIL: str = "TripLedger <noreply@tripledger.app>"
     ENVIRONMENT: str = "development"
     CORS_ORIGINS: str = "http://localhost:5173"
 

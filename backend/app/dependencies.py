@@ -13,12 +13,19 @@ from app.models.user import User
 
 security = HTTPBearer()
 
-# Use certifi SSL certs — fixes Mac SSL certificate verification issues
 _ssl_context = ssl.create_default_context(cafile=certifi.where())
 _jwks_client = PyJWKClient(
     f"{settings.SUPABASE_URL}/auth/v1/.well-known/jwks.json",
     ssl_context=_ssl_context,
+    cache_keys=True,
 )
+
+def warmup_jwks():
+    """Pre-fetch JWKS at startup so first login doesn't hang."""
+    try:
+        _jwks_client.fetch_data()
+    except Exception:
+        pass
 
 
 async def get_current_user(
@@ -31,7 +38,7 @@ async def get_current_user(
         payload = jwt.decode(
             token,
             signing_key.key,
-            algorithms=["ES256", "RS256", "HS256"],
+            algorithms=["RS256", "ES256", "HS256"],
             options={"verify_aud": False},
         )
     except jwt.ExpiredSignatureError:

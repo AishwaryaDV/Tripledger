@@ -1,10 +1,12 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
+import httpx
 
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.user import UserResponse, AuthMeRequest
+from app.schemas.user import UserResponse, AuthMeRequest, AvatarUpdateRequest
+from app.config import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
 
@@ -25,3 +27,34 @@ async def auth_me(
         await db.refresh(current_user)
 
     return current_user
+
+
+@router.patch("/me/avatar", response_model=UserResponse)
+async def update_avatar(
+    body: AvatarUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    current_user.avatar_url = body.avatar_url
+    await db.commit()
+    await db.refresh(current_user)
+    return current_user
+
+
+@router.delete("/me", status_code=204)
+async def delete_account(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    if settings.SUPABASE_SERVICE_ROLE_KEY:
+        async with httpx.AsyncClient() as client:
+            await client.delete(
+                f"{settings.SUPABASE_URL}/auth/v1/admin/users/{current_user.id}",
+                headers={
+                    "apikey": settings.SUPABASE_SERVICE_ROLE_KEY,
+                    "Authorization": f"Bearer {settings.SUPABASE_SERVICE_ROLE_KEY}",
+                },
+            )
+    await db.delete(current_user)
+    await db.commit()
+    return Response(status_code=204)

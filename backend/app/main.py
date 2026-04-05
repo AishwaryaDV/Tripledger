@@ -3,8 +3,13 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import settings
 from app.routers import auth, trips, expenses, balances, notes
+from app.dependencies import warmup_jwks
 
 app = FastAPI(title="TripLedger API", version="0.1.0")
+
+@app.on_event("startup")
+async def startup():
+    warmup_jwks()
 
 app.add_middleware(
     CORSMiddleware,

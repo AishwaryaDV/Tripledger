@@ -126,6 +126,32 @@ export class AuthStore {
     runInAction(() => { this.currentUser = null })
   }
 
+  async logoutAllDevices() {
+    await supabase.auth.signOut({ scope: 'global' })
+    runInAction(() => { this.currentUser = null })
+  }
+
+  async deleteAccount() {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error('Not authenticated')
+    await api.delete('/auth/me', {
+      headers: { Authorization: `Bearer ${session.access_token}` }
+    })
+    await supabase.auth.signOut()
+    runInAction(() => { this.currentUser = null })
+  }
+
+  async updateAvatarUrl(avatarUrl: string) {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) throw new Error('Not authenticated')
+    await api.patch('/auth/me/avatar', { avatar_url: avatarUrl || null }, {
+      headers: { Authorization: `Bearer ${session.access_token}` }
+    })
+    runInAction(() => {
+      if (this.currentUser) this.currentUser = { ...this.currentUser, avatarUrl: avatarUrl || null }
+    })
+  }
+
   // Calls POST /auth/me — upserts the user in our DB and returns their profile
   private async syncWithBackend(supabaseUser: any, displayName?: string, accessToken?: string): Promise<User> {
     try {
