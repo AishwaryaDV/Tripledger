@@ -2,10 +2,11 @@
 import { useState, useRef, useEffect } from 'react'
 import { observer } from 'mobx-react-lite'
 import { useNavigate } from 'react-router-dom'
-import { Settings, LogOut, User, Lock, X, Eye, EyeOff, ChevronDown } from 'lucide-react'
+import { Settings, LogOut, User, X, ChevronDown, Pencil, Check, Camera, MonitorSmartphone, Trash2, Eye, EyeOff } from 'lucide-react'
 import { toast } from 'sonner'
 import { Link } from 'react-router-dom'
 import { useStore } from '../../hooks/useStore'
+import { supabase } from '../../lib/supabase'
 
 const PRONOUN_OPTIONS = [
   '', 'he/him', 'she/her', 'they/them', 'he/they', 'she/they', 'any pronouns', 'prefer not to say',
@@ -16,21 +17,28 @@ const MEMBER_COLORS = ['#818cf8','#f472b6','#34d399','#fb923c','#60a5fa','#a78bf
 // ── Profile Drawer ─────────────────────────────────────────────────────────────
 const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
   const { auth } = useStore()
+  const navigate = useNavigate()
   const user = auth.currentUser!
 
-  // Only accept known pronoun values, discard anything that looks wrong (e.g. stale email)
   const validPronouns = PRONOUN_OPTIONS.includes(user.pronouns ?? '') ? (user.pronouns ?? '') : ''
 
+  const [editingName, setEditingName] = useState(false)
   const [displayName, setDisplayName] = useState(user.displayName)
   const [pronouns, setPronouns] = useState(validPronouns)
-  const [showPasswordForm, setShowPasswordForm] = useState(false)
-  const [newPassword, setNewPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirm, setShowConfirm] = useState(false)
   const [nameLoading, setNameLoading] = useState(false)
   const [pronounsLoading, setPronounsLoading] = useState(false)
+  const [avatarLoading, setAvatarLoading] = useState(false)
+  const [logoutAllLoading, setLogoutAllLoading] = useState(false)
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+  const [deleteLoading, setDeleteLoading] = useState(false)
+  const [showAvatarMenu, setShowAvatarMenu] = useState(false)
+  const [showPasswordModal, setShowPasswordModal] = useState(false)
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showNewPw, setShowNewPw] = useState(false)
+  const [showConfirmPw, setShowConfirmPw] = useState(false)
   const [passLoading, setPassLoading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const avatarColor = MEMBER_COLORS[user.displayName.charCodeAt(0) % MEMBER_COLORS.length]
   const initial = user.displayName.charAt(0).toUpperCase()
@@ -47,6 +55,7 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
     try {
       await auth.updateDisplayName(displayName.trim())
       toast.success('Display name updated.')
+      setEditingName(false)
     } catch (err: any) {
       toast.error(err.message ?? 'Failed to update name.')
     } finally {
@@ -66,20 +75,82 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
     }
   }
 
-  const handleUpdatePassword = async () => {
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    if (file.size > 5 * 1024 * 1024) { toast.error('Image must be under 5 MB.'); return }
+    setAvatarLoading(true)
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `${user.id}/avatar.${ext}`
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(path, file, { upsert: true, contentType: file.type })
+      if (uploadError) throw new Error(uploadError.message)
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(path)
+      await auth.updateAvatarUrl(publicUrl)
+      toast.success('Profile picture updated.')
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to upload picture.')
+    } finally {
+      setAvatarLoading(false)
+      if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleLogoutAll = async () => {
+    setLogoutAllLoading(true)
+    try {
+      await auth.logoutAllDevices()
+      navigate('/login', { replace: true })
+      toast.success('Signed out of all devices.')
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to sign out.')
+    } finally {
+      setLogoutAllLoading(false)
+    }
+  }
+
+  const handleRemoveAvatar = async () => {
+    setAvatarLoading(true)
+    setShowAvatarMenu(false)
+    try {
+      await auth.updateAvatarUrl('')
+      toast.success('Profile picture removed.')
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to remove picture.')
+    } finally {
+      setAvatarLoading(false)
+    }
+  }
+
+  const handleChangePassword = async () => {
     if (newPassword.length < 8) { toast.error('Password must be at least 8 characters.'); return }
     if (newPassword !== confirmPassword) { toast.error("Passwords don't match."); return }
     setPassLoading(true)
     try {
       await auth.updatePassword(newPassword)
       toast.success('Password updated.')
+      setShowPasswordModal(false)
       setNewPassword('')
       setConfirmPassword('')
-      setShowPasswordForm(false)
     } catch (err: any) {
       toast.error(err.message ?? 'Failed to update password.')
     } finally {
       setPassLoading(false)
+    }
+  }
+
+  const handleDeleteAccount = async () => {
+    setDeleteLoading(true)
+    try {
+      await auth.deleteAccount()
+      navigate('/login', { replace: true })
+      toast.success('Account deleted.')
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to delete account.')
+    } finally {
+      setDeleteLoading(false)
     }
   }
 
@@ -102,13 +173,43 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
         {/* Scrollable content */}
         <div className="flex-1 overflow-y-auto p-5 space-y-5">
 
-          {/* Avatar + identity */}
+          {/* Avatar upload */}
           <div className="flex items-center gap-4">
-            <div
-              className="w-14 h-14 rounded-full flex items-center justify-center text-xl font-bold text-white shrink-0"
-              style={{ backgroundColor: avatarColor }}
-            >
-              {initial}
+            <div className="relative shrink-0">
+              {user.avatarUrl ? (
+                <img src={user.avatarUrl} alt={user.displayName} className="w-16 h-16 rounded-full object-cover" />
+              ) : (
+                <div
+                  className="w-16 h-16 rounded-full flex items-center justify-center text-2xl font-bold text-white"
+                  style={{ backgroundColor: avatarColor }}
+                >
+                  {initial}
+                </div>
+              )}
+              <button
+                onClick={() => user.avatarUrl ? setShowAvatarMenu(v => !v) : fileInputRef.current?.click()}
+                disabled={avatarLoading}
+                className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-foreground text-background flex items-center justify-center hover:opacity-80 transition-opacity disabled:opacity-50"
+              >
+                <Camera size={11} />
+              </button>
+              {showAvatarMenu && (
+                <div className="absolute left-0 top-full mt-1 bg-card border rounded-xl shadow-lg z-10 py-1 w-40 overflow-hidden">
+                  <button
+                    onClick={() => { setShowAvatarMenu(false); fileInputRef.current?.click() }}
+                    className="w-full text-left px-3 py-2 text-xs hover:bg-muted transition-colors"
+                  >
+                    Change photo
+                  </button>
+                  <button
+                    onClick={handleRemoveAvatar}
+                    className="w-full text-left px-3 py-2 text-xs text-destructive hover:bg-destructive/5 transition-colors"
+                  >
+                    Remove photo
+                  </button>
+                </div>
+              )}
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
             </div>
             <div className="min-w-0">
               <p className="font-semibold truncate">{user.displayName}</p>
@@ -125,24 +226,41 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
               <User size={13} className="text-muted-foreground" />
               Display name
             </label>
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={displayName}
-                onChange={e => setDisplayName(e.target.value)}
-                className="flex-1 border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-              <button
-                onClick={handleUpdateName}
-                disabled={nameLoading || !displayName.trim() || displayName === user.displayName}
-                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-              >
-                {nameLoading ? 'Saving...' : 'Save'}
-              </button>
-            </div>
+            {editingName ? (
+              <div className="flex gap-2">
+                <input
+                  autoFocus
+                  type="text"
+                  value={displayName}
+                  onChange={e => setDisplayName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') handleUpdateName(); if (e.key === 'Escape') { setEditingName(false); setDisplayName(user.displayName) } }}
+                  className="flex-1 border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <button
+                  onClick={handleUpdateName}
+                  disabled={nameLoading || !displayName.trim() || displayName === user.displayName}
+                  className="px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {nameLoading ? '...' : <Check size={14} />}
+                </button>
+                <button
+                  onClick={() => { setEditingName(false); setDisplayName(user.displayName) }}
+                  className="px-3 py-2 rounded-lg border text-sm hover:bg-muted transition-colors"
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between px-3 py-2 border rounded-lg bg-background">
+                <span className="text-sm">{user.displayName}</span>
+                <button onClick={() => setEditingName(true)} className="text-muted-foreground hover:text-foreground transition-colors ml-2">
+                  <Pencil size={13} />
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Pronouns dropdown */}
+          {/* Pronouns */}
           <div className="space-y-1.5">
             <label className="text-sm font-medium flex items-center gap-1">
               Pronouns
@@ -167,7 +285,7 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
                 disabled={pronounsLoading || pronouns === validPronouns}
                 className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
               >
-                {pronounsLoading ? 'Saving...' : 'Save'}
+                {pronounsLoading ? '...' : 'Save'}
               </button>
             </div>
           </div>
@@ -176,73 +294,65 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-muted-foreground">Email</label>
             <p className="text-sm px-3 py-2 border rounded-lg bg-muted/30 text-muted-foreground">{user.email}</p>
+            <p className="text-xs text-muted-foreground/60">Email cannot be changed.</p>
           </div>
-
-          <div className="border-t" />
 
           {/* Password */}
           <div className="space-y-1.5">
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 text-sm font-medium">
-                <Lock size={13} className="text-muted-foreground" />
-                Password
-              </label>
-              {!showPasswordForm && (
-                <button
-                  onClick={() => setShowPasswordForm(true)}
-                  className="text-xs text-primary hover:opacity-70 transition-opacity font-medium"
-                >
-                  Change password
-                </button>
-              )}
+              <label className="text-sm font-medium text-muted-foreground">Password</label>
+              <button
+                onClick={() => setShowPasswordModal(true)}
+                className="text-xs text-primary font-medium hover:opacity-70 transition-opacity"
+              >
+                Change password
+              </button>
             </div>
-
-            {!showPasswordForm ? (
-              <p className="text-sm px-3 py-2 border rounded-lg bg-muted/30 text-muted-foreground tracking-widest">••••••••</p>
-            ) : (
-              <div className="space-y-2">
-                <div className="relative">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={newPassword}
-                    onChange={e => setNewPassword(e.target.value)}
-                    placeholder="New password (min. 8 chars)"
-                    className="w-full border rounded-lg px-3 pr-10 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  <button type="button" onClick={() => setShowPassword(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                    {showPassword ? <EyeOff size={13} /> : <Eye size={13} />}
-                  </button>
-                </div>
-                <div className="relative">
-                  <input
-                    type={showConfirm ? 'text' : 'password'}
-                    value={confirmPassword}
-                    onChange={e => setConfirmPassword(e.target.value)}
-                    placeholder="Confirm new password"
-                    className="w-full border rounded-lg px-3 pr-10 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-                  />
-                  <button type="button" onClick={() => setShowConfirm(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
-                    {showConfirm ? <EyeOff size={13} /> : <Eye size={13} />}
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  <button
-                    onClick={handleUpdatePassword}
-                    disabled={passLoading || !newPassword}
-                    className="flex-1 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
-                  >
-                    {passLoading ? 'Updating...' : 'Update password'}
-                  </button>
-                  <button
-                    onClick={() => { setShowPasswordForm(false); setNewPassword(''); setConfirmPassword('') }}
-                    className="px-4 py-2 rounded-lg border text-sm hover:bg-muted transition-colors"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            )}
+            <p className="text-sm px-3 py-2 border rounded-lg bg-muted/30 text-muted-foreground tracking-widest">••••••••</p>
           </div>
+
+          <div className="border-t" />
+
+          {/* Sign out all devices */}
+          <button
+            onClick={handleLogoutAll}
+            disabled={logoutAllLoading}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border text-sm hover:bg-muted transition-colors text-left disabled:opacity-50"
+          >
+            <MonitorSmartphone size={14} className="text-muted-foreground shrink-0" />
+            <span>{logoutAllLoading ? 'Signing out...' : 'Sign out of all devices'}</span>
+          </button>
+
+          {/* Delete account */}
+          {!showDeleteConfirm ? (
+            <button
+              onClick={() => setShowDeleteConfirm(true)}
+              className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg border border-destructive/30 text-sm hover:bg-destructive/5 transition-colors text-left text-destructive"
+            >
+              <Trash2 size={14} className="shrink-0" />
+              <span>Delete account</span>
+            </button>
+          ) : (
+            <div className="rounded-lg border border-destructive/30 p-4 space-y-3 bg-destructive/5">
+              <p className="text-sm font-medium text-destructive">Delete your account?</p>
+              <p className="text-xs text-muted-foreground">This is permanent and cannot be undone. All your data will be removed.</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={handleDeleteAccount}
+                  disabled={deleteLoading}
+                  className="flex-1 py-2 rounded-lg bg-destructive text-destructive-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {deleteLoading ? 'Deleting...' : 'Yes, delete'}
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 rounded-lg border text-sm hover:bg-muted transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
 
         </div>
 
@@ -258,6 +368,73 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
         </div>
 
       </div>
+
+      {/* Change Password Modal */}
+      {showPasswordModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => { setShowPasswordModal(false); setNewPassword(''); setConfirmPassword('') }} />
+          <div className="relative bg-card rounded-2xl border shadow-xl w-full max-w-sm p-6 space-y-4 z-[61]">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-semibold">Change Password</h3>
+              <button onClick={() => { setShowPasswordModal(false); setNewPassword(''); setConfirmPassword('') }} className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-muted transition-colors">
+                <X size={16} />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">New password</label>
+                <div className="relative">
+                  <input
+                    autoFocus
+                    type={showNewPw ? 'text' : 'password'}
+                    value={newPassword}
+                    onChange={e => setNewPassword(e.target.value)}
+                    placeholder="Min. 8 characters"
+                    className="w-full border rounded-lg px-3 pr-10 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <button type="button" onClick={() => setShowNewPw(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                    {showNewPw ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-sm font-medium">Confirm new password</label>
+                <div className="relative">
+                  <input
+                    type={showConfirmPw ? 'text' : 'password'}
+                    value={confirmPassword}
+                    onChange={e => setConfirmPassword(e.target.value)}
+                    placeholder="Re-enter password"
+                    onKeyDown={e => { if (e.key === 'Enter') handleChangePassword() }}
+                    className="w-full border rounded-lg px-3 pr-10 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                  <button type="button" onClick={() => setShowConfirmPw(v => !v)} className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors">
+                    {showConfirmPw ? <EyeOff size={14} /> : <Eye size={14} />}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 pt-1">
+              <button
+                onClick={handleChangePassword}
+                disabled={passLoading || !newPassword || !confirmPassword}
+                className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+              >
+                {passLoading ? 'Updating...' : 'Update password'}
+              </button>
+              <button
+                onClick={() => { setShowPasswordModal(false); setNewPassword(''); setConfirmPassword('') }}
+                className="px-4 py-2.5 rounded-lg border text-sm hover:bg-muted transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 })
@@ -293,23 +470,7 @@ const UserMenu = observer(() => {
 
   return (
     <>
-      <div className="flex items-center gap-2">
-
-        {/* User avatar */}
-        {avatarUrl ? (
-          <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-full" />
-        ) : (
-          <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold shrink-0 text-white"
-            style={{ backgroundColor: avatarColor }}
-          >
-            {initial}
-          </div>
-        )}
-        <div className="hidden sm:block">
-          <p className="text-sm font-medium leading-none text-foreground">{displayName}</p>
-          <p className="text-xs text-foreground/50 mt-0.5">{email}</p>
-        </div>
+      <div className="flex items-center">
 
         {/* Gear icon + dropdown */}
         <div ref={gearRef} className="relative">
@@ -317,11 +478,11 @@ const UserMenu = observer(() => {
             onClick={() => setGearOpen(v => !v)}
             className={`p-1.5 rounded-lg hover:bg-black/8 transition-colors ${gearOpen ? 'bg-black/8' : ''}`}
           >
-            <Settings size={18} strokeWidth={2.5} className="text-foreground/70" />
+            <Settings size={20} strokeWidth={3} className="text-foreground/80" />
           </button>
 
           {gearOpen && (
-            <div className="absolute right-0 top-full mt-2 w-36 bg-card rounded-xl border shadow-lg z-40 py-1 overflow-hidden">
+            <div className="absolute right-0 top-full mt-2 w-44 bg-card rounded-xl border shadow-lg z-40 py-1 overflow-hidden">
               <button
                 onClick={() => { setGearOpen(false); setShowProfile(true) }}
                 className="w-full flex items-center gap-2.5 px-3 py-2 text-xs hover:bg-muted transition-colors text-left"
