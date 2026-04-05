@@ -44,7 +44,7 @@ const ResetPassword = () => {
   }
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-4">
+    <div className="min-h-screen flex items-center justify-center px-4" style={{ background: 'linear-gradient(180deg, hsl(152,45%,82%) 0%, hsl(165,32%,92%) 55%, hsl(160,18%,99%) 100%)' }}>
       <div className="w-full max-w-sm space-y-6">
 
         <div>

@@ -11,7 +11,7 @@ import { toast } from 'sonner'
 type Mode = 'login' | 'signup'
 
 const GoogleIcon = () => (
-  <svg width="48" height="48" viewBox="0 0 18 18" fill="none">
+  <svg width="32" height="32" viewBox="0 0 18 18" fill="none">
     <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.716v2.259h2.908c1.702-1.567 2.684-3.875 2.684-6.615z" fill="#4285F4"/>
     <path d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.259c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z" fill="#34A853"/>
     <path d="M3.964 10.706A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.706V4.962H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.038l3.007-2.332z" fill="#FBBC05"/>
@@ -84,7 +84,10 @@ const Login = () => {
   }
 
   return (
-    <div className="h-screen overflow-hidden flex flex-col sm:flex-row" style={{ background: 'linear-gradient(180deg, hsl(152,45%,82%) 0%, hsl(165,32%,92%) 55%, hsl(160,18%,99%) 100%)' }}>
+    <div className="h-screen flex flex-col" style={{ background: 'linear-gradient(180deg, hsl(152,45%,82%) 0%, hsl(165,32%,92%) 55%, hsl(160,18%,99%) 100%)' }}>
+
+      {/* Main content */}
+      <div className="flex-1 flex flex-col sm:flex-row overflow-hidden">
 
       {/* ── Left panel — branding (desktop only) ──────────────────────── */}
       <div className="hidden sm:flex sm:w-1/2 border-r flex-col justify-between p-10" style={{ background: 'linear-gradient(180deg, hsl(152,50%,78%) 0%, hsl(165,35%,90%) 100%)' }}>
@@ -120,13 +123,8 @@ const Login = () => {
 
         <div className="w-full max-w-sm mx-auto space-y-4 sm:bg-white/80 sm:backdrop-blur-sm sm:rounded-2xl sm:p-6 sm:shadow-sm">
 
-          {/* Mobile logo — hidden on desktop (desktop left panel has it) */}
-          <div className="sm:hidden mb-2 text-center">
-            <h1 className="text-2xl font-bold text-primary">TripLedger</h1>
-          </div>
-
           {/* Heading */}
-          <div className="mb-1 text-center sm:text-left">
+          <div className="mb-1 mt-8 sm:mt-0 text-center sm:text-left">
             <h2 className="text-2xl font-bold">
               {mode === 'login' ? 'Welcome back' : 'Create account'}
             </h2>
@@ -394,6 +392,13 @@ const Login = () => {
           </div>
 
         </div>
+
+      </div>
+    </div>
+
+      {/* Footer */}
+      <div className="py-4 text-center">
+        <p className="text-xs text-foreground/50">© 2026 TripLedger. All rights reserved.</p>
       </div>
     </div>
   )

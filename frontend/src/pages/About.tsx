@@ -8,9 +8,9 @@ const About = () => {
     <div className="min-h-screen bg-background">
 
       {/* Nav */}
-      <header className="border-b bg-card">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-between">
-          <button onClick={() => navigate('/')} className="text-2xl font-bold text-primary">
+      <header style={{ background: 'linear-gradient(180deg, hsl(152,45%,82%) 0%, hsl(165,32%,92%) 100%)' }}>
+        <div className="container mx-auto px-4 py-3 flex items-center justify-between">
+          <button onClick={() => navigate('/')} className="text-2xl font-bold text-foreground">
             TripLedger
           </button>
           <button

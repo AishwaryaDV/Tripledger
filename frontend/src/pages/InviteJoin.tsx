@@ -47,10 +47,12 @@ const InviteJoin = () => {
     }
   }
 
+  const pageBg: React.CSSProperties = { background: 'linear-gradient(180deg, hsl(152,45%,82%) 0%, hsl(165,32%,92%) 55%, hsl(160,18%,99%) 100%)' }
+
   // Loading state
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={pageBg}>
         <div className="text-center space-y-3">
           <div className="w-10 h-10 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
           <p className="text-sm text-muted-foreground">Looking up circle...</p>
@@ -62,7 +64,7 @@ const InviteJoin = () => {
   // Invalid code
   if (loadError || !preview) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="min-h-screen flex items-center justify-center p-4" style={pageBg}>
         <div className="w-full max-w-sm text-center space-y-4">
           <div className="w-14 h-14 rounded-full bg-destructive/10 flex items-center justify-center mx-auto">
             <AlertTriangle size={24} className="text-destructive" />
@@ -86,7 +88,7 @@ const InviteJoin = () => {
   const TypeIcon = typeConfig.icon
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+    <div className="min-h-screen flex items-center justify-center p-4" style={pageBg}>
       <div className="w-full max-w-sm space-y-4">
 
         {/* Header */}
