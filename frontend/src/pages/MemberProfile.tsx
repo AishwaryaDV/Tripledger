@@ -2,11 +2,12 @@
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
-import { ArrowLeft, Bell } from 'lucide-react'
+import { ArrowLeft, Bell, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useStore } from '@/hooks/useStore'
 import { api } from '@/lib/api'
 import { supabase } from '@/lib/supabase'
+import { Skeleton } from '@/components/shared/Skeleton'
 
 const MEMBER_COLORS = ['#818cf8','#f472b6','#34d399','#fb923c','#60a5fa','#a78bfa','#facc15','#2dd4bf']
 
@@ -21,7 +22,47 @@ const MemberProfile = observer(() => {
   }, [tripId])
 
   const trip = trips.currentTrip
-  if (!trip) return null
+
+  if (trips.isLoading || (!trip && !trips.error)) {
+    return (
+      <div className="w-full max-w-lg mx-auto">
+        <Skeleton className="h-4 w-32 mb-8" />
+        <div className="flex flex-col items-center text-center gap-4 py-10">
+          <Skeleton className="w-24 h-24 rounded-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-7 w-40 mx-auto" />
+            <Skeleton className="h-6 w-16 mx-auto rounded-full" />
+          </div>
+        </div>
+        <Skeleton className="h-12 w-full rounded-xl" />
+      </div>
+    )
+  }
+
+  if (trips.error || !trip) {
+    return (
+      <div className="w-full max-w-lg mx-auto">
+        <button
+          onClick={() => navigate(`/trips/${tripId}`)}
+          className="text-sm text-muted-foreground hover:text-foreground mb-8 flex items-center gap-1.5 transition-colors"
+        >
+          <ArrowLeft size={15} /> Back
+        </button>
+        <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 flex items-center justify-between gap-3 text-sm">
+          <div className="flex items-center gap-2 text-destructive">
+            <AlertTriangle size={15} className="shrink-0" />
+            <span>{trips.error ?? 'Failed to load member.'}</span>
+          </div>
+          <button
+            onClick={() => tripId && trips.fetchTrip(tripId)}
+            className="text-xs font-medium text-primary hover:opacity-70 transition-opacity shrink-0"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    )
+  }
 
   const memberIndex = trip.members.findIndex(m => m.userId === memberId)
   const member = trip.members[memberIndex]

@@ -7,6 +7,7 @@ import { ArrowLeft, UserRound } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
 import SplitEditor from '@/components/expense/SplitEditor'
 import CustomSelect from '@/components/shared/CustomSelect'
+import { Skeleton } from '@/components/shared/Skeleton'
 import type { ExpenseSplit, SplitType, ExpenseCategory } from '@/types'
 
 interface ExpenseFormValues {
@@ -129,8 +130,27 @@ const AddExpense = observer(() => {
 
   if (!trip) {
     return (
-      <div className="flex items-center justify-center py-20">
-        <p className="text-muted-foreground">Loading...</p>
+      <div className="w-full max-w-3xl mx-auto">
+        <Skeleton className="h-4 w-24 mb-6" />
+        <Skeleton className="h-8 w-40 mb-8" />
+        <div className="space-y-6">
+          <Skeleton className="h-4 w-48" />
+          <Skeleton className="h-10 w-full rounded-lg" />
+          <div className="flex gap-3">
+            <Skeleton className="h-10 flex-1 rounded-lg" />
+            <Skeleton className="h-10 w-32 rounded-lg" />
+          </div>
+          <div className="flex gap-3">
+            <Skeleton className="h-10 flex-1 rounded-lg" />
+            <Skeleton className="h-10 flex-1 rounded-lg" />
+          </div>
+          <Skeleton className="h-32 w-full rounded-lg" />
+          <Skeleton className="h-16 w-full rounded-lg" />
+          <div className="flex gap-3 pt-2">
+            <Skeleton className="h-10 flex-1 rounded-lg" />
+            <Skeleton className="h-10 w-24 rounded-lg" />
+          </div>
+        </div>
       </div>
     )
   }

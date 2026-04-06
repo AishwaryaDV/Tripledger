@@ -61,7 +61,6 @@ const TripDetail = observer(() => {
   const [isAddingNote, setIsAddingNote] = useState(false)
   const [deleteExpenseId, setDeleteExpenseId] = useState<string | null>(null)
   const [showMoreOptions, setShowMoreOptions] = useState(false)
-  const [showFilterPanel, setShowFilterPanel] = useState(false)
 
   const copyJoinCode = (code: string) => {
     navigator.clipboard.writeText(code)
@@ -418,59 +417,53 @@ const TripDetail = observer(() => {
 
         return (
           <div className="space-y-3">
-            {/* ── Mobile filter dropdown ── */}
+            {/* ── Mobile filter row ── */}
             <div className="sm:hidden">
               <div className="flex items-center gap-2">
-                <button
-                  onClick={() => setShowFilterPanel(v => !v)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-xs font-medium hover:bg-muted transition-colors"
-                >
-                  <BarChart2 size={13} />
-                  Filters
-                  {activeFilterCount > 0 && (
-                    <span className="ml-0.5 bg-primary text-primary-foreground rounded-full w-4 h-4 flex items-center justify-center text-[10px] font-bold">
-                      {activeFilterCount}
-                    </span>
-                  )}
-                </button>
+                <div className="flex-1 min-w-0">
+                  <CustomSelect
+                    value={sortOrder}
+                    onChange={v => setSortOrder(v as SortOrder)}
+                    options={[
+                      { value: 'newest',  label: 'Newest' },
+                      { value: 'oldest',  label: 'Oldest' },
+                      { value: 'highest', label: 'Highest' },
+                      { value: 'lowest',  label: 'Lowest' },
+                    ]}
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <CustomSelect
+                    value={paidByFilter}
+                    onChange={setPaidByFilter}
+                    options={[
+                      { value: 'all', label: 'Anyone' },
+                      ...trip.members.map(m => ({ value: m.userId, label: m.displayName })),
+                    ]}
+                    className="w-full"
+                  />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <CustomSelect
+                    value={categoryFilter.length === 1 ? categoryFilter[0] : 'all'}
+                    onChange={v => setCategoryFilter(v === 'all' ? [] : [v as ExpenseCategory])}
+                    options={[
+                      { value: 'all', label: 'All types' },
+                      ...CATEGORY_FILTERS.map(f => ({ value: f.value, label: f.label })),
+                    ]}
+                    className="w-full"
+                  />
+                </div>
                 {isFiltered && (
                   <button
                     onClick={() => { setCategoryFilter([]); setPaidByFilter('all'); setSortOrder('newest'); setSelfFilter(false) }}
-                    className="text-xs text-destructive hover:opacity-70 transition-opacity font-medium"
+                    className="text-xs text-destructive hover:opacity-70 transition-opacity font-medium shrink-0"
                   >
                     Clear
                   </button>
                 )}
               </div>
-
-              {showFilterPanel && (
-                <div className="mt-2 rounded-xl border bg-card p-4 space-y-4">
-                  <div className="space-y-1.5">
-                    <p className="text-xs font-medium text-muted-foreground">Sort</p>
-                    <CustomSelect
-                      value={sortOrder}
-                      onChange={v => setSortOrder(v as SortOrder)}
-                      options={[
-                        { value: 'newest',  label: 'Newest first' },
-                        { value: 'oldest',  label: 'Oldest first' },
-                        { value: 'highest', label: 'Highest amount' },
-                        { value: 'lowest',  label: 'Lowest amount' },
-                      ]}
-                    />
-                  </div>
-                  <div className="space-y-1.5">
-                    <p className="text-xs font-medium text-muted-foreground">Paid by</p>
-                    <CustomSelect
-                      value={paidByFilter}
-                      onChange={setPaidByFilter}
-                      options={[
-                        { value: 'all', label: 'Anyone' },
-                        ...trip.members.map(m => ({ value: m.userId, label: m.displayName })),
-                      ]}
-                    />
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* ── Desktop filter bar (pills) ── */}

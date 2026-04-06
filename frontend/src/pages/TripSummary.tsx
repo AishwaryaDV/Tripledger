@@ -17,6 +17,7 @@ import {
 import { toJS } from 'mobx'
 import { useStore } from '@/hooks/useStore'
 import { formatCurrency, formatDate } from '@/lib/utils'
+import { Skeleton, SpendingRowSkeleton } from '@/components/shared/Skeleton'
 import type { CircleType, ExpenseCategory } from '@/types'
 
 // ── Config ───────────────────────────────────────────────────────────────────
@@ -72,7 +73,57 @@ const TripSummary = observer(() => {
   if (trips.isLoading || expenses.isLoading || !trip || trip.id !== id) {
     return (
       <div className="w-full max-w-3xl mx-auto pt-4 space-y-4">
-        {[1, 2, 3].map(i => <div key={i} className="h-28 rounded-xl bg-muted animate-pulse" />)}
+        {/* Back + title */}
+        <Skeleton className="h-4 w-28" />
+        <div className="space-y-2 pb-2">
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="h-3.5 w-64" />
+        </div>
+        {/* Export buttons */}
+        <div className="flex gap-2">
+          <Skeleton className="h-9 w-28 rounded-lg" />
+          <Skeleton className="h-9 w-28 rounded-lg" />
+        </div>
+        {/* Financial overview card */}
+        <div className="rounded-xl border bg-card p-5 space-y-4">
+          <Skeleton className="h-3 w-36" />
+          <div className="grid grid-cols-3 gap-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="flex items-start gap-3">
+                <Skeleton className="w-8 h-8 rounded-lg shrink-0" />
+                <div className="space-y-1.5 flex-1">
+                  <Skeleton className="h-3 w-14" />
+                  <Skeleton className="h-5 w-20" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+        {/* Category breakdown card */}
+        <div className="rounded-xl border bg-card p-5 space-y-4">
+          <Skeleton className="h-3 w-40" />
+          <div className="flex gap-6 items-center">
+            <Skeleton className="w-[180px] h-[180px] rounded-full shrink-0" />
+            <div className="flex-1 space-y-3">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="space-y-1.5">
+                  <div className="flex justify-between">
+                    <Skeleton className="h-3.5 w-24" />
+                    <Skeleton className="h-3.5 w-16" />
+                  </div>
+                  <Skeleton className="h-1.5 w-full rounded-full" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+        {/* Per-person card */}
+        <div className="rounded-xl border bg-card p-5 space-y-3">
+          <Skeleton className="h-3 w-24" />
+          <SpendingRowSkeleton />
+          <SpendingRowSkeleton />
+          <SpendingRowSkeleton />
+        </div>
       </div>
     )
   }
