@@ -2,11 +2,13 @@
 import { useState, useRef, useEffect } from 'react'
 import { observer } from 'mobx-react-lite'
 import { useNavigate } from 'react-router-dom'
-import { Settings, LogOut, User, X, ChevronDown, Pencil, Check, Camera, MonitorSmartphone, Trash2, Eye, EyeOff } from 'lucide-react'
+import { Settings, LogOut, User, X, Pencil, Check, Camera, MonitorSmartphone, Trash2, Eye, EyeOff } from 'lucide-react'
+
 import { toast } from 'sonner'
 import { Link } from 'react-router-dom'
 import { useStore } from '../../hooks/useStore'
 import { supabase } from '../../lib/supabase'
+import CustomSelect from './CustomSelect'
 
 const PRONOUN_OPTIONS = [
   '', 'he/him', 'she/her', 'they/them', 'he/they', 'she/they', 'any pronouns', 'prefer not to say',
@@ -267,19 +269,16 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
               <span className="text-xs text-muted-foreground font-normal">(optional)</span>
             </label>
             <div className="flex gap-2">
-              <div className="relative flex-1">
-                <select
-                  value={pronouns}
-                  onChange={e => setPronouns(e.target.value)}
-                  className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary appearance-none pr-8"
-                >
-                  <option value="">Select pronouns</option>
-                  {PRONOUN_OPTIONS.filter(p => p).map(p => (
-                    <option key={p} value={p}>{p}</option>
-                  ))}
-                </select>
-                <ChevronDown size={13} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-              </div>
+              <CustomSelect
+                value={pronouns}
+                onChange={setPronouns}
+                options={[
+                  { value: '', label: 'Select pronouns' },
+                  ...PRONOUN_OPTIONS.filter(p => p).map(p => ({ value: p, label: p })),
+                ]}
+                className="flex-1"
+                buttonClassName="py-2 text-sm"
+              />
               <button
                 onClick={handleUpdatePronouns}
                 disabled={pronounsLoading || pronouns === validPronouns}
@@ -299,16 +298,14 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
 
           {/* Password */}
           <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <label className="text-sm font-medium text-muted-foreground">Password</label>
-              <button
-                onClick={() => setShowPasswordModal(true)}
-                className="text-xs text-primary font-medium hover:opacity-70 transition-opacity"
-              >
-                Change password
-              </button>
-            </div>
-            <p className="text-sm px-3 py-2 border rounded-lg bg-muted/30 text-muted-foreground tracking-widest">••••••••</p>
+            <label className="text-sm font-medium text-muted-foreground">Password</label>
+            <button
+              onClick={() => setShowPasswordModal(true)}
+              className="w-full flex items-center justify-between px-3 py-2 border rounded-lg bg-muted/30 hover:bg-muted transition-colors"
+            >
+              <span className="text-sm text-muted-foreground tracking-widest">••••••••</span>
+              <span className="text-xs text-primary font-medium">Change</span>
+            </button>
           </div>
 
           <div className="border-t" />

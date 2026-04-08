@@ -4,18 +4,12 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
 import { ArrowLeft, CheckCircle2, AlertTriangle, PartyPopper } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
-import { formatCurrency, formatDate } from '@/lib/utils'
-
-const MEMBER_COLORS = ['#818cf8','#f472b6','#34d399','#fb923c','#60a5fa','#a78bfa','#facc15','#2dd4bf']
+import { formatCurrency } from '@/lib/utils'
 import { BalanceRowSkeleton } from '@/components/shared/Skeleton'
 import type { SettlementSuggestion } from '@/types'
 
-type Tab = 'suggestions' | 'activity'
+const MEMBER_COLORS = ['#818cf8','#f472b6','#34d399','#fb923c','#60a5fa','#a78bfa','#facc15','#2dd4bf']
 
-const TABS: { key: Tab; label: string }[] = [
-  { key: 'suggestions', label: 'Suggested Payments' },
-  { key: 'activity',    label: 'Activity' },
-]
 
 const Settle = observer(() => {
   const { id } = useParams<{ id: string }>()
@@ -23,7 +17,6 @@ const Settle = observer(() => {
   const { trips, balances, auth } = useStore()
 
 
-  const [activeTab, setActiveTab] = useState<Tab>('suggestions')
   const [openFormIndex, setOpenFormIndex] = useState<number | null>(null)
   const [formAmount, setFormAmount] = useState('')
   const [formIsPartial, setFormIsPartial] = useState(false)
@@ -204,36 +197,9 @@ const Settle = observer(() => {
         </div>
       )}
 
-      {/* Tabs */}
-      <div className="flex border-b mb-6">
-        {TABS.map(tab => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={`flex-1 py-2 text-sm font-medium transition-colors relative ${
-              activeTab === tab.key
-                ? 'text-primary'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            {tab.label}
-            {tab.key === 'activity' && balances.settlements.length > 0 && (
-              <span className="ml-1.5 text-xs bg-muted px-1.5 py-0.5 rounded-full">
-                {balances.settlements.length}
-              </span>
-            )}
-            {activeTab === tab.key && (
-              <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
-            )}
-          </button>
-        ))}
-      </div>
-
-      {/* Suggested Payments tab */}
-      {activeTab === 'suggestions' && (
-        <div className="space-y-3">
-          {balances.suggestions.length === 0 ? (
+      {/* Suggested Payments */}
+      <div className="space-y-3">
+        {balances.suggestions.length === 0 ? (
             <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
               Everyone is settled up!
             </div>
@@ -323,70 +289,6 @@ const Settle = observer(() => {
             ))
           )}
         </div>
-      )}
-
-      {/* Activity tab */}
-      {activeTab === 'activity' && (
-        <div className="space-y-2">
-          {balances.settlements.length === 0 ? (
-            <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
-              No payments recorded yet.
-            </div>
-          ) : (
-            [...balances.settlements]
-              .sort((a, b) =>
-                new Date(b.confirmedAt ?? '').getTime() - new Date(a.confirmedAt ?? '').getTime()
-              )
-              .map(s => (
-                <div
-                  key={s.id}
-                  className={`flex items-start justify-between p-3 rounded-lg border ${
-                    s.isPartial ? 'bg-yellow-50/50 border-yellow-100' : 'bg-card'
-                  }`}
-                >
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span
-                        className="w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-semibold text-white shrink-0"
-                        style={{ backgroundColor: MEMBER_COLORS[(trip?.members.findIndex(m => m.userId === s.fromUserId) ?? 0) % MEMBER_COLORS.length] }}
-                      >
-                        {getName(s.fromUserId).charAt(0).toUpperCase()}
-                      </span>
-                      <span className="text-sm font-medium">{getName(s.fromUserId)}</span>
-                      <span className="text-xs text-muted-foreground">paid</span>
-                      <span
-                        className="w-5 h-5 rounded-full inline-flex items-center justify-center text-xs font-semibold text-white shrink-0"
-                        style={{ backgroundColor: MEMBER_COLORS[(trip?.members.findIndex(m => m.userId === s.toUserId) ?? 0) % MEMBER_COLORS.length] }}
-                      >
-                        {getName(s.toUserId).charAt(0).toUpperCase()}
-                      </span>
-                      <span className="text-sm font-medium">{getName(s.toUserId)}</span>
-                      {s.isPartial ? (
-                        <span className="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full font-medium border border-yellow-200">
-                          Partial
-                        </span>
-                      ) : (
-                        <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full font-medium border border-green-200">
-                          Paid
-                        </span>
-                      )}
-                    </div>
-                    {s.confirmedAt && (
-                      <p className="text-xs text-muted-foreground mt-0.5">{formatDate(s.confirmedAt)}</p>
-                    )}
-                  </div>
-                  <div className="text-right shrink-0 ml-4">
-                    <span className={`text-sm font-semibold ${
-                      s.isPartial ? 'text-yellow-700' : 'text-green-600'
-                    }`}>
-                      {formatCurrency(s.amount, s.currency)}
-                    </span>
-                  </div>
-                </div>
-              ))
-          )}
-        </div>
-      )}
 
     </div>
   )

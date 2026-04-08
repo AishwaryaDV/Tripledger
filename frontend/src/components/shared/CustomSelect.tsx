@@ -12,9 +12,10 @@ interface CustomSelectProps {
   onChange: (value: string) => void
   options: SelectOption[]
   className?: string
+  buttonClassName?: string
 }
 
-const CustomSelect = ({ value, onChange, options, className = '' }: CustomSelectProps) => {
+const CustomSelect = ({ value, onChange, options, className = '', buttonClassName = '' }: CustomSelectProps) => {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -43,7 +44,7 @@ const CustomSelect = ({ value, onChange, options, className = '' }: CustomSelect
         onClick={() => setOpen(v => !v)}
         className={`w-full flex items-center gap-2 border rounded-lg pl-3 pr-2.5 py-1.5 text-xs bg-background transition-colors focus:outline-none focus:ring-2 focus:ring-primary ${
           open ? 'border-primary ring-2 ring-primary' : 'hover:border-primary/50'
-        }`}
+        } ${buttonClassName}`}
       >
         <span className="text-foreground">{selected?.label}</span>
         <ChevronDown

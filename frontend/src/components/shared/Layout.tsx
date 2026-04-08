@@ -1,9 +1,13 @@
 import { observer } from 'mobx-react-lite'
 import { Outlet, Link } from 'react-router-dom'
+import { Moon, Sun } from 'lucide-react'
 import Calculator from './Calculator'
 import UserMenu from './UserMenu'
+import { useTheme } from '@/hooks/useTheme'
 
 const Layout = observer(() => {
+  const { theme, toggle } = useTheme()
+
   return (
     <div className="min-h-screen flex flex-col bg-background">
       {/* Top Navigation Bar */}
@@ -14,8 +18,18 @@ const Layout = observer(() => {
             <h1 className="text-2xl font-bold text-foreground">TripLedger</h1>
           </Link>
 
-          {/* User Menu - Right */}
-          <UserMenu />
+          {/* Right: theme toggle + user menu */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggle}
+              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus:outline-none"
+              aria-label="Toggle dark mode"
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <UserMenu />
+          </div>
         </div>
       </header>
 
@@ -26,8 +40,7 @@ const Layout = observer(() => {
 
       {/* Footer */}
       <footer className="mt-auto">
-        <div className="container mx-auto px-4 py-4 flex items-center justify-center gap-2">
-          <img src="/adv-logo.png" alt="adv logo" className="h-5 w-auto opacity-50" />
+        <div className="container mx-auto px-4 py-4 text-center">
           <span className="text-xs text-foreground/50">TripLedger © {new Date().getFullYear()}</span>
         </div>
       </footer>

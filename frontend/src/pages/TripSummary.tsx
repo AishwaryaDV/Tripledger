@@ -1,5 +1,5 @@
 // src/pages/TripSummary.tsx
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
 import {
@@ -58,6 +58,14 @@ const TripSummary = observer(() => {
   const navigate  = useNavigate()
   const { trips, expenses, balances } = useStore()
   const [copied, setCopied] = useState(false)
+  const dailyScrollRef = useRef<HTMLDivElement>(null)
+
+  // Scroll daily chart to the right (most recent) on mount
+  useEffect(() => {
+    if (dailyScrollRef.current) {
+      dailyScrollRef.current.scrollLeft = dailyScrollRef.current.scrollWidth
+    }
+  }, [dailyScrollRef.current])
 
   useEffect(() => {
     if (!id) return
@@ -183,17 +191,24 @@ const TripSummary = observer(() => {
   const topCategory = categoryData[0]
 
   // Daily spending chart data
-  const dailyData = Object.entries(
-    allExpenses.reduce((acc, e) => {
-      acc[e.expenseDate] = (acc[e.expenseDate] ?? 0) + e.amountBase
-      return acc
-    }, {} as Record<string, number>)
-  )
-    .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, total]) => ({
-      date: new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(date + 'T12:00:00')),
-      total,
-    }))
+  // Daily spending — zero-fill every day in the range, not just days with expenses
+  const dailyData = (() => {
+    if (!firstDate || !lastDate) return []
+    const byDate: Record<string, number> = {}
+    allExpenses.forEach(e => { byDate[e.expenseDate] = (byDate[e.expenseDate] ?? 0) + e.amountBase })
+    const result: { date: string; total: number }[] = []
+    const cur = new Date(firstDate + 'T12:00:00')
+    const end = new Date(lastDate  + 'T12:00:00')
+    while (cur <= end) {
+      const key = cur.toISOString().split('T')[0]
+      result.push({
+        date: new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(cur),
+        total: byDate[key] ?? 0,
+      })
+      cur.setDate(cur.getDate() + 1)
+    }
+    return result
+  })()
 
   // Per-person chart data
   const memberContributions = toJS(trip.members)
@@ -326,32 +341,32 @@ const TripSummary = observer(() => {
           <div className="rounded-xl border bg-card p-5">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-4">Financial Overview</h3>
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                   <Wallet size={15} className="text-primary" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Total spend</p>
-                  <p className="text-lg font-bold mt-0.5">{formatCurrency(totalSpend, trip.baseCurrency)}</p>
+                  <p className="text-base font-bold mt-0.5 break-all leading-tight">{formatCurrency(totalSpend, trip.baseCurrency)}</p>
                 </div>
               </div>
-              <div className="flex items-start gap-3">
-                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+              <div className="flex items-start gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0 mt-0.5">
                   <Users size={15} className="text-blue-600" />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className="text-xs text-muted-foreground">Per person</p>
-                  <p className="text-lg font-bold mt-0.5">{formatCurrency(avgPerPerson, trip.baseCurrency)}</p>
+                  <p className="text-base font-bold mt-0.5 break-all leading-tight">{formatCurrency(avgPerPerson, trip.baseCurrency)}</p>
                 </div>
               </div>
               {dayCount > 1 && (
-                <div className="flex items-start gap-3">
-                  <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center shrink-0">
+                <div className="flex items-start gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center shrink-0 mt-0.5">
                     <CalendarDays size={15} className="text-green-600" />
                   </div>
-                  <div>
+                  <div className="min-w-0">
                     <p className="text-xs text-muted-foreground">Per day</p>
-                    <p className="text-lg font-bold mt-0.5">{formatCurrency(avgPerDay, trip.baseCurrency)}</p>
+                    <p className="text-base font-bold mt-0.5 break-all leading-tight">{formatCurrency(avgPerDay, trip.baseCurrency)}</p>
                   </div>
                 </div>
               )}
@@ -435,34 +450,49 @@ const TripSummary = observer(() => {
           </div>
 
           {/* ── Daily Spending ── */}
-          {dailyData.length > 1 && (
-            <div className="rounded-xl border bg-card p-5">
-              <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-4">Spending by Day</h3>
-              <ResponsiveContainer width="100%" height={160}>
-                <BarChart data={dailyData} margin={{ top: 4, right: 4, left: 4, bottom: 4 }}>
-                  <defs>
-                    <linearGradient id="dailyGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#818cf8" stopOpacity={0.95} />
-                      <stop offset="100%" stopColor="#c7d2fe" stopOpacity={0.5} />
-                    </linearGradient>
-                  </defs>
-                  <XAxis
-                    dataKey="date"
-                    tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
-                    axisLine={false}
-                    tickLine={false}
-                  />
-                  <YAxis hide />
-                  <Tooltip
-                    contentStyle={tooltipStyle}
-                    formatter={(v: number) => [formatCurrency(v, trip.baseCurrency), 'Spend']}
-                    cursor={{ fill: 'hsl(var(--muted))', radius: 4 }}
-                  />
-                  <Bar dataKey="total" fill="url(#dailyGradient)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
+          {dailyData.length > 0 && (() => {
+            const BAR_W = window.innerWidth < 640 ? 64 : window.innerWidth < 1024 ? 52 : 44
+            const chartW = Math.max(dailyData.length * BAR_W, 280)
+            return (
+              <div className="rounded-xl border bg-card p-5">
+                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-4">Spending by Day</h3>
+                <div
+                  ref={dailyScrollRef}
+                  className="overflow-x-auto"
+                  style={{ scrollbarWidth: 'none' }}
+                >
+                  <div style={{ width: chartW }}>
+                    <ResponsiveContainer width="100%" height={160}>
+                      <BarChart data={dailyData} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
+                        <defs>
+                          <linearGradient id="dailyGradient" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="0%" stopColor="#818cf8" stopOpacity={0.95} />
+                            <stop offset="100%" stopColor="#c7d2fe" stopOpacity={0.5} />
+                          </linearGradient>
+                        </defs>
+                        <XAxis
+                          dataKey="date"
+                          tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+                          axisLine={false}
+                          tickLine={false}
+                        />
+                        <YAxis hide />
+                        <Tooltip
+                          contentStyle={tooltipStyle}
+                          formatter={(v: number) => [formatCurrency(v, trip.baseCurrency), 'Spend']}
+                          cursor={{ fill: 'hsl(var(--muted))', radius: 4 }}
+                        />
+                        <Bar dataKey="total" fill="url(#dailyGradient)" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+                {dailyData.length > 3 && (
+                  <p className="text-xs text-muted-foreground text-center mt-2">← scroll to see all days →</p>
+                )}
+              </div>
+            )
+          })()}
 
           {/* ── Per-Person Contribution ── */}
           <div className="rounded-xl border bg-card p-5">

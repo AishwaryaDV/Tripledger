@@ -33,15 +33,16 @@ import MoreOptionsSheet from '@/components/trip/MoreOptionsSheet'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { ExpenseCardSkeleton, BalanceRowSkeleton, NoteRowSkeleton, SpendingRowSkeleton } from '@/components/shared/Skeleton'
 
-type Tab = 'expenses' | 'balances' | 'suggestions' | 'spending' | 'notes' | 'members'
+type Tab = 'expenses' | 'balances' | 'suggestions' | 'spending' | 'notes' | 'members' | 'activity'
 
-const TABS: { key: Tab; label: string }[] = [
+const TABS: { key: Tab; label: string; locked?: boolean }[] = [
   { key: 'expenses',    label: 'Expenses' },
   { key: 'balances',    label: 'Balances' },
   { key: 'suggestions', label: 'Suggestions' },
   { key: 'spending',    label: 'Spending' },
   { key: 'notes',       label: 'Notes' },
   { key: 'members',     label: 'Members' },
+  { key: 'activity',    label: 'Activity', locked: true },
 ]
 
 const TripDetail = observer(() => {
@@ -357,14 +358,22 @@ const TripDetail = observer(() => {
         {TABS.map(tab => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => !tab.locked && setActiveTab(tab.key)}
+            disabled={tab.locked}
             className={`flex-1 min-w-max py-2.5 px-4 text-sm font-medium transition-colors relative whitespace-nowrap ${
-              activeTab === tab.key
+              tab.locked
+                ? 'text-muted-foreground/40 cursor-not-allowed'
+                : activeTab === tab.key
                 ? 'text-primary'
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
             {tab.label}
+            {tab.locked && (
+              <span className="ml-1.5 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full font-normal">
+                soon
+              </span>
+            )}
             {tab.key === 'expenses' && (
               <span className="ml-1.5 text-xs bg-muted px-1.5 py-0.5 rounded-full">
                 {expenses.expenses.length}
@@ -375,7 +384,7 @@ const TripDetail = observer(() => {
                 {notes.notes.length}
               </span>
             )}
-            {activeTab === tab.key && (
+            {!tab.locked && activeTab === tab.key && (
               <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
             )}
           </button>
