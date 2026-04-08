@@ -804,6 +804,11 @@ const TripDetail = observer(() => {
 
       {activeTab === 'members' && (
         <div className="space-y-2">
+          {trip.members.length === 0 && (
+            <div className="rounded-xl border border-dashed p-8 text-center text-muted-foreground text-sm">
+              No members found.
+            </div>
+          )}
           {trip.members.map((member, i) => {
             const isMe = member.userId === auth.currentUser?.id
             const color = MEMBER_COLORS[i % MEMBER_COLORS.length]

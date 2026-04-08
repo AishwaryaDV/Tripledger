@@ -133,6 +133,9 @@ const Settle = observer(() => {
           Balance Overview
         </h3>
         <div className="space-y-2">
+          {balances.balances.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-2">No balances yet — add some expenses first.</p>
+          )}
           {balances.balances.map(b => {
             const isMe = b.userId === currentUserId
             return (
