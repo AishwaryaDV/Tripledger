@@ -1,6 +1,8 @@
 // src/pages/Landing.tsx
 import { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Moon, Sun } from 'lucide-react'
+import { useTheme } from '@/hooks/useTheme'
 
 // ── Onboarding slides ────────────────────────────────────────────────────────
 const SLIDES = [
@@ -57,6 +59,7 @@ const BOX_CONFIG = [
 // ── Mobile onboarding carousel ───────────────────────────────────────────────
 const MobileOnboarding = () => {
   const navigate = useNavigate()
+  const { theme, toggle } = useTheme()
   const [current, setCurrent] = useState(0)
   const touchStartX = useRef(0)
   const touchEndX = useRef(0)
@@ -76,11 +79,21 @@ const MobileOnboarding = () => {
 
   return (
     <div
-      className="fixed inset-0 flex flex-col select-none px-8 transition-all duration-700 overflow-y-auto"
+      className="fixed inset-0 flex flex-col select-none px-8 transition-all duration-700 overflow-y-auto relative"
       style={{ background: slide.bg }}
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
     >
+      {/* Theme toggle — top right */}
+      <button
+        type="button"
+        onClick={toggle}
+        className="absolute top-4 right-4 p-2 rounded-lg text-foreground/60 hover:text-foreground hover:bg-black/10 transition-colors focus:outline-none z-10"
+        aria-label="Toggle dark mode"
+      >
+        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+      </button>
+
       {/* Text — top, left justified */}
       <div key={`text-${current}`} className="pt-16 pb-6">
         <h1
@@ -208,6 +221,7 @@ const FEATURES: Record<FeatureTab, { heading: string; description: string; point
 
 const DesktopLanding = () => {
   const navigate = useNavigate()
+  const { theme, toggle } = useTheme()
   const [activeFeature, setActiveFeature] = useState<FeatureTab>('split')
   const feature = FEATURES[activeFeature]
 
@@ -216,12 +230,22 @@ const DesktopLanding = () => {
       <header className="border-b bg-card">
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-bold text-primary">TripLedger</h1>
-          <button
-            onClick={() => navigate('/login')}
-            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
-          >
-            Open App
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={toggle}
+              className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors focus:outline-none"
+              aria-label="Toggle dark mode"
+            >
+              {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+            </button>
+            <button
+              onClick={() => navigate('/login')}
+              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+            >
+              Open App
+            </button>
+          </div>
         </div>
       </header>
 
