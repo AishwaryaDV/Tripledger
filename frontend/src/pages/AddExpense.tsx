@@ -1,13 +1,14 @@
 // src/pages/AddExpense.tsx
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { observer } from 'mobx-react-lite'
-import { ArrowLeft, UserRound } from 'lucide-react'
+import { ArrowLeft, Camera, Sparkles, UserRound } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
 import SplitEditor from '@/components/expense/SplitEditor'
 import CustomSelect from '@/components/shared/CustomSelect'
 import { Skeleton } from '@/components/shared/Skeleton'
+import { api } from '@/lib/api'
 import type { ExpenseSplit, SplitType, ExpenseCategory } from '@/types'
 
 interface ExpenseFormValues {
@@ -39,6 +40,10 @@ const AddExpense = observer(() => {
   const [splitKey, setSplitKey] = useState(0)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isSelfExpense, setIsSelfExpense] = useState(false)
+  const [isScanning, setIsScanning] = useState(false)
+  const [scanError, setScanError] = useState<string | null>(null)
+  const [wasScanned, setWasScanned] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const trip = trips.currentTrip
   const currentUserId = auth.currentUser?.id ?? ''
@@ -90,6 +95,41 @@ const AddExpense = observer(() => {
   const onSplitChange = (newSplits: ExpenseSplit[], newSplitType: SplitType) => {
     setSplits(newSplits)
     setSplitType(newSplitType)
+  }
+
+  const onReceiptFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    e.target.value = ''
+
+    setScanError(null)
+    setIsScanning(true)
+    setWasScanned(false)
+
+    try {
+      const form = new FormData()
+      form.append('file', file)
+      const { data } = await api.post('/ai/parse-receipt', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      })
+
+      if (data.title)    setValue('title', data.title)
+      if (data.amount)   setValue('amount', data.amount)
+      if (data.date)     setValue('expenseDate', data.date)
+      if (data.category) setValue('category', data.category)
+      if (data.notes)    setValue('notes', data.notes)
+
+      // Only set currency if it's one of the trip's currencies
+      if (data.currency && trip?.currencies.includes(data.currency)) {
+        setValue('currency', data.currency)
+      }
+
+      setWasScanned(true)
+    } catch (err: any) {
+      setScanError(err?.response?.data?.detail ?? 'Could not read the receipt — try a clearer photo')
+    } finally {
+      setIsScanning(false)
+    }
   }
 
   const onSubmit = async (data: ExpenseFormValues) => {
@@ -168,7 +208,44 @@ const AddExpense = observer(() => {
         Back to {trip.name}
       </button>
 
-      <h2 className="text-3xl font-bold mb-8">{isEditing ? 'Edit Expense' : 'Add Expense'}</h2>
+      <div className="flex items-center justify-between mb-8">
+        <h2 className="text-3xl font-bold">{isEditing ? 'Edit Expense' : 'Add Expense'}</h2>
+
+        {!isEditing && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={onReceiptFile}
+            />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={isScanning}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
+            >
+              <Camera size={15} />
+              {isScanning ? 'Reading...' : 'Scan Receipt'}
+            </button>
+          </>
+        )}
+      </div>
+
+      {wasScanned && (
+        <div className="flex items-center gap-1.5 text-xs text-emerald-600 bg-emerald-50 dark:bg-emerald-950/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 rounded-lg px-3 py-2 mb-4">
+          <Sparkles size={13} />
+          Filled from receipt — review and adjust before saving
+        </div>
+      )}
+
+      {scanError && (
+        <div className="text-xs text-destructive bg-destructive/10 border border-destructive/20 rounded-lg px-3 py-2 mb-4">
+          {scanError}
+        </div>
+      )}
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
 

@@ -9,10 +9,7 @@ export class AuthStore {
   currentUser: User | null = null
   isLoading = true // true on first load while session is checked
   error: string | null = null
-  private _root: RootStore // reserved for cross-store access
-
-  constructor(root: RootStore) {
-    this._root = root
+  constructor(_root: RootStore) {
     makeAutoObservable(this)
     this.init()
   }
@@ -148,7 +145,7 @@ export class AuthStore {
       headers: { Authorization: `Bearer ${session.access_token}` }
     })
     runInAction(() => {
-      if (this.currentUser) this.currentUser = { ...this.currentUser, avatarUrl: avatarUrl || null }
+      if (this.currentUser) this.currentUser = { ...this.currentUser, avatarUrl: avatarUrl || undefined }
     })
   }
 

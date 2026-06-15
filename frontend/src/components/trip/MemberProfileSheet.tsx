@@ -16,7 +16,6 @@ interface Props {
   memberIndex: number
   allMembers: TripMember[]
   tripId: string
-  tripName: string
   baseCurrency: string
   balance: Balance | undefined
   suggestions: SettlementSuggestion[]
@@ -29,7 +28,6 @@ const MemberProfileSheet = observer(({
   memberIndex,
   allMembers,
   tripId,
-  tripName,
   baseCurrency,
   balance,
   suggestions,

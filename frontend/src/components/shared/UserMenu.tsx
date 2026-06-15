@@ -454,10 +454,6 @@ const UserMenu = observer(() => {
 
   if (!auth.currentUser) return null
 
-  const { displayName, email, avatarUrl } = auth.currentUser
-  const initial = displayName.charAt(0).toUpperCase()
-  const avatarColor = MEMBER_COLORS[displayName.charCodeAt(0) % MEMBER_COLORS.length]
-
   const handleLogout = async () => {
     setGearOpen(false)
     await auth.logout()

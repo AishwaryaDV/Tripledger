@@ -415,7 +415,7 @@ const TripSummary = observer(() => {
                   </Pie>
                   <Tooltip
                     contentStyle={tooltipStyle}
-                    formatter={(v: number) => formatCurrency(v, trip.baseCurrency)}
+                    formatter={(v: number | undefined) => formatCurrency(v ?? 0, trip.baseCurrency)}
                   />
                 </PieChart>
               </div>
@@ -479,7 +479,7 @@ const TripSummary = observer(() => {
                         <YAxis hide />
                         <Tooltip
                           contentStyle={tooltipStyle}
-                          formatter={(v: number) => [formatCurrency(v, trip.baseCurrency), 'Spend']}
+                          formatter={(v: number | undefined) => [formatCurrency(v ?? 0, trip.baseCurrency), 'Spend']}
                           cursor={{ fill: 'hsl(var(--muted))', radius: 4 }}
                         />
                         <Bar dataKey="total" fill="url(#dailyGradient)" radius={[4, 4, 0, 0]} />
@@ -518,7 +518,7 @@ const TripSummary = observer(() => {
                     />
                     <Tooltip
                       contentStyle={tooltipStyle}
-                      formatter={(v: number) => [formatCurrency(v, trip.baseCurrency), 'Paid']}
+                      formatter={(v: number | undefined) => [formatCurrency(v ?? 0, trip.baseCurrency), 'Paid']}
                       cursor={{ fill: 'hsl(var(--muted))', radius: 4 }}
                     />
                     <Bar dataKey="paid" name="Paid" radius={[0, 4, 4, 0]}>

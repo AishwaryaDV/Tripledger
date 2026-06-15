@@ -77,6 +77,18 @@ const TripDetail = observer(() => {
     notes.fetchNotes(id)
   }, [id, trips, expenses, balances, notes])
 
+  useEffect(() => {
+    if (!id) return
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        expenses.fetchExpenses(id, true)
+        balances.fetchBalances(id)
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [id, expenses, balances])
+
   // Auto-fetch rates once trip is loaded (if stale or base changed)
   useEffect(() => {
     if (trips.currentTrip) {
@@ -421,8 +433,6 @@ const TripDetail = observer(() => {
           })
 
         const isFiltered = categoryFilter.length > 0 || paidByFilter !== 'all' || selfFilter
-
-        const activeFilterCount = (categoryFilter.length > 0 ? 1 : 0) + (paidByFilter !== 'all' ? 1 : 0) + (sortOrder !== 'newest' ? 1 : 0) + (selfFilter ? 1 : 0)
 
         return (
           <div className="space-y-3">
