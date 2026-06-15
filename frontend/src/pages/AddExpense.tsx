@@ -43,7 +43,9 @@ const AddExpense = observer(() => {
   const [isScanning, setIsScanning] = useState(false)
   const [scanError, setScanError] = useState<string | null>(null)
   const [wasScanned, setWasScanned] = useState(false)
+  const [aiCategory, setAiCategory] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const categoryDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const trip = trips.currentTrip
   const currentUserId = auth.currentUser?.id ?? ''
@@ -91,6 +93,31 @@ const AddExpense = observer(() => {
     setIsSelfExpense(expense.splits.length === 1 && expense.splits[0].userId === expense.paidBy)
     setSplitKey(k => k + 1) // remount SplitEditor with pre-filled data
   }, [isEditing, expenseId, expenses.expenses.length]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const watchedTitle = watch('title')
+
+  useEffect(() => {
+    if (isEditing) return
+    if (!watchedTitle || watchedTitle.trim().length < 3) return
+
+    if (categoryDebounceRef.current) clearTimeout(categoryDebounceRef.current)
+
+    categoryDebounceRef.current = setTimeout(async () => {
+      try {
+        const { data } = await api.post('/ai/suggest-category', { title: watchedTitle.trim() })
+        if (data.category) {
+          setValue('category', data.category)
+          setAiCategory(true)
+        }
+      } catch {
+        // fail silently — user keeps whatever category is selected
+      }
+    }, 500)
+
+    return () => {
+      if (categoryDebounceRef.current) clearTimeout(categoryDebounceRef.current)
+    }
+  }, [watchedTitle]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const onSplitChange = (newSplits: ExpenseSplit[], newSplitType: SplitType) => {
     setSplits(newSplits)
@@ -324,9 +351,18 @@ const AddExpense = observer(() => {
         {/* Category + Date */}
         <div className="flex gap-3">
           <div className="flex-1">
-            <label className="block text-sm font-medium mb-1.5">Category</label>
+            <label className="block text-sm font-medium mb-1.5 flex items-center gap-1.5">
+              Category
+              {aiCategory && (
+                <span className="flex items-center gap-0.5 text-xs font-normal text-emerald-600 dark:text-emerald-400">
+                  <Sparkles size={11} />
+                  AI
+                </span>
+              )}
+            </label>
             <select
               {...register('category')}
+              onChange={e => { setValue('category', e.target.value as ExpenseCategory); setAiCategory(false) }}
               className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
             >
               {CATEGORIES.map(c => (

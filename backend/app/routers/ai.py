@@ -27,6 +27,75 @@ RECEIPT_SCHEMA = json.dumps({
 })
 
 
+CATEGORY_SCHEMA = json.dumps({
+    "type": "object",
+    "properties": {
+        "category": {"type": "string", "enum": list(VALID_CATEGORIES)},
+    },
+    "required": ["category"],
+})
+
+
+class CategoryRequest(BaseModel):
+    title: str
+
+
+class CategoryResponse(BaseModel):
+    category: str
+
+
+@router.post("/suggest-category", response_model=CategoryResponse)
+async def suggest_category(
+    body: CategoryRequest,
+    current_user: User = Depends(get_current_user),
+):
+    if not body.title or len(body.title.strip()) < 3:
+        return CategoryResponse(category="other")
+
+    try:
+        claude = _claude_path()
+    except FileNotFoundError:
+        return CategoryResponse(category="other")
+
+    prompt = (
+        f'Categorise this expense title: "{body.title.strip()}"\n'
+        "Pick exactly one of: food, transport, accommodation, activities, other.\n"
+        "food = restaurants, groceries, drinks. transport = flights, taxis, fuel, trains. "
+        "accommodation = hotels, rentals, hostels. activities = tickets, tours, sports, entertainment. "
+        "other = everything else."
+    )
+
+    proc = await asyncio.create_subprocess_exec(
+        claude, "--print",
+        "--model", "haiku",
+        "--tools", "",
+        "--output-format", "json",
+        "--json-schema", CATEGORY_SCHEMA,
+        "--prompt", prompt,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+
+    try:
+        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=15)
+    except asyncio.TimeoutError:
+        proc.kill()
+        return CategoryResponse(category="other")
+
+    if proc.returncode != 0:
+        return CategoryResponse(category="other")
+
+    try:
+        result = json.loads(stdout.decode())
+        parsed = result.get("structured_output") or result
+        category = parsed.get("category", "other")
+        if category not in VALID_CATEGORIES:
+            category = "other"
+        return CategoryResponse(category=category)
+    except (json.JSONDecodeError, KeyError):
+        return CategoryResponse(category="other")
+
+
 class ReceiptParseResponse(BaseModel):
     title:    str | None = None
     amount:   float | None = None
