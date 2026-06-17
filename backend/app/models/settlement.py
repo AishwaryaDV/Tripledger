@@ -14,6 +14,6 @@ class Settlement(Base):
     to_user_id: Mapped[str] = mapped_column(String, ForeignKey("users.id"), nullable=False)
     amount: Mapped[float] = mapped_column(Numeric(12, 4), nullable=False)
     currency: Mapped[str] = mapped_column(String(3), nullable=False)
-    method: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    method: Mapped[str | None] = mapped_column(Text, nullable=True)
     is_partial: Mapped[bool] = mapped_column(Boolean, default=False)
     confirmed_at: Mapped[str] = mapped_column(TIMESTAMP(timezone=True), server_default=func.now())

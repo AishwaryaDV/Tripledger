@@ -30,6 +30,7 @@ import ExpenseCard from '@/components/expense/ExpenseCard'
 import BalanceSummary from '@/components/trip/BalanceSummary'
 import SettleSuggestions from '@/components/trip/SettleSuggestions'
 import MoreOptionsSheet from '@/components/trip/MoreOptionsSheet'
+import AiChatPanel from '@/components/trip/AiChatPanel'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { ExpenseCardSkeleton, BalanceRowSkeleton, NoteRowSkeleton, SpendingRowSkeleton } from '@/components/shared/Skeleton'
 
@@ -875,6 +876,16 @@ const TripDetail = observer(() => {
 
     {showMoreOptions && (
       <MoreOptionsSheet trip={trip} onClose={() => setShowMoreOptions(false)} />
+    )}
+
+    {id && (
+      <AiChatPanel
+        tripId={id}
+        onActionPerformed={() => {
+          expenses.fetchExpenses(id, true)
+          balances.fetchBalances(id)
+        }}
+      />
     )}
     </>
   )
