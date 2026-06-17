@@ -20,6 +20,7 @@ class MemberResponse(BaseModel):
     userId: str
     displayName: str
     role: str
+    avatarUrl: Optional[str] = None
 
 
 class TripResponse(BaseModel):

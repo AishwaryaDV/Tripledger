@@ -48,8 +48,8 @@ const AiChatPanel = ({ tripId, onActionPerformed }: Props) => {
       setMessages(res.data)
       setHasFetched(true)
     } catch {
-      // silent — empty history is fine
-      setHasFetched(true)
+      // hasFetched stays false so next open retries
+      // silent — will retry next open
     } finally {
       setIsLoadingHistory(false)
     }

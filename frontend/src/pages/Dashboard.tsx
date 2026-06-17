@@ -32,6 +32,14 @@ const Dashboard = observer(() => {
     trips.fetchTrips()
   }, [trips])
 
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') trips.fetchTrips(true)
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [trips])
+
   if (trips.isLoading && trips.trips.length === 0) {
     return (
       <div className="w-full max-w-3xl mx-auto space-y-3 pt-4">

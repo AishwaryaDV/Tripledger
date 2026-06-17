@@ -83,7 +83,10 @@ export class CurrencyStore {
       })
       this.saveToCache()
     } catch (e: any) {
-      runInAction(() => { this.error = e.message })
+      runInAction(() => {
+        this.error = e.message
+        this.updatedAt = null  // force retry next call
+      })
     } finally {
       runInAction(() => { this.isLoading = false })
     }

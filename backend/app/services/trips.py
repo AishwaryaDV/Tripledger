@@ -13,12 +13,21 @@ def _generate_join_code() -> str:
     return secrets.token_hex(3).upper()
 
 
-def _build_trip_response(trip: Trip) -> TripResponse:
+async def _get_user_avatars(db: AsyncSession, user_ids: list[str]) -> dict[str, str | None]:
+    if not user_ids:
+        return {}
+    result = await db.execute(select(User.id, User.avatar_url).where(User.id.in_(user_ids)))
+    return {row.id: row.avatar_url for row in result}
+
+
+def _build_trip_response(trip: Trip, user_avatars: dict[str, str | None] | None = None) -> TripResponse:
+    avatars = user_avatars or {}
     members = [
         MemberResponse(
             userId=m.user_id,
             displayName=m.display_name or m.user_id,
             role=m.role,
+            avatarUrl=avatars.get(m.user_id),
         )
         for m in trip.members
     ]
@@ -69,7 +78,9 @@ async def create_trip(db: AsyncSession, current_user: User, data: TripCreate) ->
     db.add(member)
     await db.commit()
     await db.refresh(trip)
-    return _build_trip_response(trip)
+    user_ids = [m.user_id for m in trip.members]
+    avatars = await _get_user_avatars(db, user_ids)
+    return _build_trip_response(trip, avatars)
 
 
 async def list_trips(db: AsyncSession, current_user: User) -> list[TripResponse]:
@@ -80,7 +91,9 @@ async def list_trips(db: AsyncSession, current_user: User) -> list[TripResponse]
         .order_by(Trip.created_at.desc())
     )
     trips = result.scalars().all()
-    return [_build_trip_response(t) for t in trips]
+    all_user_ids = list({m.user_id for t in trips for m in t.members})
+    avatars = await _get_user_avatars(db, all_user_ids)
+    return [_build_trip_response(t, avatars) for t in trips]
 
 
 async def get_trip(db: AsyncSession, trip_id: str, current_user: User) -> TripResponse:
@@ -100,7 +113,9 @@ async def get_trip(db: AsyncSession, trip_id: str, current_user: User) -> TripRe
     if not member_result.scalar_one_or_none():
         raise HTTPException(status_code=403, detail="Not a member of this trip")
 
-    return _build_trip_response(trip)
+    user_ids = [m.user_id for m in trip.members]
+    avatars = await _get_user_avatars(db, user_ids)
+    return _build_trip_response(trip, avatars)
 
 
 async def get_trip_by_code(db: AsyncSession, join_code: str) -> TripResponse:
@@ -110,7 +125,9 @@ async def get_trip_by_code(db: AsyncSession, join_code: str) -> TripResponse:
     if not trip:
         raise HTTPException(status_code=404, detail="Invalid join code")
 
-    return _build_trip_response(trip)
+    user_ids = [m.user_id for m in trip.members]
+    avatars = await _get_user_avatars(db, user_ids)
+    return _build_trip_response(trip, avatars)
 
 
 async def join_trip(db: AsyncSession, trip_id: str, current_user: User) -> TripResponse:
@@ -139,7 +156,9 @@ async def join_trip(db: AsyncSession, trip_id: str, current_user: User) -> TripR
     db.add(member)
     await db.commit()
     await db.refresh(trip)
-    return _build_trip_response(trip)
+    user_ids = [m.user_id for m in trip.members]
+    avatars = await _get_user_avatars(db, user_ids)
+    return _build_trip_response(trip, avatars)
 
 
 async def leave_trip(db: AsyncSession, trip_id: str, current_user: User) -> None:
@@ -184,7 +203,9 @@ async def patch_trip(db: AsyncSession, trip_id: str, current_user: User, is_sett
     trip.is_settled = is_settled
     await db.commit()
     await db.refresh(trip)
-    return _build_trip_response(trip)
+    user_ids = [m.user_id for m in trip.members]
+    avatars = await _get_user_avatars(db, user_ids)
+    return _build_trip_response(trip, avatars)
 
 
 async def delete_trip(db: AsyncSession, trip_id: str, current_user: User) -> None:

@@ -50,6 +50,7 @@ const Login = () => {
 
   const switchMode = (m: Mode) => {
     setMode(m); setError(null); setPassword(''); setConfirmPassword('')
+    setShowForgot(false); setForgotSent(false)
   }
 
   const handleSubmit = async (e: React.SyntheticEvent<HTMLFormElement>) => {
@@ -79,8 +80,9 @@ const Login = () => {
     }
   }
 
-  const handleGoogle = () => {
-    auth.loginWithGoogle()
+  const handleGoogle = async () => {
+    await auth.loginWithGoogle()
+    if (auth.error) toast.error(auth.error)
   }
 
   return (
