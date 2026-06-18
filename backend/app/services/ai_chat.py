@@ -217,15 +217,14 @@ async def send_message(
     context, member_map, _ = await _build_context(db, trip_id)
 
     history_msgs = await get_history(db, trip_id, current_user.id)
-    recent = history_msgs[-20:]
 
     history_text = ""
-    if recent:
+    if history_msgs:
         lines = []
-        for m in recent:
+        for m in history_msgs:
             label = "User" if m["role"] == "user" else "Assistant"
             lines.append(f"{label}: {m['content']}")
-        history_text = "\nPRIOR CONVERSATION:\n" + "\n".join(lines) + "\n"
+        history_text = "\nCONVERSATION HISTORY:\n" + "\n".join(lines) + "\n"
 
     user_name = current_user.display_name or current_user.email
 

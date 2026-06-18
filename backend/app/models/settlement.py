@@ -1,4 +1,4 @@
-from sqlalchemy import String, Boolean, Numeric, TIMESTAMP, ForeignKey, func
+from sqlalchemy import String, Text, Boolean, Numeric, TIMESTAMP, ForeignKey, func
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID
 
