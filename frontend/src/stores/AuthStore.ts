@@ -14,33 +14,37 @@ export class AuthStore {
     this.init()
   }
 
-  // Called once on app start — restores session if user was already logged in
-  private async init() {
-    const { data: { session } } = await supabase.auth.getSession()
-
-    if (session?.user) {
-      const user = await this.syncWithBackend(
-        session.user,
-        session.user.user_metadata?.full_name,
-        session.access_token
-      )
-      runInAction(() => {
-        this.currentUser = user
-        this.isLoading = false
-      })
-    } else {
-      runInAction(() => { this.isLoading = false })
-    }
-
-    // Listen for future login/logout events (e.g. Google OAuth callback)
-    supabase.auth.onAuthStateChange(async (_event, session) => {
-      if (session?.user) {
-        const user = await this.syncWithBackend(
-          session.user,
-          session.user.user_metadata?.full_name,
-          session.access_token
-        )
-        runInAction(() => { this.currentUser = user })
+  // Called once on app start — restores session if user was already logged in.
+  // We rely on onAuthStateChange(INITIAL_SESSION) instead of a bare getSession() call so
+  // that after a Google OAuth redirect the PKCE code exchange completes before we mark
+  // auth as ready. We use setTimeout(0) before calling syncWithBackend to ensure the API
+  // call (and its getSession() in the request interceptor) runs outside the
+  // onAuthStateChange callback context, avoiding potential Supabase internal lock issues.
+  private init() {
+    supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'INITIAL_SESSION') {
+        if (session?.user) {
+          setTimeout(async () => {
+            const user = await this.syncWithBackend(
+              session.user,
+              session.user.user_metadata?.full_name,
+              session.access_token
+            )
+            runInAction(() => { this.currentUser = user; this.isLoading = false })
+          }, 0)
+        } else {
+          runInAction(() => { this.isLoading = false })
+        }
+      } else if (session?.user) {
+        // SIGNED_IN (email login or OAuth), TOKEN_REFRESHED, etc.
+        setTimeout(async () => {
+          const user = await this.syncWithBackend(
+            session.user,
+            session.user.user_metadata?.full_name,
+            session.access_token
+          )
+          runInAction(() => { this.currentUser = user })
+        }, 0)
       } else {
         runInAction(() => { this.currentUser = null })
       }

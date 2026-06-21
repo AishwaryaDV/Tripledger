@@ -15,6 +15,11 @@ from app.routers.ai import _claude_path
 
 VALID_CATEGORIES = {"food", "transport", "accommodation", "activities", "other"}
 
+# When total non-summary messages exceed this, compress the older ones into a summary
+SUMMARY_THRESHOLD = 40
+# Always keep the most recent N messages verbatim (so context stays fresh)
+KEEP_RECENT = 10
+
 CHAT_SCHEMA = json.dumps({
     "type": "object",
     "properties": {
@@ -37,6 +42,75 @@ async def get_history(db: AsyncSession, trip_id: str, user_id: str) -> list[dict
     )
     msgs = result.scalars().all()
     return [{"role": m.role, "content": m.content, "id": m.id, "createdAt": str(m.created_at)} for m in msgs]
+
+
+async def _maybe_compress_history(
+    db: AsyncSession,
+    trip_id: str,
+    user_id: str,
+    claude_path: str,
+    history: list[dict],
+) -> list[dict]:
+    """
+    When non-summary messages exceed SUMMARY_THRESHOLD, compress all but the most
+    recent KEEP_RECENT into a single summary message stored in DB. On subsequent
+    calls the prompt sends [summary] + [recent messages] instead of everything.
+    Falls back to the full history if summarization fails.
+    """
+    non_summary = [m for m in history if m["role"] != "summary"]
+    if len(non_summary) <= SUMMARY_THRESHOLD:
+        return history
+
+    to_summarize = non_summary[:-KEEP_RECENT]
+    keep_recent = non_summary[-KEEP_RECENT:]
+    existing_summary = next((m for m in history if m["role"] == "summary"), None)
+
+    conv_lines = "\n".join(
+        f"{'User' if m['role'] == 'user' else 'AI'}: {m['content']}"
+        for m in to_summarize
+    )
+    summary_prompt = (
+        "You are summarizing a conversation between a user and a trip expense AI assistant. "
+        "Write a compact factual summary preserving all important details: "
+        "expenses added/edited/deleted (title, amount, currency, who paid, date), "
+        "questions asked, and any decisions or context mentioned. "
+        "Be dense and factual — this summary replaces the original messages.\n\n"
+        + (f"Prior summary to incorporate:\n{existing_summary['content']}\n\n" if existing_summary else "")
+        + f"Messages to summarize:\n{conv_lines}\n\nSummary:"
+    )
+
+    proc = await asyncio.create_subprocess_exec(
+        claude_path, "--print",
+        stdin=asyncio.subprocess.PIPE,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.PIPE,
+    )
+    try:
+        stdout, _ = await asyncio.wait_for(proc.communicate(input=summary_prompt.encode()), timeout=20)
+    except asyncio.TimeoutError:
+        proc.kill()
+        return history
+    if proc.returncode != 0:
+        return history
+
+    new_summary_text = stdout.decode().strip()
+    if not new_summary_text:
+        return history
+
+    # Delete the messages we summarized and any prior summary from DB
+    ids_to_delete = [m["id"] for m in to_summarize]
+    if existing_summary:
+        ids_to_delete.append(existing_summary["id"])
+    await db.execute(delete(AiMessage).where(AiMessage.id.in_(ids_to_delete)))
+
+    summary_id = str(uuid.uuid4())
+    db.add(AiMessage(id=summary_id, trip_id=trip_id, user_id=user_id, role="summary", content=new_summary_text))
+    await db.commit()
+
+    return [{"role": "summary", "content": new_summary_text, "id": summary_id, "createdAt": ""}] + [
+        {"role": m["role"], "content": m["content"], "id": m["id"], "createdAt": m.get("createdAt", "")}
+        for m in keep_recent
+    ]
 
 
 async def clear_history(db: AsyncSession, trip_id: str, user_id: str) -> None:
@@ -216,15 +290,26 @@ async def send_message(
 ) -> dict:
     context, member_map, _ = await _build_context(db, trip_id)
 
+    try:
+        claude = _claude_path()
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=503, detail=str(e))
+
     history_msgs = await get_history(db, trip_id, current_user.id)
+    history_msgs = await _maybe_compress_history(db, trip_id, current_user.id, claude, history_msgs)
+
+    summary_msg = next((m for m in history_msgs if m["role"] == "summary"), None)
+    chat_msgs = [m for m in history_msgs if m["role"] != "summary"]
 
     history_text = ""
-    if history_msgs:
-        lines = []
-        for m in history_msgs:
-            label = "User" if m["role"] == "user" else "Assistant"
-            lines.append(f"{label}: {m['content']}")
-        history_text = "\nCONVERSATION HISTORY:\n" + "\n".join(lines) + "\n"
+    if summary_msg:
+        history_text += f"\nCONVERSATION SUMMARY (earlier messages):\n{summary_msg['content']}\n"
+    if chat_msgs:
+        lines = [
+            f"{'User' if m['role'] == 'user' else 'Assistant'}: {m['content']}"
+            for m in chat_msgs
+        ]
+        history_text += "\nRECENT MESSAGES:\n" + "\n".join(lines) + "\n"
 
     user_name = current_user.display_name or current_user.email
 
@@ -246,23 +331,18 @@ async def send_message(
         f"For delete_expense: expense_id(required)."
     )
 
-    try:
-        claude = _claude_path()
-    except FileNotFoundError as e:
-        raise HTTPException(status_code=503, detail=str(e))
-
     proc = await asyncio.create_subprocess_exec(
         claude, "--print",
         "--model", "haiku",
         "--output-format", "json",
         "--json-schema", CHAT_SCHEMA,
-        "--prompt", prompt,
+        stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
 
     try:
-        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=30)
+        stdout, _ = await asyncio.wait_for(proc.communicate(input=prompt.encode()), timeout=30)
     except asyncio.TimeoutError:
         proc.kill()
         raise HTTPException(status_code=504, detail="AI response timed out — try again")

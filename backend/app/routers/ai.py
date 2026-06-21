@@ -68,16 +68,15 @@ async def suggest_category(
     proc = await asyncio.create_subprocess_exec(
         claude, "--print",
         "--model", "haiku",
-        "--tools", "",
         "--output-format", "json",
         "--json-schema", CATEGORY_SCHEMA,
-        "--prompt", prompt,
+        stdin=asyncio.subprocess.PIPE,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,
     )
 
     try:
-        stdout, _ = await asyncio.wait_for(proc.communicate(), timeout=15)
+        stdout, _ = await asyncio.wait_for(proc.communicate(input=prompt.encode()), timeout=15)
     except asyncio.TimeoutError:
         proc.kill()
         return CategoryResponse(category="other")
@@ -136,6 +135,7 @@ async def parse_receipt(
             f"Read the image at this exact file path: {tmp_path}\n\n"
             "It is a receipt. Extract the merchant name, total amount, currency, "
             "date, spending category, and any short useful notes. "
+            "Translate all text to English if it is in another language. "
             "Return the result as JSON matching the provided schema."
         )
 
@@ -147,17 +147,16 @@ async def parse_receipt(
         proc = await asyncio.create_subprocess_exec(
             claude, "--print",
             "--model", "haiku",
-            "--tools", "Read",
-            "--add-dir", tempfile.gettempdir(),
             "--output-format", "json",
             "--json-schema", RECEIPT_SCHEMA,
-            "--prompt", prompt,
+            "--add-dir", tempfile.gettempdir(),
+            stdin=asyncio.subprocess.PIPE,
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
 
         try:
-            stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=60)
+            stdout, stderr = await asyncio.wait_for(proc.communicate(input=prompt.encode()), timeout=60)
         except asyncio.TimeoutError:
             proc.kill()
             raise HTTPException(status_code=504, detail="Receipt parsing timed out — try again")
