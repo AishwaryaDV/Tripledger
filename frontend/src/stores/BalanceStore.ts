@@ -9,6 +9,7 @@ export class BalanceStore {
   suggestions: SettlementSuggestion[] = []
   settlements: Settlement[] = []
   isLoading = false
+  error: string | null = null
   private root: RootStore
 
   constructor(root: RootStore) {
@@ -29,13 +30,15 @@ export class BalanceStore {
   }
 
   async fetchBalances(tripId: string) {
-    runInAction(() => { this.isLoading = true; this.balances = []; this.suggestions = [] })
+    runInAction(() => { this.isLoading = true; this.error = null; this.balances = []; this.suggestions = [] })
     try {
       const [bal, sug] = await Promise.all([
         api.get<Balance[]>(`/trips/${tripId}/balances`),
         api.get<SettlementSuggestion[]>(`/trips/${tripId}/settle`),
       ])
       runInAction(() => { this.balances = bal.data; this.suggestions = sug.data })
+    } catch (e: any) {
+      runInAction(() => { this.error = e?.response?.data?.detail ?? e.message ?? 'Failed to load balances' })
     } finally {
       runInAction(() => { this.isLoading = false })
     }
@@ -69,10 +72,12 @@ export class BalanceStore {
           s.id === optimistic.id ? res.data : s
         )
       })
-    } catch {
+      await this.fetchBalances(tripId)
+    } catch (e) {
       runInAction(() => {
         this.settlements = this.settlements.filter(s => s.id !== optimistic.id)
       })
+      throw e
     }
   }
 

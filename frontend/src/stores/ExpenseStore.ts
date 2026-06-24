@@ -59,6 +59,7 @@ export class ExpenseStore {
         this.expenses = this.expenses.filter(e => e.id !== temp.id)
         this.error = e.message
       })
+      throw e
     }
   }
 
@@ -74,6 +75,7 @@ export class ExpenseStore {
       runInAction(() => { this.expenses[idx] = data })
     } catch (e: any) {
       runInAction(() => { this.expenses[idx] = snapshot; this.error = e.message })
+      throw e
     }
   }
 

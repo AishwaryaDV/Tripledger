@@ -38,8 +38,9 @@ export class NoteStore {
       runInAction(() => {
         this.notes = this.notes.map(n => n.id === optimistic.id ? res.data : n)
       })
-    } catch {
+    } catch (e) {
       runInAction(() => { this.notes = this.notes.filter(n => n.id !== optimistic.id) })
+      throw e
     }
   }
 
@@ -52,8 +53,9 @@ export class NoteStore {
     try {
       const res = await api.put<Note>(`/trips/${tripId}/notes/${noteId}`, { content })
       runInAction(() => { this.notes = this.notes.map(n => n.id === noteId ? res.data : n) })
-    } catch {
+    } catch (e) {
       runInAction(() => { this.notes = this.notes.map(n => n.id === noteId ? original : n) })
+      throw e
     }
   }
 
@@ -62,8 +64,9 @@ export class NoteStore {
     runInAction(() => { this.notes = this.notes.filter(n => n.id !== noteId) })
     try {
       await api.delete(`/trips/${tripId}/notes/${noteId}`)
-    } catch {
+    } catch (e) {
       runInAction(() => { this.notes = original })
+      throw e
     }
   }
 }

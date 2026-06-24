@@ -66,6 +66,7 @@ export class TripStore {
       })
     } catch (e: any) {
       runInAction(() => { this.error = e.message })
+      throw e
     }
   }
 
@@ -79,6 +80,7 @@ export class TripStore {
       })
     } catch (e: any) {
       runInAction(() => { this.error = e.message })
+      throw e
     }
   }
 
