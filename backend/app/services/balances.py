@@ -201,6 +201,11 @@ async def create_settlement(
 ) -> SettlementResponse:
     await _check_membership(db, trip_id, current_user.id)
 
+    member_result = await db.execute(select(TripMember).where(TripMember.trip_id == trip_id))
+    member_ids = {m.user_id for m in member_result.scalars().all()}
+    if data.fromUserId not in member_ids or data.toUserId not in member_ids:
+        raise HTTPException(status_code=400, detail="Both payer and recipient must be members of this trip")
+
     settlement = Settlement(
         id=str(uuid.uuid4()),
         trip_id=trip_id,

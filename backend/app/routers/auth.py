@@ -5,7 +5,7 @@ import httpx
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
-from app.schemas.user import UserResponse, AuthMeRequest, AvatarUpdateRequest
+from app.schemas.user import UserResponse, AuthMeRequest, AvatarUpdateRequest, CurrencyUpdateRequest
 from app.config import settings
 
 router = APIRouter(prefix="/auth", tags=["auth"])
@@ -26,6 +26,18 @@ async def auth_me(
         await db.commit()
         await db.refresh(current_user)
 
+    return current_user
+
+
+@router.patch("/me/currency", response_model=UserResponse)
+async def update_currency(
+    body: CurrencyUpdateRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    current_user.default_currency = body.default_currency.upper()[:3]
+    await db.commit()
+    await db.refresh(current_user)
     return current_user
 
 

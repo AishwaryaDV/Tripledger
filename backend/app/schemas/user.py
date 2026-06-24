@@ -16,3 +16,6 @@ class AuthMeRequest(BaseModel):
 
 class AvatarUpdateRequest(BaseModel):
     avatar_url: str | None = None
+
+class CurrencyUpdateRequest(BaseModel):
+    default_currency: str

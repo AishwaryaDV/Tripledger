@@ -5,7 +5,7 @@ from sqlalchemy import select, delete
 from fastapi import HTTPException
 
 from app.models.expense import Expense, ExpenseSplit
-from app.models.trip import TripMember
+from app.models.trip import Trip, TripMember
 from app.models.user import User
 from app.schemas.expense import ExpenseCreate, ExpenseResponse, ExpenseSplitResponse
 
@@ -39,6 +39,19 @@ def _build_expense_response(expense: Expense) -> ExpenseResponse:
     )
 
 
+async def _get_trip(db: AsyncSession, trip_id: str) -> Trip:
+    result = await db.execute(select(Trip).where(Trip.id == trip_id))
+    trip = result.scalar_one_or_none()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+    return trip
+
+
+async def _get_member_ids(db: AsyncSession, trip_id: str) -> set[str]:
+    result = await db.execute(select(TripMember).where(TripMember.trip_id == trip_id))
+    return {m.user_id for m in result.scalars().all()}
+
+
 async def _check_membership(db: AsyncSession, trip_id: str, user_id: str) -> None:
     result = await db.execute(
         select(TripMember).where(
@@ -64,6 +77,12 @@ async def get_expenses(db: AsyncSession, trip_id: str, current_user: User) -> li
 
 async def create_expense(db: AsyncSession, trip_id: str, current_user: User, data: ExpenseCreate) -> ExpenseResponse:
     await _check_membership(db, trip_id, current_user.id)
+    trip = await _get_trip(db, trip_id)
+    if trip.is_settled:
+        raise HTTPException(status_code=409, detail="This trip is already settled — reopen it before adding expenses")
+    member_ids = await _get_member_ids(db, trip_id)
+    if data.paidBy not in member_ids:
+        raise HTTPException(status_code=400, detail="The selected payer is not a member of this trip")
 
     expense = Expense(
         id=str(uuid.uuid4()),
@@ -100,6 +119,12 @@ async def create_expense(db: AsyncSession, trip_id: str, current_user: User, dat
 
 async def update_expense(db: AsyncSession, trip_id: str, expense_id: str, current_user: User, data: ExpenseCreate) -> ExpenseResponse:
     await _check_membership(db, trip_id, current_user.id)
+    trip = await _get_trip(db, trip_id)
+    if trip.is_settled:
+        raise HTTPException(status_code=409, detail="This trip is already settled — reopen it before editing expenses")
+    member_ids = await _get_member_ids(db, trip_id)
+    if data.paidBy not in member_ids:
+        raise HTTPException(status_code=400, detail="The selected payer is not a member of this trip")
 
     result = await db.execute(select(Expense).where(Expense.id == expense_id, Expense.trip_id == trip_id))
     expense = result.scalar_one_or_none()
