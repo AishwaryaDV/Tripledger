@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
-import { ArrowLeft, Plus, Copy, Check, RefreshCw, CreditCard, Pencil, Trash2, Plane, User, Home, PartyPopper, UtensilsCrossed, Car, BedDouble, Ticket, Package, X, FileText, BarChart2, StickyNote, MoreHorizontal } from 'lucide-react'
+import { ArrowLeft, Plus, Copy, Check, RefreshCw, CreditCard, Pencil, Trash2, Plane, User, Home, PartyPopper, UtensilsCrossed, Car, BedDouble, Ticket, Package, X, FileText, BarChart2, StickyNote, MoreHorizontal, AlertTriangle } from 'lucide-react'
+import { toast } from 'sonner'
 import CustomSelect from '@/components/shared/CustomSelect'
 import ConfirmModal from '@/components/shared/ConfirmModal'
 import type { CircleType, ExpenseCategory } from '@/types'
@@ -195,7 +196,6 @@ const TripDetail = observer(() => {
 
           {/* Member avatars */}
           {(() => {
-            const MEMBER_COLORS = ['#818cf8','#f472b6','#34d399','#fb923c','#60a5fa','#a78bfa','#facc15','#2dd4bf']
             const maxMobile = 3
             const maxDesktop = 5
             const total = trip.members.length
@@ -601,12 +601,16 @@ const TripDetail = observer(() => {
       {activeTab === 'balances' && (
         balances.isLoading
           ? <div className="space-y-2">{[1,2,3].map(i => <BalanceRowSkeleton key={i} />)}</div>
+          : balances.error
+          ? <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 flex items-center gap-2 text-sm text-destructive"><AlertTriangle size={15} />{balances.error}</div>
           : <BalanceSummary balances={balances.balances} baseCurrency={trip.baseCurrency} />
       )}
 
       {activeTab === 'suggestions' && (
         balances.isLoading
           ? <div className="space-y-2">{[1,2].map(i => <BalanceRowSkeleton key={i} />)}</div>
+          : balances.error
+          ? <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 flex items-center gap-2 text-sm text-destructive"><AlertTriangle size={15} />{balances.error}</div>
           : <SettleSuggestions suggestions={balances.suggestions} members={trip.members} />
       )}
 
@@ -690,9 +694,14 @@ const TripDetail = observer(() => {
         const handleAddNote = async () => {
           if (!newNote.trim() || !id) return
           setIsAddingNote(true)
-          await notes.addNote(id, newNote.trim())
-          setNewNote('')
-          setIsAddingNote(false)
+          try {
+            await notes.addNote(id, newNote.trim())
+            setNewNote('')
+          } catch (err: any) {
+            toast.error(err?.response?.data?.detail ?? err?.message ?? 'Failed to add note')
+          } finally {
+            setIsAddingNote(false)
+          }
         }
 
         const startEdit = (noteId: string, content: string) => {
@@ -702,9 +711,13 @@ const TripDetail = observer(() => {
 
         const saveEdit = async () => {
           if (!editingNoteId || !editingContent.trim()) return
-          await notes.editNote(id!, editingNoteId, editingContent.trim())
-          setEditingNoteId(null)
-          setEditingContent('')
+          try {
+            await notes.editNote(id!, editingNoteId, editingContent.trim())
+            setEditingNoteId(null)
+            setEditingContent('')
+          } catch (err: any) {
+            toast.error(err?.response?.data?.detail ?? err?.message ?? 'Failed to save note')
+          }
         }
 
         const sorted = [...notes.notes].sort(
@@ -717,12 +730,14 @@ const TripDetail = observer(() => {
             <div className="rounded-lg border bg-card p-3 space-y-2">
               <textarea
                 value={newNote}
-                onChange={e => setNewNote(e.target.value)}
+                onChange={e => setNewNote(e.target.value.slice(0, 250))}
                 placeholder="Add a note for the group..."
                 rows={2}
+                maxLength={250}
                 className="w-full text-sm bg-background border rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary resize-none"
               />
-              <div className="flex justify-end">
+              <div className="flex items-center justify-between">
+                <span className={`text-xs ${newNote.length >= 240 ? 'text-destructive' : 'text-muted-foreground'}`}>{newNote.length}/250</span>
                 <button
                   onClick={handleAddNote}
                   disabled={isAddingNote || !newNote.trim()}
@@ -769,7 +784,7 @@ const TripDetail = observer(() => {
                           <Pencil size={13} />
                         </button>
                         <button
-                          onClick={() => notes.deleteNote(id!, note.id)}
+                          onClick={() => notes.deleteNote(id!, note.id).catch((err: any) => toast.error(err?.response?.data?.detail ?? 'Failed to delete note'))}
                           title="Delete note"
                           className="p-1 rounded hover:bg-muted text-destructive transition-colors"
                         >
@@ -783,10 +798,12 @@ const TripDetail = observer(() => {
                     <div className="space-y-2">
                       <textarea
                         value={editingContent}
-                        onChange={e => setEditingContent(e.target.value)}
+                        onChange={e => setEditingContent(e.target.value.slice(0, 250))}
                         rows={2}
+                        maxLength={250}
                         className="w-full text-sm bg-background border rounded-md px-3 py-2 focus:outline-none focus:ring-1 focus:ring-primary resize-none"
                       />
+                      <span className={`text-xs ${editingContent.length >= 240 ? 'text-destructive' : 'text-muted-foreground'}`}>{editingContent.length}/250</span>
                       <div className="flex gap-2 justify-end">
                         <button
                           onClick={saveEdit}
