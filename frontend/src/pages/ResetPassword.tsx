@@ -14,14 +14,23 @@ const ResetPassword = () => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [ready, setReady] = useState(false)
+  const [linkExpired, setLinkExpired] = useState(false)
 
   // Supabase puts the session tokens in the URL hash after redirect.
   // onAuthStateChange fires with event=PASSWORD_RECOVERY once they're parsed.
   useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (!ready) setLinkExpired(true)
+    }, 8000)
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'PASSWORD_RECOVERY') setReady(true)
+      if (event === 'PASSWORD_RECOVERY') {
+        clearTimeout(timeout)
+        setLinkExpired(false)
+        setReady(true)
+      }
     })
-    return () => subscription.unsubscribe()
+    return () => { subscription.unsubscribe(); clearTimeout(timeout) }
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -98,9 +107,21 @@ const ResetPassword = () => {
           </form>
         )}
 
-        {!ready && (
+        {!ready && !linkExpired && (
           <div className="flex justify-center">
             <Loader2 size={24} className="animate-spin text-primary" />
+          </div>
+        )}
+
+        {linkExpired && (
+          <div className="space-y-3 text-center">
+            <p className="text-sm text-destructive font-medium">This link has expired or is invalid.</p>
+            <button
+              onClick={() => navigate('/login')}
+              className="w-full py-2.5 rounded-lg border text-sm font-medium hover:bg-muted transition-colors"
+            >
+              Request a new reset link
+            </button>
           </div>
         )}
 

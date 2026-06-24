@@ -66,10 +66,12 @@ const MemberProfile = observer(() => {
 
   const memberIndex = trip.members.findIndex(m => m.userId === memberId)
   const member = trip.members[memberIndex]
-  if (!member) {
-    navigate(`/trips/${tripId}`, { replace: true })
-    return null
-  }
+
+  useEffect(() => {
+    if (trip && memberIndex === -1) navigate(`/trips/${tripId}`, { replace: true })
+  }, [trip, memberIndex, tripId, navigate])
+
+  if (!member) return null
 
   const isMe = member.userId === auth.currentUser?.id
   const color = MEMBER_COLORS[memberIndex % MEMBER_COLORS.length]

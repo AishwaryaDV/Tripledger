@@ -154,7 +154,11 @@ const InviteJoin = () => {
         </div>
 
         {/* Action */}
-        {!isLoggedIn ? (
+        {auth.isLoading ? (
+          <div className="flex justify-center py-4">
+            <div className="w-6 h-6 rounded-full border-2 border-primary border-t-transparent animate-spin" />
+          </div>
+        ) : !isLoggedIn ? (
           <div className="space-y-2">
             <button
               onClick={() => navigate('/login', { state: { redirectTo: `/join/${code}` } })}
