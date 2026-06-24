@@ -100,7 +100,7 @@ const MoreOptionsSheet = observer(({ trip, onClose }: Props) => {
           else await trips.settleTrip(trip.id)
           toast.success(trip.isSettled ? 'Circle reopened.' : 'Circle settled.')
           onClose()
-        } catch { toast.error('Failed.') }
+        } catch (err: any) { toast.error(err?.response?.data?.detail ?? err?.message ?? 'Failed.') }
         finally { setLoading(null) }
       },
       ownerOnly: true,

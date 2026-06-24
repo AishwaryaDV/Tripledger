@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
 import { ArrowLeft, CheckCircle2, AlertTriangle, PartyPopper } from 'lucide-react'
+import { toast } from 'sonner'
 import { useStore } from '@/hooks/useStore'
 import { formatCurrency } from '@/lib/utils'
 import { BalanceRowSkeleton } from '@/components/shared/Skeleton'
@@ -50,24 +51,27 @@ const Settle = observer(() => {
     const amount = parseFloat(formAmount) || 0
     const isPartial = formIsPartial || amount < suggestion.amount
 
-    await balances.recordSettlement(id, {
-      fromUserId: suggestion.fromUserId,
-      toUserId: suggestion.toUserId,
-      amount,
-      currency: suggestion.currency,
-      isPartial,
-    })
-
-    setIsSubmitting(false)
-    setOpenFormIndex(null)
-
-    setNotification({
-      msg: isPartial
-        ? `Partial payment of ${formatCurrency(amount, suggestion.currency)} recorded — ${formatCurrency(suggestion.amount - amount, suggestion.currency)} still outstanding`
-        : `Full payment of ${formatCurrency(amount, suggestion.currency)} recorded`,
-      isPartial,
-    })
-    setTimeout(() => setNotification(null), 5000)
+    try {
+      await balances.recordSettlement(id, {
+        fromUserId: suggestion.fromUserId,
+        toUserId: suggestion.toUserId,
+        amount,
+        currency: suggestion.currency,
+        isPartial,
+      })
+      setOpenFormIndex(null)
+      setNotification({
+        msg: isPartial
+          ? `Partial payment of ${formatCurrency(amount, suggestion.currency)} recorded — ${formatCurrency(suggestion.amount - amount, suggestion.currency)} still outstanding`
+          : `Full payment of ${formatCurrency(amount, suggestion.currency)} recorded`,
+        isPartial,
+      })
+      setTimeout(() => setNotification(null), 5000)
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail ?? err?.message ?? 'Failed to record payment')
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   if (!trip || balances.isLoading) {
@@ -192,7 +196,14 @@ const Settle = observer(() => {
           </div>
           <button
             type="button"
-            onClick={async () => { await trips.settleTrip(id!); navigate(`/trips/${id}`) }}
+            onClick={async () => {
+              try {
+                await trips.settleTrip(id!)
+                navigate(`/trips/${id}`)
+              } catch (err: any) {
+                toast.error(err?.response?.data?.detail ?? err?.message ?? 'Failed to settle circle')
+              }
+            }}
             className="shrink-0 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
           >
             Mark Settled
