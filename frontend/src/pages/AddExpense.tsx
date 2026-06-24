@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { observer } from 'mobx-react-lite'
 import { ArrowLeft, Camera, Sparkles, UserRound } from 'lucide-react'
+import { toast } from 'sonner'
 import { useStore } from '@/hooks/useStore'
 import SplitEditor from '@/components/expense/SplitEditor'
 import CustomSelect from '@/components/shared/CustomSelect'
@@ -163,6 +164,20 @@ const AddExpense = observer(() => {
     if (!id) return
     setIsSubmitting(true)
 
+    if (!isSelfExpense) {
+      if (splits.length === 0) {
+        toast.error('Select at least one person to split with')
+        setIsSubmitting(false)
+        return
+      }
+      const splitTotal = splits.reduce((sum, s) => sum + s.amountOwed, 0)
+      if (Math.abs(splitTotal - Number(data.amount)) > 0.02) {
+        toast.error(`Splits must add up to ${Number(data.amount).toFixed(2)} ${data.currency} (currently ${splitTotal.toFixed(2)})`)
+        setIsSubmitting(false)
+        return
+      }
+    }
+
     const rate = currency.getRate(data.currency) ?? 1
     const amountBase = currency.convert(Number(data.amount), data.currency) ?? Number(data.amount)
 
@@ -185,14 +200,18 @@ const AddExpense = observer(() => {
       tripId: id,
     }
 
-    if (isEditing && expenseId) {
-      await expenses.editExpense(id, expenseId, payload)
-    } else {
-      await expenses.addExpense(id, payload)
+    try {
+      if (isEditing && expenseId) {
+        await expenses.editExpense(id, expenseId, payload)
+      } else {
+        await expenses.addExpense(id, payload)
+      }
+      navigate(`/trips/${id}`)
+    } catch (err: any) {
+      toast.error(err?.response?.data?.detail ?? err?.message ?? 'Failed to save expense')
+    } finally {
+      setIsSubmitting(false)
     }
-
-    setIsSubmitting(false)
-    navigate(`/trips/${id}`)
   }
 
   if (!trip) {

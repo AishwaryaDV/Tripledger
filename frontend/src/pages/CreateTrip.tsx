@@ -16,13 +16,14 @@ const CIRCLE_TYPES: { value: CircleType; label: string; description: string; ico
 
 const CreateTrip = observer(() => {
   const navigate = useNavigate()
-  const { trips } = useStore()
+  const { trips, auth } = useStore()
+  const defaultCurrency = auth.currentUser?.defaultCurrency || 'USD'
 
   const [circleType, setCircleType] = useState<CircleType>('trip')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>(['INR'])
-  const [baseCurrency, setBaseCurrency] = useState('INR')
+  const [selectedCurrencies, setSelectedCurrencies] = useState<string[]>([defaultCurrency])
+  const [baseCurrency, setBaseCurrency] = useState(defaultCurrency)
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
