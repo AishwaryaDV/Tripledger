@@ -65,7 +65,7 @@ const TripSummary = observer(() => {
     if (dailyScrollRef.current) {
       dailyScrollRef.current.scrollLeft = dailyScrollRef.current.scrollWidth
     }
-  }, [dailyScrollRef.current])
+  }, [])
 
   useEffect(() => {
     if (!id) return

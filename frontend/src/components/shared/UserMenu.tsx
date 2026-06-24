@@ -9,6 +9,7 @@ import { Link } from 'react-router-dom'
 import { useStore } from '../../hooks/useStore'
 import { supabase } from '../../lib/supabase'
 import CustomSelect from './CustomSelect'
+import { SUPPORTED_CURRENCIES } from '../../lib/currencies'
 
 const PRONOUN_OPTIONS = [
   '', 'he/him', 'she/her', 'they/them', 'he/they', 'she/they', 'any pronouns', 'prefer not to say',
@@ -27,8 +28,10 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
   const [editingName, setEditingName] = useState(false)
   const [displayName, setDisplayName] = useState(user.displayName)
   const [pronouns, setPronouns] = useState(validPronouns)
+  const [defaultCurrency, setDefaultCurrency] = useState(user.defaultCurrency ?? 'USD')
   const [nameLoading, setNameLoading] = useState(false)
   const [pronounsLoading, setPronounsLoading] = useState(false)
+  const [currencyLoading, setCurrencyLoading] = useState(false)
   const [avatarLoading, setAvatarLoading] = useState(false)
   const [logoutAllLoading, setLogoutAllLoading] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -62,6 +65,19 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
       toast.error(err.message ?? 'Failed to update name.')
     } finally {
       setNameLoading(false)
+    }
+  }
+
+  const handleUpdateCurrency = async (currency: string) => {
+    setDefaultCurrency(currency)
+    setCurrencyLoading(true)
+    try {
+      await auth.updateDefaultCurrency(currency)
+      toast.success('Default currency updated.')
+    } catch (err: any) {
+      toast.error(err.message ?? 'Failed to update currency.')
+    } finally {
+      setCurrencyLoading(false)
     }
   }
 
@@ -287,6 +303,21 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
                 {pronounsLoading ? '...' : 'Save'}
               </button>
             </div>
+          </div>
+
+          {/* Default Currency */}
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium flex items-center gap-1">
+              Default currency
+              {currencyLoading && <span className="text-xs text-muted-foreground font-normal">Saving...</span>}
+            </label>
+            <CustomSelect
+              value={defaultCurrency}
+              onChange={handleUpdateCurrency}
+              options={SUPPORTED_CURRENCIES.map(c => ({ value: c.code, label: `${c.code} — ${c.name}` }))}
+              className="w-full"
+              buttonClassName="py-2 text-sm"
+            />
           </div>
 
           {/* Email — read only */}

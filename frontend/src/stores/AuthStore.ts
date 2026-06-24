@@ -142,6 +142,13 @@ export class AuthStore {
     runInAction(() => { this.currentUser = null })
   }
 
+  async updateDefaultCurrency(currency: string) {
+    await api.patch('/auth/me/currency', { default_currency: currency })
+    runInAction(() => {
+      if (this.currentUser) this.currentUser = { ...this.currentUser, defaultCurrency: currency }
+    })
+  }
+
   async updateAvatarUrl(avatarUrl: string) {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) throw new Error('Not authenticated')
