@@ -31,6 +31,7 @@ import ExpenseCard from '@/components/expense/ExpenseCard'
 import BalanceSummary from '@/components/trip/BalanceSummary'
 import SettleSuggestions from '@/components/trip/SettleSuggestions'
 import MoreOptionsSheet from '@/components/trip/MoreOptionsSheet'
+import MemberProfileSheet from '@/components/trip/MemberProfileSheet'
 import AiChatPanel from '@/components/trip/AiChatPanel'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { ExpenseCardSkeleton, BalanceRowSkeleton, NoteRowSkeleton, SpendingRowSkeleton } from '@/components/shared/Skeleton'
@@ -64,6 +65,7 @@ const TripDetail = observer(() => {
   const [isAddingNote, setIsAddingNote] = useState(false)
   const [deleteExpenseId, setDeleteExpenseId] = useState<string | null>(null)
   const [showMoreOptions, setShowMoreOptions] = useState(false)
+  const [selectedMemberIndex, setSelectedMemberIndex] = useState<number | null>(null)
 
   const copyJoinCode = (code: string) => {
     navigator.clipboard.writeText(code)
@@ -406,6 +408,13 @@ const TripDetail = observer(() => {
 
       {/* Tab content */}
       {activeTab === 'expenses' && (() => {
+        if (expenses.error) return (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 flex items-center gap-2 text-sm text-destructive">
+            <AlertTriangle size={15} className="shrink-0" />
+            {expenses.error}
+          </div>
+        )
+
         if (expenses.expenses.length === 0) return (
           <div className="rounded-xl border border-dashed p-8 text-center space-y-2">
             <Package size={24} className="mx-auto text-muted-foreground/50" />
@@ -845,7 +854,7 @@ const TripDetail = observer(() => {
             return (
               <button
                 key={member.userId}
-                onClick={() => navigate(`/trips/${id}/members/${member.userId}`)}
+                onClick={() => setSelectedMemberIndex(i)}
                 className="w-full flex items-center gap-3 rounded-xl border bg-background px-3 py-2.5 hover:bg-muted transition-colors text-left"
               >
                 <span className="text-xs text-muted-foreground w-5 shrink-0 text-right">{i + 1}.</span>
@@ -876,6 +885,20 @@ const TripDetail = observer(() => {
       )}
 
     </div>
+
+    {selectedMemberIndex !== null && trip.members[selectedMemberIndex] && (
+      <MemberProfileSheet
+        member={trip.members[selectedMemberIndex]}
+        memberIndex={selectedMemberIndex}
+        allMembers={trip.members}
+        tripId={trip.id}
+        baseCurrency={trip.baseCurrency}
+        balance={balances.balances.find(b => b.userId === trip.members[selectedMemberIndex!].userId)}
+        suggestions={balances.suggestions}
+        expenses={expenses.expenses}
+        onClose={() => setSelectedMemberIndex(null)}
+      />
+    )}
 
     {deleteExpenseId && (
       <ConfirmModal

@@ -265,9 +265,14 @@ const Settle = observer(() => {
                       <input
                         type="number"
                         min="0.01"
+                        max={s.amount}
                         step="0.01"
                         value={formAmount}
-                        onChange={e => setFormAmount(e.target.value)}
+                        onChange={e => {
+                          const val = e.target.value
+                          if (parseFloat(val) > s.amount) setFormAmount(s.amount.toFixed(2))
+                          else setFormAmount(val)
+                        }}
                         className="w-full border rounded-md px-2.5 py-1.5 text-sm bg-background focus:outline-none focus:ring-1 focus:ring-primary"
                       />
                       {parseFloat(formAmount) > 0 && parseFloat(formAmount) < s.amount && (

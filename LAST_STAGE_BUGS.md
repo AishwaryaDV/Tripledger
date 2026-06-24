@@ -89,7 +89,7 @@ Identified during pre-launch audit. Listed in priority order.
 ### #13 MemberProfileSheet component was dead code
 **File:** `frontend/src/components/trip/MemberProfileSheet.tsx`, `frontend/src/pages/TripDetail.tsx`
 **What:** MemberProfileSheet was fully built with rich stats (balance, spending breakdown, settlement details) but never imported or used. TripDetail navigated to the sparse MemberProfile page instead.
-**Fix:** Imported and wired MemberProfileSheet into TripDetail's members tab. Member row clicks now open the sheet instead of navigating to a separate page.
+**Fix:** Imported MemberProfileSheet and added `selectedMemberIndex` state. Member row clicks now open the sheet instead of navigating to a separate page.
 **Status:** ✅ Fixed
 
 ### #14 CreateTrip defaults to hardcoded INR instead of user's defaultCurrency
