@@ -1,11 +1,13 @@
 // src/components/shared/ConfirmModal.tsx
+import { useState } from 'react'
+
 interface ConfirmModalProps {
   title: string
   description: string
   confirmLabel?: string
   cancelLabel?: string
   destructive?: boolean
-  onConfirm: () => void
+  onConfirm: () => Promise<void>
   onCancel: () => void
 }
 
@@ -18,6 +20,17 @@ export default function ConfirmModal({
   onConfirm,
   onCancel,
 }: ConfirmModalProps) {
+  const [isConfirming, setIsConfirming] = useState(false)
+
+  const handleConfirm = async () => {
+    setIsConfirming(true)
+    try {
+      await onConfirm()
+    } finally {
+      setIsConfirming(false)
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
       <div className="bg-card rounded-xl border shadow-lg w-full max-w-sm p-6">
@@ -26,19 +39,21 @@ export default function ConfirmModal({
         <div className="flex gap-2 justify-end">
           <button
             onClick={onCancel}
-            className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors"
+            disabled={isConfirming}
+            className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors disabled:opacity-50"
           >
             {cancelLabel}
           </button>
           <button
-            onClick={onConfirm}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-90 ${
+            onClick={handleConfirm}
+            disabled={isConfirming}
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-opacity hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed ${
               destructive
                 ? 'bg-destructive text-destructive-foreground'
                 : 'bg-primary text-primary-foreground'
             }`}
           >
-            {confirmLabel}
+            {isConfirming ? 'Please wait…' : confirmLabel}
           </button>
         </div>
       </div>
