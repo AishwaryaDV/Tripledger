@@ -18,6 +18,7 @@ import { toJS } from 'mobx'
 import { useStore } from '@/hooks/useStore'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { Skeleton, SpendingRowSkeleton } from '@/components/shared/Skeleton'
+import ErrorBoundary from '@/components/shared/ErrorBoundary'
 import type { CircleType, ExpenseCategory } from '@/types'
 
 // ── Config ───────────────────────────────────────────────────────────────────
@@ -392,6 +393,7 @@ const TripSummary = observer(() => {
           </div>
 
           {/* ── Category Breakdown ── */}
+          <ErrorBoundary fallback={<div className="rounded-xl border bg-card p-5 text-sm text-muted-foreground text-center py-8">Chart failed to render</div>}>
           <div className="rounded-xl border bg-card p-5">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-4">Spending by Category</h3>
             <div className="flex flex-col sm:flex-row gap-6 items-center">
@@ -448,6 +450,7 @@ const TripSummary = observer(() => {
               </div>
             </div>
           </div>
+          </ErrorBoundary>
 
           {/* ── Daily Spending ── */}
           {dailyData.length > 0 && (() => {
