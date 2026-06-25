@@ -71,7 +71,8 @@ const Login = () => {
         navigate(redirectTo, { replace: true })
       } else {
         await auth.signUp(email, password, displayName)
-        navigate('/dashboard', { replace: true, state: { welcome: true, name: displayName } })
+        toast.success('Welcome to TripLedger!')
+        navigate(redirectTo, { replace: true, state: { welcome: true, name: displayName } })
       }
     } catch (err: any) {
       setError(err.message ?? 'Something went wrong.')

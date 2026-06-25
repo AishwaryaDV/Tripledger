@@ -7,6 +7,7 @@ import type { RootStore } from './RootStore'
 export class NoteStore {
   notes: Note[] = []
   isLoading = false
+  error: string | null = null
   private root: RootStore
 
   constructor(root: RootStore) {
@@ -15,10 +16,12 @@ export class NoteStore {
   }
 
   async fetchNotes(tripId: string) {
-    runInAction(() => { this.isLoading = true })
+    runInAction(() => { this.isLoading = true; this.error = null })
     try {
       const res = await api.get<Note[]>(`/trips/${tripId}/notes`)
       runInAction(() => { this.notes = res.data })
+    } catch (e: any) {
+      runInAction(() => { this.error = e.message })
     } finally {
       runInAction(() => { this.isLoading = false })
     }

@@ -766,6 +766,19 @@ const TripDetail = observer(() => {
               <div className="space-y-3">
                 {[1, 2].map(i => <NoteRowSkeleton key={i} />)}
               </div>
+            ) : notes.error ? (
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 flex items-center justify-between gap-3 text-sm">
+                <div className="flex items-center gap-2 text-destructive">
+                  <AlertTriangle size={15} className="shrink-0" />
+                  <span>{notes.error}</span>
+                </div>
+                <button
+                  onClick={() => notes.fetchNotes(id!)}
+                  className="text-xs font-medium text-primary hover:opacity-70 shrink-0 transition-opacity"
+                >
+                  Retry
+                </button>
+              </div>
             ) : sorted.length === 0 ? (
               <div className="rounded-xl border border-dashed p-8 text-center space-y-2">
                 <StickyNote size={24} className="mx-auto text-muted-foreground/50" />

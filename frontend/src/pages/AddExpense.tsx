@@ -206,6 +206,7 @@ const AddExpense = observer(() => {
       } else {
         await expenses.addExpense(id, payload)
       }
+      toast.success(isEditing ? 'Expense updated' : 'Expense added')
       navigate(`/trips/${id}`)
     } catch (err: any) {
       toast.error(err?.response?.data?.detail ?? err?.message ?? 'Failed to save expense')

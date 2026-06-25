@@ -82,13 +82,13 @@ const Settle = observer(() => {
     )
   }
 
-  if (trips.error) {
+  if (trips.error || balances.error) {
     return (
       <div className="w-full max-w-3xl mx-auto pt-8 space-y-3">
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 flex items-center justify-between gap-3 text-sm">
           <div className="flex items-center gap-2 text-destructive">
             <AlertTriangle size={15} className="shrink-0" />
-            <span>{trips.error}</span>
+            <span>{trips.error ?? balances.error}</span>
           </div>
           <button
             onClick={() => { trips.fetchTrip(id!); balances.fetchBalances(id!); balances.fetchSettlements(id!) }}

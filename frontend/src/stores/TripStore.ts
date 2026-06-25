@@ -29,7 +29,7 @@ export class TripStore {
     const stale = !this.lastFetched || Date.now() - this.lastFetched > 60_000
     if (!stale && !force) return
 
-    runInAction(() => { this.isLoading = true })
+    runInAction(() => { this.isLoading = true; this.error = null })
     try {
       const { data } = await api.get<Trip[]>('/trips')
       runInAction(() => { this.trips = data; this.lastFetched = Date.now() })
@@ -41,7 +41,7 @@ export class TripStore {
   }
 
   async fetchTrip(id: string) {
-    runInAction(() => { this.isLoading = true })
+    runInAction(() => { this.isLoading = true; this.error = null })
     try {
       const { data } = await api.get<Trip>(`/trips/${id}`)
       runInAction(() => {
@@ -101,19 +101,29 @@ export class TripStore {
   }
 
   async leaveTrip(id: string) {
-    await api.delete(`/trips/${id}/members/me`)
-    runInAction(() => {
-      this.trips = this.trips.filter(t => t.id !== id)
-      if (this.currentTrip?.id === id) this.currentTrip = null
-    })
+    try {
+      await api.delete(`/trips/${id}/members/me`)
+      runInAction(() => {
+        this.trips = this.trips.filter(t => t.id !== id)
+        if (this.currentTrip?.id === id) this.currentTrip = null
+      })
+    } catch (e: any) {
+      runInAction(() => { this.error = e.message })
+      throw e
+    }
   }
 
   async deleteTrip(id: string) {
-    await api.delete(`/trips/${id}`)
-    runInAction(() => {
-      this.trips = this.trips.filter(t => t.id !== id)
-      if (this.currentTrip?.id === id) this.currentTrip = null
-    })
+    try {
+      await api.delete(`/trips/${id}`)
+      runInAction(() => {
+        this.trips = this.trips.filter(t => t.id !== id)
+        if (this.currentTrip?.id === id) this.currentTrip = null
+      })
+    } catch (e: any) {
+      runInAction(() => { this.error = e.message })
+      throw e
+    }
   }
 
   // Takes tripId (from the preview fetched by fetchTripByCode)
