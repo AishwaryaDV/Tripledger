@@ -91,6 +91,7 @@ export class ExpenseStore {
         if (snapshot) this.expenses.push(snapshot)
         this.error = e.message
       })
+      throw e
     }
   }
 }

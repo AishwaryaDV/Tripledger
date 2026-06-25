@@ -287,9 +287,13 @@ const TripDetail = observer(() => {
                 <div className="flex gap-2">
                   <button
                     onClick={async () => {
-                      await trips.reopenTrip(id!)
-                      setConfirmReopen(null)
-                      if (confirmReopen === 'add') navigate(`/trips/${id}/add`)
+                      try {
+                        await trips.reopenTrip(id!)
+                        setConfirmReopen(null)
+                        if (confirmReopen === 'add') navigate(`/trips/${id}/add`)
+                      } catch (err: any) {
+                        toast.error(err?.response?.data?.detail ?? err?.message ?? 'Failed to reopen circle')
+                      }
                     }}
                     className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
                   >
@@ -907,8 +911,12 @@ const TripDetail = observer(() => {
         confirmLabel="Delete"
         destructive
         onConfirm={async () => {
-          await expenses.deleteExpense(id!, deleteExpenseId)
-          setDeleteExpenseId(null)
+          try {
+            await expenses.deleteExpense(id!, deleteExpenseId)
+            setDeleteExpenseId(null)
+          } catch (err: any) {
+            toast.error(err?.response?.data?.detail ?? err?.message ?? 'Failed to delete expense')
+          }
         }}
         onCancel={() => setDeleteExpenseId(null)}
       />
