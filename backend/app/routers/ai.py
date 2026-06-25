@@ -141,8 +141,8 @@ async def parse_receipt(
 
         try:
             claude = _claude_path()
-        except FileNotFoundError as e:
-            raise HTTPException(status_code=503, detail=str(e))
+        except FileNotFoundError:
+            raise HTTPException(status_code=501, detail="AI receipt parsing is not available on this server")
 
         proc = await asyncio.create_subprocess_exec(
             claude, "--print",

@@ -6,7 +6,6 @@ import TripDetail from './pages/TripDetail'
 import AddExpense from './pages/AddExpense'
 import Settle from './pages/Settle'
 import TripSummary from './pages/TripSummary'
-import MemberProfile from './pages/MemberProfile'
 import CreateTrip from './pages/CreateTrip'
 import Login from './pages/Login'
 import Landing from './pages/Landing'
@@ -42,7 +41,6 @@ function App() {
           <Route path="/trips/:id/expenses/:expenseId/edit" element={<AddExpense />} />
           <Route path="/trips/:id/settle" element={<Settle />} />
           <Route path="/trips/:id/summary" element={<TripSummary />} />
-          <Route path="/trips/:id/members/:memberId" element={<MemberProfile />} />
         </Route>
 
         {/* Catch-all redirect to dashboard */}

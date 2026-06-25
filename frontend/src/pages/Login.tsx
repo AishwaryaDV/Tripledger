@@ -1,5 +1,5 @@
 // src/pages/Login.tsx
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import {
   Eye, EyeOff, ArrowRight, Mail, Lock, User,
@@ -33,6 +33,13 @@ const Login = () => {
   const redirectTo = (location.state as any)?.redirectTo ?? '/dashboard'
 
   const [mode, setMode] = useState<Mode>((location.state as any)?.tab === 'signup' ? 'signup' : 'login')
+
+  useEffect(() => {
+    if (sessionStorage.getItem('auth_expired')) {
+      sessionStorage.removeItem('auth_expired')
+      toast.info('Your session expired — please sign in again.')
+    }
+  }, [])
   const [showForgot, setShowForgot] = useState(false)
   const [forgotEmail, setForgotEmail] = useState('')
   const [forgotSent, setForgotSent] = useState(false)

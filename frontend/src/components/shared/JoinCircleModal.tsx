@@ -100,7 +100,7 @@ const JoinCircleModal = ({ isOpen, onClose }: Props) => {
           <div className="flex gap-2 pt-1">
             <button
               onClick={handleJoin}
-              disabled={isJoining || code.trim().length < 1}
+              disabled={isJoining || code.trim().length < 6}
               className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
             >
               {isJoining ? 'Joining...' : 'Join Circle'}

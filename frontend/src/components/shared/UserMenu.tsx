@@ -21,7 +21,8 @@ const MEMBER_COLORS = ['#818cf8','#f472b6','#34d399','#fb923c','#60a5fa','#a78bf
 const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
   const { auth } = useStore()
   const navigate = useNavigate()
-  const user = auth.currentUser!
+  if (!auth.currentUser) return null
+  const user = auth.currentUser
 
   const validPronouns = PRONOUN_OPTIONS.includes(user.pronouns ?? '') ? (user.pronouns ?? '') : ''
 

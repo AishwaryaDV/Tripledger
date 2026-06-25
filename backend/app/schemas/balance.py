@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional
 
 
@@ -22,6 +22,13 @@ class SettlementCreate(BaseModel):
     currency: str
     method: Optional[str] = None
     isPartial: bool = False
+
+    @field_validator('amount')
+    @classmethod
+    def amount_must_be_positive(cls, v: float) -> float:
+        if v <= 0:
+            raise ValueError('amount must be greater than 0')
+        return v
 
 
 class SettlementResponse(BaseModel):

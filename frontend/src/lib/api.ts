@@ -24,6 +24,7 @@ api.interceptors.response.use(
     const url = error.config?.url ?? ''
     if (error.response?.status === 401 && !url.includes('/auth/me')) {
       await supabase.auth.signOut()
+      sessionStorage.setItem('auth_expired', '1')
       window.location.href = '/login'
     }
     return Promise.reject(error)

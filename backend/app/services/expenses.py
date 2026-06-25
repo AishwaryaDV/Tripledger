@@ -83,6 +83,9 @@ async def create_expense(db: AsyncSession, trip_id: str, current_user: User, dat
     member_ids = await _get_member_ids(db, trip_id)
     if data.paidBy not in member_ids:
         raise HTTPException(status_code=400, detail="The selected payer is not a member of this trip")
+    for s in data.splits:
+        if s.userId not in member_ids:
+            raise HTTPException(status_code=400, detail=f"Split user {s.userId} is not a member of this trip")
 
     expense = Expense(
         id=str(uuid.uuid4()),
@@ -125,6 +128,9 @@ async def update_expense(db: AsyncSession, trip_id: str, expense_id: str, curren
     member_ids = await _get_member_ids(db, trip_id)
     if data.paidBy not in member_ids:
         raise HTTPException(status_code=400, detail="The selected payer is not a member of this trip")
+    for s in data.splits:
+        if s.userId not in member_ids:
+            raise HTTPException(status_code=400, detail=f"Split user {s.userId} is not a member of this trip")
 
     result = await db.execute(select(Expense).where(Expense.id == expense_id, Expense.trip_id == trip_id))
     expense = result.scalar_one_or_none()

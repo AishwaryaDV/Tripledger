@@ -79,7 +79,11 @@ const AddExpense = observer(() => {
   useEffect(() => {
     if (!isEditing || !expenseId || expenses.expenses.length === 0) return
     const expense = expenses.expenses.find(e => e.id === expenseId)
-    if (!expense) return
+    if (!expense) {
+      toast.error('Expense not found')
+      navigate(`/trips/${id}`, { replace: true })
+      return
+    }
     reset({
       title: expense.title,
       amount: expense.amount,
@@ -178,6 +182,12 @@ const AddExpense = observer(() => {
       }
     }
 
+    const rateAvailable = data.currency === trip!.baseCurrency || currency.getRate(data.currency) != null
+    if (!rateAvailable) {
+      toast.error(`Exchange rate for ${data.currency} is unavailable — rates haven't loaded yet. Try again in a moment.`)
+      setIsSubmitting(false)
+      return
+    }
     const rate = currency.getRate(data.currency) ?? 1
     const amountBase = currency.convert(Number(data.amount), data.currency) ?? Number(data.amount)
 
