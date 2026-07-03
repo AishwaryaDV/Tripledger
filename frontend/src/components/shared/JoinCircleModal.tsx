@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { X, Link2 } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
+import { getApiError } from '@/lib/utils'
 
 interface Props {
   isOpen: boolean
@@ -44,7 +45,7 @@ const JoinCircleModal = ({ isOpen, onClose }: Props) => {
       onClose()
       navigate(`/trips/${trip.id}`)
     } catch (err: any) {
-      setError(err?.response?.data?.detail ?? err.message ?? 'Invalid code. Try again.')
+      setError(getApiError(err, 'Invalid code. Try again.'))
     } finally {
       setIsJoining(false)
     }

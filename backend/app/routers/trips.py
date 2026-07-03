@@ -124,10 +124,12 @@ async def remind_member(
     if not settings.RESEND_API_KEY:
         raise HTTPException(status_code=503, detail="Email service not configured")
 
-    if net >= 0:
-        balance_line = f"you are owed {trip.baseCurrency} {abs(net):.2f}"
+    if net > 0:
+        balance_line = f"you are owed {trip.base_currency} {abs(net):.2f}"
+    elif net < 0:
+        balance_line = f"you owe {trip.base_currency} {abs(net):.2f}"
     else:
-        balance_line = f"you owe {trip.baseCurrency} {abs(net):.2f}"
+        balance_line = "you are fully settled up"
 
     html = f"""
     <p>Hi {target_member.displayName},</p>

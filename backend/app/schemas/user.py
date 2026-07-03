@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 
 
 class UserResponse(BaseModel):
@@ -13,6 +13,13 @@ class UserResponse(BaseModel):
 
 class AuthMeRequest(BaseModel):
     display_name: str | None = None
+
+    @field_validator('display_name')
+    @classmethod
+    def display_name_length(cls, v: str | None) -> str | None:
+        if v is not None and len(v.strip()) > 50:
+            raise ValueError('display_name must be 50 characters or fewer')
+        return v
 
 class AvatarUpdateRequest(BaseModel):
     avatar_url: str | None = None

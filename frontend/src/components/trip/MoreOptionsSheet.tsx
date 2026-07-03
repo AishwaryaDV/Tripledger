@@ -7,6 +7,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useStore } from '@/hooks/useStore'
+import { getApiError } from '@/lib/utils'
 import type { Trip } from '@/types'
 
 interface Props {
@@ -100,7 +101,7 @@ const MoreOptionsSheet = observer(({ trip, onClose }: Props) => {
           else await trips.settleTrip(trip.id)
           toast.success(trip.isSettled ? 'Circle reopened.' : 'Circle settled.')
           onClose()
-        } catch (err: any) { toast.error(err?.response?.data?.detail ?? err?.message ?? 'Failed.') }
+        } catch (err: any) { toast.error(getApiError(err)) }
         finally { setLoading(null) }
       },
       ownerOnly: true,

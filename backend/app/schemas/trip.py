@@ -1,9 +1,16 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional
 
 
 class TripCreate(BaseModel):
     name: str
+
+    @field_validator('name')
+    @classmethod
+    def name_must_not_be_empty(cls, v: str) -> str:
+        if not v.strip():
+            raise ValueError('name must not be empty')
+        return v
     description: Optional[str] = None
     circleType: str = "trip"
     currencies: list[str] = ["USD"]

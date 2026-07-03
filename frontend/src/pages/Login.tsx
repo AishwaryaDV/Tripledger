@@ -40,6 +40,12 @@ const Login = () => {
       toast.info('Your session expired — please sign in again.')
     }
   }, [])
+
+  useEffect(() => {
+    if (!auth.isLoading && auth.isLoggedIn) {
+      navigate(redirectTo, { replace: true })
+    }
+  }, [auth.isLoading, auth.isLoggedIn]) // eslint-disable-line react-hooks/exhaustive-deps
   const [showForgot, setShowForgot] = useState(false)
   const [forgotEmail, setForgotEmail] = useState('')
   const [forgotSent, setForgotSent] = useState(false)
@@ -192,7 +198,8 @@ const Login = () => {
                 <input
                   type="text"
                   value={displayName}
-                  onChange={e => setDisplayName(e.target.value)}
+                  onChange={e => setDisplayName(e.target.value.slice(0, 50))}
+                  maxLength={50}
                   placeholder="Display name"
                   autoComplete="name"
                   className="w-full border rounded-lg pl-9 pr-3 py-2.5 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
