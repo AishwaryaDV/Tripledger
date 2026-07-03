@@ -10,6 +10,7 @@ import SplitEditor from '@/components/expense/SplitEditor'
 import CustomSelect from '@/components/shared/CustomSelect'
 import { Skeleton } from '@/components/shared/Skeleton'
 import { api } from '@/lib/api'
+import { getApiError } from '@/lib/utils'
 import type { ExpenseSplit, SplitType, ExpenseCategory } from '@/types'
 
 interface ExpenseFormValues {
@@ -158,7 +159,7 @@ const AddExpense = observer(() => {
 
       setWasScanned(true)
     } catch (err: any) {
-      setScanError(err?.response?.data?.detail ?? 'Could not read the receipt — try a clearer photo')
+      setScanError(getApiError(err, 'Could not read the receipt — try a clearer photo'))
     } finally {
       setIsScanning(false)
     }
@@ -191,9 +192,13 @@ const AddExpense = observer(() => {
     const rate = currency.getRate(data.currency) ?? 1
     const amountBase = currency.convert(Number(data.amount), data.currency) ?? Number(data.amount)
 
+    // Convert split amountOwed values from original currency to base currency.
+    // SplitEditor works in the expense's original currency for display; the backend
+    // balance service expects every amountOwed to be in the trip's base currency.
+    const scalingFactor = Number(data.amount) > 0 ? amountBase / Number(data.amount) : 1
     const finalSplits: ExpenseSplit[] = isSelfExpense
       ? [{ userId: currentUserId, amountOwed: amountBase, isSettled: false }]
-      : splits
+      : splits.map(s => ({ ...s, amountOwed: s.amountOwed > 0 ? s.amountOwed * scalingFactor : 0 }))
 
     const payload = {
       title: data.title,
@@ -219,7 +224,7 @@ const AddExpense = observer(() => {
       toast.success(isEditing ? 'Expense updated' : 'Expense added')
       navigate(`/trips/${id}`)
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail ?? err?.message ?? 'Failed to save expense')
+      toast.error(getApiError(err, 'Failed to save expense'))
     } finally {
       setIsSubmitting(false)
     }
@@ -374,7 +379,7 @@ const AddExpense = observer(() => {
               </span>
             </p>
           ) : (
-            <p className="text-xs text-muted-foreground -mt-3">Rate not available — will use 1:1</p>
+            <p className="text-xs text-amber-600 -mt-3">Rate not available — saving disabled until rates load</p>
           )
         })()}
 

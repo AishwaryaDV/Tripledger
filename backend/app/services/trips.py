@@ -1,6 +1,8 @@
 import secrets
+import string
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, delete
+from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
 
 from app.models.trip import Trip, TripMember
@@ -8,9 +10,12 @@ from app.models.user import User
 from app.schemas.trip import TripCreate, TripResponse, MemberResponse
 
 
+_CODE_ALPHABET = string.ascii_uppercase + string.digits
+
+
 def _generate_join_code() -> str:
-    """Generate a unique 6-char uppercase alphanumeric join code."""
-    return secrets.token_hex(3).upper()
+    """Generate a random 6-char uppercase alphanumeric join code."""
+    return ''.join(secrets.choice(_CODE_ALPHABET) for _ in range(6))
 
 
 async def _get_user_avatars(db: AsyncSession, user_ids: list[str]) -> dict[str, str | None]:
@@ -50,23 +55,31 @@ def _build_trip_response(trip: Trip, user_avatars: dict[str, str | None] | None 
 
 async def create_trip(db: AsyncSession, current_user: User, data: TripCreate) -> TripResponse:
     import uuid
-    join_code = _generate_join_code()
-
-    trip = Trip(
-        id=str(uuid.uuid4()),
-        name=data.name,
-        description=data.description,
-        circle_type=data.circleType,
-        currencies=data.currencies,
-        base_currency=data.baseCurrency,
-        join_code=join_code,
-        is_settled=False,
-        start_date=data.startDate,
-        end_date=data.endDate,
-        created_by=current_user.id,
-    )
-    db.add(trip)
-    await db.flush()  # get trip.id before adding member
+    for attempt in range(5):
+        join_code = _generate_join_code()
+        trip = Trip(
+            id=str(uuid.uuid4()),
+            name=data.name,
+            description=data.description,
+            circle_type=data.circleType,
+            currencies=data.currencies,
+            base_currency=data.baseCurrency,
+            join_code=join_code,
+            is_settled=False,
+            start_date=data.startDate,
+            end_date=data.endDate,
+            created_by=current_user.id,
+        )
+        db.add(trip)
+        try:
+            await db.flush()
+            break
+        except IntegrityError:
+            await db.rollback()
+            if attempt == 4:
+                raise HTTPException(status_code=500, detail="Could not generate a unique join code — please try again")
+    else:
+        raise HTTPException(status_code=500, detail="Could not generate a unique join code — please try again")
 
     # Auto-add creator as owner
     member = TripMember(
