@@ -467,7 +467,7 @@ const AddExpense = observer(() => {
         <div className="flex gap-3 pt-2">
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || (!!watchedCurrency && watchedCurrency !== trip.baseCurrency && currency.getRate(watchedCurrency) == null)}
             className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {isSubmitting
