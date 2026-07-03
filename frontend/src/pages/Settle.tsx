@@ -5,7 +5,7 @@ import { observer } from 'mobx-react-lite'
 import { ArrowLeft, CheckCircle2, AlertTriangle, PartyPopper } from 'lucide-react'
 import { toast } from 'sonner'
 import { useStore } from '@/hooks/useStore'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, getApiError } from '@/lib/utils'
 import { BalanceRowSkeleton } from '@/components/shared/Skeleton'
 import type { SettlementSuggestion } from '@/types'
 
@@ -33,6 +33,7 @@ const Settle = observer(() => {
 
   const trip = trips.currentTrip
   const currentUserId = auth.currentUser?.id
+  const isOwner = trip?.members.find(m => m.userId === currentUserId)?.role === 'owner'
 
   const getName = (userId: string) =>
     trip?.members.find(m => m.userId === userId)?.displayName ?? userId
@@ -68,7 +69,7 @@ const Settle = observer(() => {
       })
       setTimeout(() => setNotification(null), 5000)
     } catch (err: any) {
-      toast.error(err?.response?.data?.detail ?? err?.message ?? 'Failed to record payment')
+      toast.error(getApiError(err, 'Failed to record payment'))
     } finally {
       setIsSubmitting(false)
     }
@@ -191,23 +192,27 @@ const Settle = observer(() => {
             <PartyPopper size={20} className="text-green-600 shrink-0" />
             <div>
               <p className="text-sm font-semibold text-green-800">Everyone is settled up!</p>
-              <p className="text-xs text-green-700 mt-0.5">You can now mark this circle as settled.</p>
+              <p className="text-xs text-green-700 mt-0.5">
+                {isOwner ? 'You can now mark this circle as settled.' : 'Only the owner can mark this circle as settled.'}
+              </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={async () => {
-              try {
-                await trips.settleTrip(id!)
-                navigate(`/trips/${id}`)
-              } catch (err: any) {
-                toast.error(err?.response?.data?.detail ?? err?.message ?? 'Failed to settle circle')
-              }
-            }}
-            className="shrink-0 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
-          >
-            Mark Settled
-          </button>
+          {isOwner && (
+            <button
+              type="button"
+              onClick={async () => {
+                try {
+                  await trips.settleTrip(id!)
+                  navigate(`/trips/${id}`)
+                } catch (err: any) {
+                  toast.error(getApiError(err, 'Failed to settle circle'))
+                }
+              }}
+              className="shrink-0 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors"
+            >
+              Mark Settled
+            </button>
+          )}
         </div>
       )}
 
@@ -308,6 +313,35 @@ const Settle = observer(() => {
             ))
           )}
         </div>
+
+      {/* Recorded Payments */}
+      {balances.settlements.length > 0 && (
+        <div className="mt-8">
+          <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-3">Recorded Payments</h3>
+          <div className="space-y-2">
+            {[...balances.settlements]
+              .sort((a, b) => new Date(b.confirmedAt ?? '').getTime() - new Date(a.confirmedAt ?? '').getTime())
+              .map(s => (
+                <div key={s.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/30 text-sm">
+                  <div className="flex flex-wrap items-center gap-1">
+                    <span className="font-medium">{getName(s.fromUserId)}</span>
+                    <span className="text-muted-foreground">paid</span>
+                    <span className="font-medium">{getName(s.toUserId)}</span>
+                    {s.isPartial && (
+                      <span className="ml-1 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">Partial</span>
+                    )}
+                    {s.confirmedAt && (
+                      <span className="text-xs text-muted-foreground ml-1">{formatCurrency(0, s.currency).replace('0.00', '')} {new Date(s.confirmedAt).toLocaleDateString()}</span>
+                    )}
+                  </div>
+                  <span className={`font-semibold shrink-0 ${s.isPartial ? 'text-yellow-700' : 'text-green-600'}`}>
+                    {formatCurrency(s.amount, s.currency)}
+                  </span>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
 
     </div>
   )

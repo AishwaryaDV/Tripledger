@@ -61,12 +61,12 @@ const TripSummary = observer(() => {
   const [copied, setCopied] = useState(false)
   const dailyScrollRef = useRef<HTMLDivElement>(null)
 
-  // Scroll daily chart to the right (most recent) on mount
+  // Scroll daily chart to the right after data loads and chart renders
   useEffect(() => {
     if (dailyScrollRef.current) {
       dailyScrollRef.current.scrollLeft = dailyScrollRef.current.scrollWidth
     }
-  }, [])
+  }, [allExpenses.length])
 
   useEffect(() => {
     if (!id) return
@@ -453,6 +453,7 @@ const TripSummary = observer(() => {
           </ErrorBoundary>
 
           {/* ── Daily Spending ── */}
+          <ErrorBoundary fallback={<div className="rounded-xl border bg-card p-5 text-sm text-muted-foreground text-center py-8">Chart failed to render</div>}>
           {dailyData.length > 0 && (() => {
             const BAR_W = window.innerWidth < 640 ? 64 : window.innerWidth < 1024 ? 52 : 44
             const chartW = Math.max(dailyData.length * BAR_W, 280)
@@ -497,7 +498,10 @@ const TripSummary = observer(() => {
             )
           })()}
 
+          </ErrorBoundary>
+
           {/* ── Per-Person Contribution ── */}
+          <ErrorBoundary fallback={<div className="rounded-xl border bg-card p-5 text-sm text-muted-foreground text-center py-8">Chart failed to render</div>}>
           <div className="rounded-xl border bg-card p-5">
             <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-4">Per Person</h3>
 
@@ -591,6 +595,8 @@ const TripSummary = observer(() => {
               })}
             </div>
           </div>
+
+          </ErrorBoundary>
 
           {/* ── Settlement Status ── */}
           {(balances.suggestions.length > 0 || balances.settlements.length > 0) && (

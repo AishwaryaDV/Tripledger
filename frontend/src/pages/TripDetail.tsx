@@ -33,7 +33,7 @@ import SettleSuggestions from '@/components/trip/SettleSuggestions'
 import MoreOptionsSheet from '@/components/trip/MoreOptionsSheet'
 import MemberProfileSheet from '@/components/trip/MemberProfileSheet'
 import AiChatPanel from '@/components/trip/AiChatPanel'
-import { formatCurrency, formatDate } from '@/lib/utils'
+import { formatCurrency, formatDate, getApiError } from '@/lib/utils'
 import { ExpenseCardSkeleton, BalanceRowSkeleton, NoteRowSkeleton, SpendingRowSkeleton } from '@/components/shared/Skeleton'
 
 type Tab = 'expenses' | 'balances' | 'suggestions' | 'spending' | 'notes' | 'members' | 'activity'
@@ -126,6 +126,9 @@ const TripDetail = observer(() => {
 
   const trip = trips.currentTrip
   if (!trip) return null
+
+  const currentUserRole = trip.members.find(m => m.userId === auth.currentUser?.id)?.role
+  const isOwner = currentUserRole === 'owner'
 
   return (
     <>
@@ -250,14 +253,16 @@ const TripDetail = observer(() => {
             {/* Settled banner */}
             <div className="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <p className="text-sm text-amber-700">
-                This circle is settled. You can reopen it to make changes.
+                This circle is settled. {isOwner ? 'You can reopen it to make changes.' : 'Only the owner can reopen it.'}
               </p>
-              <button
-                onClick={() => setConfirmReopen('reopen')}
-                className="text-sm font-medium text-amber-700 hover:text-amber-900 shrink-0 transition-colors self-start sm:self-auto"
-              >
-                Reopen Circle
-              </button>
+              {isOwner && (
+                <button
+                  onClick={() => setConfirmReopen('reopen')}
+                  className="text-sm font-medium text-amber-700 hover:text-amber-900 shrink-0 transition-colors self-start sm:self-auto"
+                >
+                  Reopen Circle
+                </button>
+              )}
             </div>
             <div className="flex gap-2">
               <button
@@ -292,7 +297,7 @@ const TripDetail = observer(() => {
                         setConfirmReopen(null)
                         if (confirmReopen === 'add') navigate(`/trips/${id}/add`)
                       } catch (err: any) {
-                        toast.error(err?.response?.data?.detail ?? err?.message ?? 'Failed to reopen circle')
+                        toast.error(getApiError(err, 'Failed to reopen circle'))
                       }
                     }}
                     className="px-4 py-1.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
@@ -711,7 +716,7 @@ const TripDetail = observer(() => {
             await notes.addNote(id, newNote.trim())
             setNewNote('')
           } catch (err: any) {
-            toast.error(err?.response?.data?.detail ?? err?.message ?? 'Failed to add note')
+            toast.error(getApiError(err, 'Failed to add note'))
           } finally {
             setIsAddingNote(false)
           }
@@ -729,7 +734,7 @@ const TripDetail = observer(() => {
             setEditingNoteId(null)
             setEditingContent('')
           } catch (err: any) {
-            toast.error(err?.response?.data?.detail ?? err?.message ?? 'Failed to save note')
+            toast.error(getApiError(err, 'Failed to save note'))
           }
         }
 
@@ -810,7 +815,7 @@ const TripDetail = observer(() => {
                           <Pencil size={13} />
                         </button>
                         <button
-                          onClick={() => notes.deleteNote(id!, note.id).catch((err: any) => toast.error(err?.response?.data?.detail ?? 'Failed to delete note'))}
+                          onClick={() => notes.deleteNote(id!, note.id).catch((err: any) => toast.error(getApiError(err, 'Failed to delete note')))}
                           title="Delete note"
                           className="p-1 rounded hover:bg-muted text-destructive transition-colors"
                         >
@@ -928,7 +933,7 @@ const TripDetail = observer(() => {
             await expenses.deleteExpense(id!, deleteExpenseId)
             setDeleteExpenseId(null)
           } catch (err: any) {
-            toast.error(err?.response?.data?.detail ?? err?.message ?? 'Failed to delete expense')
+            toast.error(getApiError(err, 'Failed to delete expense'))
           }
         }}
         onCancel={() => setDeleteExpenseId(null)}

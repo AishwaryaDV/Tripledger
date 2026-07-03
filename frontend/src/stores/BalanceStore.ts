@@ -30,7 +30,7 @@ export class BalanceStore {
   }
 
   async fetchBalances(tripId: string) {
-    runInAction(() => { this.isLoading = true; this.error = null; this.balances = []; this.suggestions = [] })
+    runInAction(() => { this.isLoading = true; this.error = null })
     try {
       const [bal, sug] = await Promise.all([
         api.get<Balance[]>(`/trips/${tripId}/balances`),

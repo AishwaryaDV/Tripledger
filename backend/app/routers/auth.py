@@ -1,10 +1,12 @@
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import update
 import httpx
 
 from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
+from app.models.trip import TripMember
 from app.schemas.user import UserResponse, AuthMeRequest, AvatarUpdateRequest, CurrencyUpdateRequest
 from app.config import settings
 
@@ -23,6 +25,11 @@ async def auth_me(
     """
     if body.display_name:
         current_user.display_name = body.display_name
+        await db.execute(
+            update(TripMember)
+            .where(TripMember.user_id == current_user.id)
+            .values(display_name=body.display_name)
+        )
         await db.commit()
         await db.refresh(current_user)
 
