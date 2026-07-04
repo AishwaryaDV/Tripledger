@@ -183,6 +183,9 @@ async def update_expense(db: AsyncSession, trip_id: str, expense_id: str, curren
 
 async def delete_expense(db: AsyncSession, trip_id: str, expense_id: str, current_user: User) -> None:
     await _check_membership(db, trip_id, current_user.id)
+    trip = await _get_trip(db, trip_id)
+    if trip.is_settled:
+        raise HTTPException(status_code=409, detail="This trip is already settled — reopen it before deleting expenses")
 
     result = await db.execute(select(Expense).where(Expense.id == expense_id, Expense.trip_id == trip_id))
     expense = result.scalar_one_or_none()

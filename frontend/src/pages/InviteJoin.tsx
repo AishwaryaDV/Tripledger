@@ -1,9 +1,10 @@
 // src/pages/InviteJoin.tsx
 import { useEffect, useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { observer } from 'mobx-react-lite'
 import { Plane, User, Home, PartyPopper, Users, Coins, AlertTriangle, CheckCircle2, ArrowRight, LogIn } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
-import type { CircleType, Trip } from '@/types'
+import type { CircleType, TripPreview } from '@/types'
 
 const CIRCLE_TYPE_CONFIG: Record<CircleType, { label: string; icon: React.ElementType; style: string }> = {
   trip:      { label: 'Trip',      icon: Plane,       style: 'bg-blue-100 text-blue-700' },
@@ -12,19 +13,20 @@ const CIRCLE_TYPE_CONFIG: Record<CircleType, { label: string; icon: React.Elemen
   event:     { label: 'Event',     icon: PartyPopper, style: 'bg-amber-100 text-amber-700' },
 }
 
-const InviteJoin = () => {
+const InviteJoin = observer(() => {
   const { code } = useParams<{ code: string }>()
   const navigate = useNavigate()
   const { trips, auth } = useStore()
 
-  const [preview, setPreview] = useState<Trip | null>(null)
+  const [preview, setPreview] = useState<TripPreview | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isJoining, setIsJoining] = useState(false)
   const [joinError, setJoinError] = useState<string | null>(null)
 
   const isLoggedIn = auth.isLoggedIn
-  const alreadyMember = preview?.members.some(m => m.userId === auth.currentUser?.id)
+  // The public preview no longer exposes member IDs — check against our own trips
+  const alreadyMember = !!preview && trips.trips.some(t => t.id === preview.id)
 
   useEffect(() => {
     if (!code) { setLoadError('No join code provided.'); setIsLoading(false); return }
@@ -34,12 +36,16 @@ const InviteJoin = () => {
       .catch(err => { setLoadError(err.message ?? 'Invalid join code.'); setIsLoading(false) })
   }, [code])
 
+  useEffect(() => {
+    if (isLoggedIn) trips.fetchTrips()
+  }, [isLoggedIn]) // eslint-disable-line react-hooks/exhaustive-deps
+
   const handleJoin = async () => {
     if (!code) return
     setIsJoining(true)
     setJoinError(null)
     try {
-      const trip = await trips.joinTrip(preview!.id)
+      const trip = await trips.joinTrip(code)
       navigate(`/trips/${trip.id}`)
     } catch (err: any) {
       setJoinError(err.message ?? 'Something went wrong.')
@@ -116,7 +122,7 @@ const InviteJoin = () => {
           <div className="grid grid-cols-2 gap-3">
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Users size={14} className="shrink-0" />
-              <span>{preview.members.length} member{preview.members.length !== 1 ? 's' : ''}</span>
+              <span>{preview.memberCount} member{preview.memberCount !== 1 ? 's' : ''}</span>
             </div>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Coins size={14} className="shrink-0" />
@@ -125,23 +131,23 @@ const InviteJoin = () => {
           </div>
 
           {/* Member avatars */}
-          {preview.members.length > 0 && (
+          {preview.memberNames.length > 0 && (
             <div className="flex items-center gap-2">
               <div className="flex -space-x-2">
-                {preview.members.slice(0, 5).map((m, i) => (
+                {preview.memberNames.map((name, i) => (
                   <div
-                    key={m.userId}
-                    title={m.displayName}
+                    key={`${name}-${i}`}
+                    title={name}
                     style={{ backgroundColor: ['#818cf8','#f472b6','#34d399','#fb923c','#60a5fa'][i % 5] }}
                     className="w-7 h-7 rounded-full flex items-center justify-center text-xs font-semibold border-2 border-card text-white"
                   >
-                    {m.displayName.charAt(0).toUpperCase()}
+                    {name.charAt(0).toUpperCase()}
                   </div>
                 ))}
               </div>
               <span className="text-xs text-muted-foreground">
-                {preview.members.slice(0, 3).map(m => m.displayName).join(', ')}
-                {preview.members.length > 3 && ` +${preview.members.length - 3} more`}
+                {preview.memberNames.slice(0, 3).join(', ')}
+                {preview.memberCount > 3 && ` +${preview.memberCount - 3} more`}
               </span>
             </div>
           )}
@@ -210,6 +216,6 @@ const InviteJoin = () => {
       </div>
     </div>
   )
-}
+})
 
 export default InviteJoin

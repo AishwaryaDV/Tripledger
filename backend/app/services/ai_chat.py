@@ -1,17 +1,20 @@
 import asyncio
 import json
 import uuid
-from datetime import date
 
 from fastapi import HTTPException
+from pydantic import ValidationError
 from sqlalchemy import delete, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.ai_message import AiMessage
-from app.models.expense import Expense, ExpenseSplit
+from app.models.expense import Expense
 from app.models.trip import Trip, TripMember
 from app.models.user import User
 from app.routers.ai import _claude_path
+from app.schemas.expense import ExpenseCreate, ExpenseSplitInput
+from app.services import expenses as expense_service
+from app.services.expenses import _check_membership
 
 VALID_CATEGORIES = {"food", "transport", "accommodation", "activities", "other"}
 
@@ -34,7 +37,7 @@ CHAT_SCHEMA = json.dumps({
 })
 
 
-async def get_history(db: AsyncSession, trip_id: str, user_id: str) -> list[dict]:
+async def _fetch_history(db: AsyncSession, trip_id: str, user_id: str) -> list[dict]:
     result = await db.execute(
         select(AiMessage)
         .where(AiMessage.trip_id == trip_id, AiMessage.user_id == user_id)
@@ -42,6 +45,11 @@ async def get_history(db: AsyncSession, trip_id: str, user_id: str) -> list[dict
     )
     msgs = result.scalars().all()
     return [{"role": m.role, "content": m.content, "id": m.id, "createdAt": str(m.created_at)} for m in msgs]
+
+
+async def get_history(db: AsyncSession, trip_id: str, current_user: User) -> list[dict]:
+    await _check_membership(db, trip_id, current_user.id)
+    return await _fetch_history(db, trip_id, current_user.id)
 
 
 async def _maybe_compress_history(
@@ -113,9 +121,10 @@ async def _maybe_compress_history(
     ]
 
 
-async def clear_history(db: AsyncSession, trip_id: str, user_id: str) -> None:
+async def clear_history(db: AsyncSession, trip_id: str, current_user: User) -> None:
+    await _check_membership(db, trip_id, current_user.id)
     await db.execute(
-        delete(AiMessage).where(AiMessage.trip_id == trip_id, AiMessage.user_id == user_id)
+        delete(AiMessage).where(AiMessage.trip_id == trip_id, AiMessage.user_id == current_user.id)
     )
     await db.commit()
 
@@ -203,6 +212,12 @@ async def _execute_action(
     action_type: str,
     action_data: dict,
 ) -> str:
+    """
+    Executes an AI-requested action by delegating to the expense service, so chat
+    actions get the same membership / settled-trip / member-validation / splits-sum
+    rules as the REST endpoints. Service rejections come back as friendly strings
+    for the chat instead of HTTP errors.
+    """
     if action_type == "delete_expense":
         expense_id = action_data.get("expense_id")
         if not expense_id:
@@ -211,59 +226,55 @@ async def _execute_action(
         expense = res.scalar_one_or_none()
         if not expense:
             return f"Expense {expense_id} not found."
-        await db.execute(delete(Expense).where(Expense.id == expense_id))
-        return f"Deleted expense: {expense.title}"
+        title = expense.title
+        try:
+            await expense_service.delete_expense(db, trip_id, expense_id, current_user)
+        except HTTPException as e:
+            return str(e.detail)
+        return f"Deleted expense: {title}"
 
     if action_type == "add_expense":
+        trip_res = await db.execute(select(Trip).where(Trip.id == trip_id))
+        trip = trip_res.scalar_one_or_none()
+        if not trip:
+            return "Trip not found."
         try:
-            amount = float(action_data["amount"])
             currency = str(action_data["currency"])[:3].upper()
             # The backend has no exchange-rate source, so chat expenses are limited to
             # the trip's base currency; the Add Expense form handles conversion.
-            trip_res = await db.execute(select(Trip).where(Trip.id == trip_id))
-            trip = trip_res.scalar_one()
             if currency != trip.base_currency:
                 return (
                     f"I can only add expenses in {trip.base_currency}, this trip's base currency. "
                     f"For a {currency} amount, please use the Add Expense form — it converts currencies for you."
                 )
-            title = str(action_data["title"])
             category = action_data.get("category", "other")
             if category not in VALID_CATEGORIES:
                 category = "other"
-            expense_date = date.fromisoformat(action_data["expense_date"])
-            paid_by = str(action_data["paid_by"])
-            notes = action_data.get("notes")
-            splits_raw = action_data.get("splits", [])
-
-            expense = Expense(
-                id=str(uuid.uuid4()),
-                trip_id=trip_id,
-                paid_by=paid_by,
-                title=title,
-                amount=amount,
+            payload = ExpenseCreate(
+                paidBy=str(action_data["paid_by"]),
+                title=str(action_data["title"]),
+                amount=float(action_data["amount"]),
                 currency=currency,
-                amount_base=amount,
-                exchange_rate=1.0,
+                amountBase=float(action_data["amount"]),
+                exchangeRate=1.0,
                 category=category,
-                split_type="equal",
-                expense_date=expense_date,
-                notes=notes,
+                splitType="equal",
+                splits=[
+                    ExpenseSplitInput(userId=str(s["userId"]), amountOwed=float(s["amountOwed"]))
+                    for s in action_data.get("splits") or []
+                ],
+                expenseDate=str(action_data["expense_date"]),
+                notes=action_data.get("notes"),
             )
-            db.add(expense)
-            await db.flush()
-
-            for s in splits_raw:
-                db.add(ExpenseSplit(
-                    id=str(uuid.uuid4()),
-                    expense_id=expense.id,
-                    user_id=s["userId"],
-                    amount_owed=float(s["amountOwed"]),
-                    is_settled=False,
-                ))
-            return f"Added expense: {title} ({amount:.2f} {currency})"
-        except (KeyError, ValueError) as e:
+        except (KeyError, ValueError, TypeError) as e:
             return f"Could not add expense: {e}"
+        except ValidationError as e:
+            return f"Could not add expense: {e.errors()[0]['msg']}"
+        try:
+            created = await expense_service.create_expense(db, trip_id, current_user, payload)
+        except HTTPException as e:
+            return str(e.detail)
+        return f"Added expense: {created.title} ({created.amount:.2f} {created.currency})"
 
     if action_type == "edit_expense":
         expense_id = action_data.get("expense_id")
@@ -285,20 +296,51 @@ async def _execute_action(
                 f"This expense is in {expense.currency}, and I can only edit amounts for "
                 f"{trip.base_currency} expenses. Please use the edit form — it converts currencies for you."
             )
-        if "title" in action_data:
-            expense.title = action_data["title"]
-        if "amount" in action_data:
-            expense.amount = float(action_data["amount"])
-            expense.amount_base = float(action_data["amount"])
-        if "currency" in action_data:
-            expense.currency = str(action_data["currency"])[:3].upper()
-        if "category" in action_data and action_data["category"] in VALID_CATEGORIES:
-            expense.category = action_data["category"]
-        if "expense_date" in action_data:
-            expense.expense_date = date.fromisoformat(action_data["expense_date"])
-        if "notes" in action_data:
-            expense.notes = action_data["notes"]
-        return f"Updated expense: {expense.title}"
+        try:
+            new_amount = float(action_data.get("amount", expense.amount))
+            if action_data.get("splits"):
+                splits = [
+                    ExpenseSplitInput(userId=str(s["userId"]), amountOwed=float(s["amountOwed"]))
+                    for s in action_data["splits"]
+                ]
+            else:
+                # No new splits from the AI — rescale the existing ones so they still
+                # sum to the (possibly changed) amount.
+                old_base = float(expense.amount_base)
+                factor = (new_amount / old_base) if old_base > 0 else 1.0
+                splits = [
+                    ExpenseSplitInput(
+                        userId=s.user_id,
+                        amountOwed=round(float(s.amount_owed) * factor, 2),
+                        shareValue=float(s.share_value) if s.share_value is not None else None,
+                    )
+                    for s in expense.splits
+                ]
+            category = action_data.get("category", expense.category)
+            if category not in VALID_CATEGORIES:
+                category = expense.category
+            payload = ExpenseCreate(
+                paidBy=str(action_data.get("paid_by", expense.paid_by)),
+                title=str(action_data.get("title", expense.title)),
+                amount=new_amount,
+                currency=str(action_data.get("currency", expense.currency))[:3].upper(),
+                amountBase=new_amount if "amount" in action_data else float(expense.amount_base),
+                exchangeRate=float(expense.exchange_rate),
+                category=category,
+                splitType=expense.split_type,
+                splits=splits,
+                expenseDate=str(action_data.get("expense_date", expense.expense_date)),
+                notes=action_data.get("notes", expense.notes),
+            )
+        except (KeyError, ValueError, TypeError) as e:
+            return f"Could not edit expense: {e}"
+        except ValidationError as e:
+            return f"Could not edit expense: {e.errors()[0]['msg']}"
+        try:
+            updated = await expense_service.update_expense(db, trip_id, expense_id, current_user, payload)
+        except HTTPException as e:
+            return str(e.detail)
+        return f"Updated expense: {updated.title}"
 
     return "Unknown action."
 
@@ -309,6 +351,7 @@ async def send_message(
     current_user: User,
     user_message: str,
 ) -> dict:
+    await _check_membership(db, trip_id, current_user.id)
     context, member_map, _ = await _build_context(db, trip_id)
 
     try:
@@ -316,7 +359,7 @@ async def send_message(
     except FileNotFoundError as e:
         raise HTTPException(status_code=503, detail=str(e))
 
-    history_msgs = await get_history(db, trip_id, current_user.id)
+    history_msgs = await _fetch_history(db, trip_id, current_user.id)
     history_msgs = await _maybe_compress_history(db, trip_id, current_user.id, claude, history_msgs)
 
     summary_msg = next((m for m in history_msgs if m["role"] == "summary"), None)

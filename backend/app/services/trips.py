@@ -5,9 +5,11 @@ from sqlalchemy import select, delete
 from sqlalchemy.exc import IntegrityError
 from fastapi import HTTPException
 
+from app.models.expense import Expense, ExpenseSplit
 from app.models.trip import Trip, TripMember
 from app.models.user import User
-from app.schemas.trip import TripCreate, TripResponse, MemberResponse
+from app.schemas.trip import TripCreate, TripResponse, TripPreviewResponse, MemberResponse
+from app.services.balances import _load_net_balances
 
 
 _CODE_ALPHABET = string.ascii_uppercase + string.digits
@@ -131,29 +133,39 @@ async def get_trip(db: AsyncSession, trip_id: str, current_user: User) -> TripRe
     return _build_trip_response(trip, avatars)
 
 
-async def get_trip_by_code(db: AsyncSession, join_code: str) -> TripResponse:
-    result = await db.execute(select(Trip).where(Trip.join_code == join_code.upper()))
+async def get_trip_by_code(db: AsyncSession, join_code: str) -> TripPreviewResponse:
+    result = await db.execute(select(Trip).where(Trip.join_code == join_code.strip().upper()))
     trip = result.scalar_one_or_none()
 
     if not trip:
         raise HTTPException(status_code=404, detail="Invalid join code")
 
-    user_ids = [m.user_id for m in trip.members]
-    avatars = await _get_user_avatars(db, user_ids)
-    return _build_trip_response(trip, avatars)
+    return TripPreviewResponse(
+        id=trip.id,
+        name=trip.name,
+        description=trip.description,
+        circleType=trip.circle_type,
+        currencies=trip.currencies or [],
+        baseCurrency=trip.base_currency,
+        joinCode=trip.join_code,
+        isSettled=trip.is_settled,
+        memberCount=len(trip.members),
+        memberNames=[m.display_name or "Member" for m in trip.members[:5]],
+    )
 
 
-async def join_trip(db: AsyncSession, trip_id: str, current_user: User) -> TripResponse:
-    result = await db.execute(select(Trip).where(Trip.id == trip_id))
+async def join_trip(db: AsyncSession, join_code: str, current_user: User) -> TripResponse:
+    # Joining requires the join code — knowing a trip's UUID alone must not be enough.
+    result = await db.execute(select(Trip).where(Trip.join_code == join_code.strip().upper()))
     trip = result.scalar_one_or_none()
 
     if not trip:
-        raise HTTPException(status_code=404, detail="Trip not found")
+        raise HTTPException(status_code=404, detail="Invalid join code")
 
     # Check already a member
     existing = await db.execute(
         select(TripMember).where(
-            TripMember.trip_id == trip_id,
+            TripMember.trip_id == trip.id,
             TripMember.user_id == current_user.id,
         )
     )
@@ -161,13 +173,18 @@ async def join_trip(db: AsyncSession, trip_id: str, current_user: User) -> TripR
         raise HTTPException(status_code=409, detail="Already a member of this trip")
 
     member = TripMember(
-        trip_id=trip_id,
+        trip_id=trip.id,
         user_id=current_user.id,
         display_name=current_user.display_name or current_user.email,
         role="member",
     )
     db.add(member)
-    await db.commit()
+    try:
+        await db.commit()
+    except IntegrityError:
+        # Double-click / two-device race: the other insert won — same outcome
+        await db.rollback()
+        raise HTTPException(status_code=409, detail="Already a member of this trip")
     await db.refresh(trip)
     user_ids = [m.user_id for m in trip.members]
     avatars = await _get_user_avatars(db, user_ids)
@@ -188,6 +205,38 @@ async def leave_trip(db: AsyncSession, trip_id: str, current_user: User) -> None
         raise HTTPException(status_code=404, detail="Not a member of this trip")
     if member.role == "owner":
         raise HTTPException(status_code=400, detail="Owner cannot leave — delete the trip instead")
+
+    # Balance math only counts current members, so a member who leaves takes their
+    # paid credits and owed splits out of the equation — corrupting everyone else's
+    # balances. Block leaving while they're still woven into the trip's money.
+    trip_result = await db.execute(select(Trip).where(Trip.id == trip_id))
+    trip = trip_result.scalar_one_or_none()
+    if not trip:
+        raise HTTPException(status_code=404, detail="Trip not found")
+
+    net = await _load_net_balances(db, trip)
+    if abs(net.get(current_user.id, 0.0)) > 0.005:
+        raise HTTPException(
+            status_code=409,
+            detail="Settle your balance before leaving this circle",
+        )
+
+    paid_result = await db.execute(
+        select(Expense.id)
+        .where(Expense.trip_id == trip_id, Expense.paid_by == current_user.id)
+        .limit(1)
+    )
+    split_result = await db.execute(
+        select(ExpenseSplit.id)
+        .join(Expense, Expense.id == ExpenseSplit.expense_id)
+        .where(Expense.trip_id == trip_id, ExpenseSplit.user_id == current_user.id)
+        .limit(1)
+    )
+    if paid_result.first() or split_result.first():
+        raise HTTPException(
+            status_code=409,
+            detail="You still have expenses on this circle — they must be removed or reassigned before you can leave",
+        )
 
     await db.execute(
         delete(TripMember).where(

@@ -41,6 +41,20 @@ export interface Trip {
   endDate?: string
 }
 
+// Slim public preview returned by GET /trips/by-code — no member IDs
+export interface TripPreview {
+  id: string
+  name: string
+  description?: string
+  circleType: CircleType
+  currencies: Currency[]
+  baseCurrency: Currency
+  joinCode: string
+  isSettled: boolean
+  memberCount: number
+  memberNames: string[]
+}
+
 export interface ExpenseSplit {
   userId: string
   amountOwed: number // in base currency

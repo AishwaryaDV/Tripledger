@@ -1,7 +1,7 @@
 // src/stores/TripStore.ts
 import { makeAutoObservable, runInAction } from 'mobx'
 import { api } from '../lib/api'
-import type { Trip } from '../types'
+import type { Trip, TripPreview } from '../types'
 import type { RootStore } from './RootStore'
 
 export class TripStore {
@@ -95,8 +95,8 @@ export class TripStore {
     }
   }
 
-  async fetchTripByCode(code: string): Promise<Trip> {
-    const { data } = await api.get<Trip>(`/trips/by-code/${code}`)
+  async fetchTripByCode(code: string): Promise<TripPreview> {
+    const { data } = await api.get<TripPreview>(`/trips/by-code/${code}`)
     return data
   }
 
@@ -126,10 +126,10 @@ export class TripStore {
     }
   }
 
-  // Takes tripId (from the preview fetched by fetchTripByCode)
-  async joinTrip(tripId: string) {
+  // Joins by the 6-char join code — the code is the credential, not the trip ID
+  async joinTrip(joinCode: string) {
     try {
-      const { data } = await api.post<Trip>(`/trips/${tripId}/join`)
+      const { data } = await api.post<Trip>('/trips/join', { joinCode })
       runInAction(() => {
         const idx = this.trips.findIndex(t => t.id === data.id)
         if (idx >= 0) this.trips[idx] = data

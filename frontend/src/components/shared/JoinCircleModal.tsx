@@ -40,8 +40,7 @@ const JoinCircleModal = ({ isOpen, onClose }: Props) => {
     setIsJoining(true)
     setError(null)
     try {
-      const preview = await trips.fetchTripByCode(trimmed)
-      const trip = await trips.joinTrip(preview.id)
+      const trip = await trips.joinTrip(trimmed)
       onClose()
       navigate(`/trips/${trip.id}`)
     } catch (err: any) {

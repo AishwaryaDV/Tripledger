@@ -2,6 +2,7 @@ from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 import jwt
 from jwt import PyJWKClient
 import ssl
@@ -55,7 +56,13 @@ async def get_current_user(
     if not user:
         user = User(id=user_id, email=email)
         db.add(user)
-        await db.commit()
-        await db.refresh(user)
+        try:
+            await db.commit()
+            await db.refresh(user)
+        except IntegrityError:
+            # Two concurrent first requests raced on the insert — the other one won
+            await db.rollback()
+            result = await db.execute(select(User).where(User.id == user_id))
+            user = result.scalar_one()
 
     return user

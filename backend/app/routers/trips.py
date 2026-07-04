@@ -7,7 +7,7 @@ from app.database import get_db
 from app.dependencies import get_current_user
 from app.models.user import User
 from app.models.trip import Trip, TripMember
-from app.schemas.trip import TripCreate, TripPatch, TripResponse
+from app.schemas.trip import TripCreate, TripJoinRequest, TripPatch, TripPreviewResponse, TripResponse
 from app.services import trips as trip_service
 from app.services import balances as balance_service
 from app.config import settings
@@ -32,12 +32,12 @@ async def list_trips(
     return await trip_service.list_trips(db, current_user)
 
 
-@router.get("/by-code/{join_code}", response_model=TripResponse)
+@router.get("/by-code/{join_code}", response_model=TripPreviewResponse)
 async def get_trip_by_code(
     join_code: str,
     db: AsyncSession = Depends(get_db),
 ):
-    """Public endpoint — no auth required. Returns trip for join screen."""
+    """Public endpoint — no auth required. Returns a slim preview for the join screen."""
     return await trip_service.get_trip_by_code(db, join_code)
 
 
@@ -50,13 +50,14 @@ async def get_trip(
     return await trip_service.get_trip(db, trip_id, current_user)
 
 
-@router.post("/{trip_id}/join", response_model=TripResponse)
+@router.post("/join", response_model=TripResponse)
 async def join_trip(
-    trip_id: str,
+    body: TripJoinRequest,
     db: AsyncSession = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    return await trip_service.join_trip(db, trip_id, current_user)
+    """Join a circle by its join code — the code, not the trip UUID, is the credential."""
+    return await trip_service.join_trip(db, body.joinCode, current_user)
 
 
 @router.patch("/{trip_id}", response_model=TripResponse)
