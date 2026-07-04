@@ -78,7 +78,10 @@ const AddExpense = observer(() => {
 
   // Pre-fill form for edit mode once expenses are loaded
   useEffect(() => {
-    if (!isEditing || !expenseId || expenses.expenses.length === 0) return
+    if (!isEditing || !expenseId) return
+    // Only trust the store once it holds THIS trip's expenses — another trip's
+    // cached list would make a perfectly valid expense look "not found".
+    if (expenses.loadedTripId !== id) return
     const expense = expenses.expenses.find(e => e.id === expenseId)
     if (!expense) {
       toast.error('Expense not found')
@@ -104,7 +107,7 @@ const AddExpense = observer(() => {
     })))
     setIsSelfExpense(expense.splits.length === 1 && expense.splits[0].userId === expense.paidBy)
     setSplitKey(k => k + 1) // remount SplitEditor with pre-filled data
-  }, [isEditing, expenseId, expenses.expenses.length]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isEditing, expenseId, expenses.loadedTripId, expenses.expenses.length]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const watchedTitle = watch('title')
 
@@ -189,14 +192,14 @@ const AddExpense = observer(() => {
       }
     }
 
-    const rateAvailable = data.currency === trip!.baseCurrency || currency.getRate(data.currency) != null
+    const rateAvailable = data.currency === trip!.baseCurrency || currency.getRate(data.currency, trip!.baseCurrency) != null
     if (!rateAvailable) {
       toast.error(`Exchange rate for ${data.currency} is unavailable — rates haven't loaded yet. Try again in a moment.`)
       setIsSubmitting(false)
       return
     }
-    const rate = currency.getRate(data.currency) ?? 1
-    const amountBase = currency.convert(Number(data.amount), data.currency) ?? Number(data.amount)
+    const rate = currency.getRate(data.currency, trip!.baseCurrency) ?? 1
+    const amountBase = currency.convert(Number(data.amount), data.currency, trip!.baseCurrency) ?? Number(data.amount)
 
     // Convert split amountOwed values from original currency to base currency.
     // SplitEditor works in the expense's original currency for display; the backend
@@ -375,8 +378,8 @@ const AddExpense = observer(() => {
 
         {/* Inline base currency conversion hint */}
         {watchedCurrency && watchedCurrency !== trip.baseCurrency && Number(watchedAmount) > 0 && (() => {
-          const converted = currency.convert(Number(watchedAmount), watchedCurrency)
-          const rate = currency.getRate(watchedCurrency)
+          const converted = currency.convert(Number(watchedAmount), watchedCurrency, trip.baseCurrency)
+          const rate = currency.getRate(watchedCurrency, trip.baseCurrency)
           return converted !== null ? (
             <p className="text-xs text-muted-foreground -mt-3">
               = {new Intl.NumberFormat('en-US', { style: 'currency', currency: trip.baseCurrency }).format(converted)}
@@ -473,7 +476,7 @@ const AddExpense = observer(() => {
         <div className="flex gap-3 pt-2">
           <button
             type="submit"
-            disabled={isSubmitting || (!!watchedCurrency && watchedCurrency !== trip.baseCurrency && currency.getRate(watchedCurrency) == null)}
+            disabled={isSubmitting || (!!watchedCurrency && watchedCurrency !== trip.baseCurrency && currency.getRate(watchedCurrency, trip.baseCurrency) == null)}
             className="flex-1 py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
           >
             {isSubmitting

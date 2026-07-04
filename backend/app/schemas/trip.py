@@ -21,6 +21,8 @@ class TripCreate(BaseModel):
 
 class TripPatch(BaseModel):
     isSettled: Optional[bool] = None
+    # Acknowledge-and-proceed flag: settle even with outstanding payments
+    force: bool = False
 
 
 class TripJoinRequest(BaseModel):

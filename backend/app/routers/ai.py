@@ -166,12 +166,12 @@ async def parse_receipt(
 
         try:
             result = json.loads(stdout.decode())
-            # --output-format json wraps in a result envelope; unwrap if needed
-            if "result" in result:
-                parsed = result["result"]
-            else:
-                parsed = result
-        except (json.JSONDecodeError, KeyError):
+            # --output-format json puts schema-conformant output in "structured_output";
+            # "result" is the plain-text field (a string), not the parsed object
+            parsed = result.get("structured_output") or result
+            if not isinstance(parsed, dict):
+                raise ValueError("unexpected response shape")
+        except (json.JSONDecodeError, ValueError, AttributeError):
             raise HTTPException(status_code=422, detail="Could not read the receipt — try a clearer photo")
 
     finally:

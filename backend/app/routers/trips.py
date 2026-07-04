@@ -70,7 +70,7 @@ async def patch_trip(
     if data.isSettled is None:
         from fastapi import HTTPException as _HTTPException
         raise _HTTPException(status_code=400, detail="Nothing to update")
-    return await trip_service.patch_trip(db, trip_id, current_user, data.isSettled)
+    return await trip_service.patch_trip(db, trip_id, current_user, data.isSettled, data.force)
 
 
 @router.delete("/{trip_id}/members/me", status_code=204)

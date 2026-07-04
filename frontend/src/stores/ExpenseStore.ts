@@ -17,6 +17,11 @@ export class ExpenseStore {
     makeAutoObservable(this)
   }
 
+  // Which trip the current `expenses` array belongs to (null before first load)
+  get loadedTripId() {
+    return this.currentTripId
+  }
+
   get totalAmount() {
     return this.expenses.reduce((sum, e) => sum + e.amountBase, 0)
   }
@@ -31,7 +36,7 @@ export class ExpenseStore {
   async fetchExpenses(tripId: string, force = false) {
     if (this.currentTripId === tripId && !force) return
 
-    runInAction(() => { this.isLoading = true })
+    runInAction(() => { this.isLoading = true; this.error = null })
     try {
       const data = (await api.get<Expense[]>(`/trips/${tripId}/expenses`)).data
       runInAction(() => { this.expenses = data; this.currentTripId = tripId })
@@ -52,6 +57,7 @@ export class ExpenseStore {
       runInAction(() => {
         const idx = this.expenses.findIndex(e => e.id === temp.id)
         this.expenses[idx] = data
+        this.error = null
       })
       return data
     } catch (e: any) {
@@ -72,7 +78,7 @@ export class ExpenseStore {
 
     try {
       const data = (await api.put<Expense>(`/trips/${tripId}/expenses/${expenseId}`, payload)).data
-      runInAction(() => { this.expenses[idx] = data })
+      runInAction(() => { this.expenses[idx] = data; this.error = null })
     } catch (e: any) {
       runInAction(() => { this.expenses[idx] = snapshot; this.error = e.message })
       throw e
@@ -86,6 +92,7 @@ export class ExpenseStore {
 
     try {
       await api.delete(`/trips/${tripId}/expenses/${expenseId}`)
+      runInAction(() => { this.error = null })
     } catch (e: any) {
       runInAction(() => {
         if (snapshot) this.expenses.push(snapshot)

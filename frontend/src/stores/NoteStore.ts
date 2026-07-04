@@ -8,6 +8,7 @@ export class NoteStore {
   notes: Note[] = []
   isLoading = false
   error: string | null = null
+  private currentTripId: string | null = null
   private root: RootStore
 
   constructor(root: RootStore) {
@@ -16,7 +17,15 @@ export class NoteStore {
   }
 
   async fetchNotes(tripId: string) {
-    runInAction(() => { this.isLoading = true; this.error = null })
+    runInAction(() => {
+      // Switching trips — drop the previous trip's notes so they never flash
+      if (this.currentTripId !== tripId) {
+        this.currentTripId = tripId
+        this.notes = []
+      }
+      this.isLoading = true
+      this.error = null
+    })
     try {
       const res = await api.get<Note[]>(`/trips/${tripId}/notes`)
       runInAction(() => { this.notes = res.data })

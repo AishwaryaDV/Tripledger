@@ -75,7 +75,7 @@ export class AuthStore {
     }
   }
 
-  async signUp(email: string, password: string, displayName: string) {
+  async signUp(email: string, password: string, displayName: string): Promise<{ needsEmailConfirmation: boolean }> {
     runInAction(() => { this.error = null })
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) {
@@ -85,7 +85,11 @@ export class AuthStore {
     if (data.user && data.session) {
       const user = await this.syncWithBackend(data.user, displayName, data.session.access_token)
       runInAction(() => { this.currentUser = user })
+      return { needsEmailConfirmation: false }
     }
+    // Supabase email confirmation is ON: a user was created but there's no
+    // session until they click the link — nobody is logged in yet.
+    return { needsEmailConfirmation: true }
   }
 
   async updateDisplayName(name: string) {

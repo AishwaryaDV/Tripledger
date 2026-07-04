@@ -9,7 +9,7 @@ from app.models.expense import Expense, ExpenseSplit
 from app.models.trip import Trip, TripMember
 from app.models.user import User
 from app.schemas.trip import TripCreate, TripResponse, TripPreviewResponse, MemberResponse
-from app.services.balances import _load_net_balances
+from app.services.balances import _load_net_balances, _minimum_transactions
 
 
 _CODE_ALPHABET = string.ascii_uppercase + string.digits
@@ -247,7 +247,7 @@ async def leave_trip(db: AsyncSession, trip_id: str, current_user: User) -> None
     await db.commit()
 
 
-async def patch_trip(db: AsyncSession, trip_id: str, current_user: User, is_settled: bool) -> TripResponse:
+async def patch_trip(db: AsyncSession, trip_id: str, current_user: User, is_settled: bool, force: bool = False) -> TripResponse:
     result = await db.execute(select(Trip).where(Trip.id == trip_id))
     trip = result.scalar_one_or_none()
     if not trip:
@@ -261,6 +261,18 @@ async def patch_trip(db: AsyncSession, trip_id: str, current_user: User, is_sett
         raise HTTPException(status_code=403, detail="Not a member of this trip")
     if member.role != "owner":
         raise HTTPException(status_code=403, detail="Only the owner can settle or reopen this circle")
+
+    # Settling freezes the trip — warn (409) if payments are still outstanding,
+    # unless the owner explicitly confirmed with force=true.
+    if is_settled and not trip.is_settled and not force:
+        net = await _load_net_balances(db, trip)
+        outstanding = _minimum_transactions(net, trip.base_currency)
+        if outstanding:
+            count = len(outstanding)
+            raise HTTPException(
+                status_code=409,
+                detail=f"{count} payment{'s are' if count != 1 else ' is'} still outstanding on this circle",
+            )
 
     trip.is_settled = is_settled
     await db.commit()

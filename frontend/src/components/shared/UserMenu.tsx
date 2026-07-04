@@ -21,15 +21,17 @@ const MEMBER_COLORS = ['#818cf8','#f472b6','#34d399','#fb923c','#60a5fa','#a78bf
 const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
   const { auth } = useStore()
   const navigate = useNavigate()
-  if (!auth.currentUser) return null
+  // NOTE: all hooks must run before any early return — if the session expires
+  // while the drawer is mounted (currentUser → null), returning above the hooks
+  // changes the hook count mid-lifecycle and React crashes the whole tree.
   const user = auth.currentUser
 
-  const validPronouns = PRONOUN_OPTIONS.includes(user.pronouns ?? '') ? (user.pronouns ?? '') : ''
+  const validPronouns = PRONOUN_OPTIONS.includes(user?.pronouns ?? '') ? (user?.pronouns ?? '') : ''
 
   const [editingName, setEditingName] = useState(false)
-  const [displayName, setDisplayName] = useState(user.displayName)
+  const [displayName, setDisplayName] = useState(user?.displayName ?? '')
   const [pronouns, setPronouns] = useState(validPronouns)
-  const [defaultCurrency, setDefaultCurrency] = useState(user.defaultCurrency ?? 'USD')
+  const [defaultCurrency, setDefaultCurrency] = useState(user?.defaultCurrency ?? 'USD')
   const [nameLoading, setNameLoading] = useState(false)
   const [pronounsLoading, setPronounsLoading] = useState(false)
   const [currencyLoading, setCurrencyLoading] = useState(false)
@@ -46,14 +48,17 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
   const [passLoading, setPassLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  const avatarColor = MEMBER_COLORS[user.displayName.charCodeAt(0) % MEMBER_COLORS.length]
-  const initial = user.displayName.charAt(0).toUpperCase()
-
   useEffect(() => {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
     document.addEventListener('keydown', handler)
     return () => document.removeEventListener('keydown', handler)
   }, [onClose])
+
+  // Guard AFTER every hook (see note above)
+  if (!user) return null
+
+  const avatarColor = MEMBER_COLORS[user.displayName.charCodeAt(0) % MEMBER_COLORS.length]
+  const initial = user.displayName.charAt(0).toUpperCase()
 
   const handleUpdateName = async () => {
     if (!displayName.trim()) return

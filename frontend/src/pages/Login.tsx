@@ -60,6 +60,7 @@ const Login = () => {
   const [showConfirm, setShowConfirm] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [confirmEmailSent, setConfirmEmailSent] = useState(false)
 
   const switchMode = (m: Mode) => {
     setMode(m); setError(null); setPassword(''); setConfirmPassword('')
@@ -83,9 +84,14 @@ const Login = () => {
         toast.success('Welcome back!')
         navigate(redirectTo, { replace: true })
       } else {
-        await auth.signUp(email, password, displayName)
-        toast.success('Welcome to TripLedger!')
-        navigate(redirectTo, { replace: true, state: { welcome: true, name: displayName } })
+        const { needsEmailConfirmation } = await auth.signUp(email, password, displayName)
+        if (needsEmailConfirmation) {
+          // No session yet — navigating would just bounce back to /login
+          setConfirmEmailSent(true)
+        } else {
+          toast.success('Welcome to TripLedger!')
+          navigate(redirectTo, { replace: true, state: { welcome: true, name: displayName } })
+        }
       }
     } catch (err: any) {
       setError(err.message ?? 'Something went wrong.')
@@ -149,6 +155,28 @@ const Login = () => {
             </p>
           </div>
 
+          {confirmEmailSent ? (
+            /* Email-confirmation-required state (Supabase confirmation ON) */
+            <div className="rounded-lg border bg-card p-5 text-center space-y-3">
+              <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mx-auto">
+                <Mail size={20} className="text-primary" />
+              </div>
+              <h3 className="text-base font-semibold">Check your email</h3>
+              <p className="text-sm text-muted-foreground">
+                We sent a confirmation link to{' '}
+                <span className="font-medium text-foreground">{email}</span>.
+                Confirm your address, then come back and log in.
+              </p>
+              <button
+                type="button"
+                onClick={() => { setConfirmEmailSent(false); switchMode('login') }}
+                className="w-full py-2.5 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity"
+              >
+                Back to log in
+              </button>
+            </div>
+          ) : (
+          <>
           {/* Mode toggle — desktop only */}
           <div className="hidden sm:flex rounded-lg border bg-muted/30 p-1">
             {(['login', 'signup'] as Mode[]).map(m => (
@@ -367,6 +395,8 @@ const Login = () => {
               {mode === 'login' ? 'Sign up' : 'Log in'}
             </button>
           </p>
+          </>
+          )}
 
           {/* Invite code entry */}
           <div className="border-t pt-5 mt-2">

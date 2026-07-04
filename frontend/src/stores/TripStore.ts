@@ -70,9 +70,9 @@ export class TripStore {
     }
   }
 
-  async settleTrip(id: string) {
+  async settleTrip(id: string, force = false) {
     try {
-      const { data } = await api.patch<Trip>(`/trips/${id}`, { isSettled: true })
+      const { data } = await api.patch<Trip>(`/trips/${id}`, { isSettled: true, force })
       runInAction(() => {
         if (this.currentTrip?.id === id) this.currentTrip = data
         const idx = this.trips.findIndex(t => t.id === id)

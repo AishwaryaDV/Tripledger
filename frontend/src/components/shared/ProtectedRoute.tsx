@@ -1,5 +1,5 @@
 import { observer } from 'mobx-react-lite'
-import { Navigate } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom'
 import { Loader2 } from 'lucide-react'
 import { useStore } from '../../hooks/useStore'
 
@@ -9,6 +9,7 @@ interface ProtectedRouteProps {
 
 const ProtectedRoute = observer(({ children }: ProtectedRouteProps) => {
   const { auth } = useStore()
+  const location = useLocation()
 
   // Show loading while checking auth
   if (auth.isLoading) {
@@ -20,9 +21,16 @@ const ProtectedRoute = observer(({ children }: ProtectedRouteProps) => {
     )
   }
 
-  // Redirect to login if not authenticated
+  // Redirect to login if not authenticated — remember where they were headed
+  // so Login can send them back after re-auth (it already honours redirectTo)
   if (!auth.isLoggedIn) {
-    return <Navigate to="/login" replace />
+    return (
+      <Navigate
+        to="/login"
+        state={{ redirectTo: location.pathname + location.search }}
+        replace
+      />
+    )
   }
 
   // Render children if authenticated

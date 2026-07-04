@@ -60,4 +60,19 @@ describe('CurrencyStore conversion direction', () => {
   it('convert returns null when no rate is available', () => {
     expect(store.convert(50, 'XYZ')).toBeNull()
   })
+
+  // FINAL_AUDIT N17: stale rates fetched for a different base must never be used
+  it('returns null when the store base does not match the expected base', () => {
+    expect(store.getRate('THB', 'EUR')).toBeNull()
+    expect(store.convert(500, 'THB', 'EUR')).toBeNull()
+  })
+
+  it('same-currency conversion still works during a base mismatch', () => {
+    expect(store.getRate('EUR', 'EUR')).toBe(1)
+    expect(store.convert(42, 'EUR', 'EUR')).toBe(42)
+  })
+
+  it('expectedBase matching the store base behaves normally', () => {
+    expect(store.convert(500, 'THB', 'USD')).toBeCloseTo(13.89, 2)
+  })
 })

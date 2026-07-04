@@ -75,14 +75,9 @@ const Settle = observer(() => {
     }
   }
 
-  if (!trip || balances.isLoading) {
-    return (
-      <div className="w-full max-w-3xl mx-auto space-y-3 pt-4">
-        {[1, 2, 3].map(i => <BalanceRowSkeleton key={i} />)}
-      </div>
-    )
-  }
-
+  // Error check must come before the skeleton: if the trip fetch failed with no
+  // cached trip, `trip` stays null with isLoading false — skeleton-first would
+  // spin forever with the error screen unreachable.
   if (trips.error || balances.error) {
     return (
       <div className="w-full max-w-3xl mx-auto pt-8 space-y-3">
@@ -98,6 +93,14 @@ const Settle = observer(() => {
             Retry
           </button>
         </div>
+      </div>
+    )
+  }
+
+  if (!trip || balances.isLoading) {
+    return (
+      <div className="w-full max-w-3xl mx-auto space-y-3 pt-4">
+        {[1, 2, 3].map(i => <BalanceRowSkeleton key={i} />)}
       </div>
     )
   }

@@ -10,6 +10,7 @@ export class BalanceStore {
   settlements: Settlement[] = []
   isLoading = false
   error: string | null = null
+  private currentTripId: string | null = null
   private root: RootStore
 
   constructor(root: RootStore) {
@@ -29,8 +30,18 @@ export class BalanceStore {
     return this.suggestions.filter(s => s.fromUserId === uid)
   }
 
+  // Drop the previous trip's data when switching trips so it never renders
+  // under the new trip; same-trip refetches keep showing current data (QA H2).
+  private switchTrip(tripId: string) {
+    if (this.currentTripId === tripId) return
+    this.currentTripId = tripId
+    this.balances = []
+    this.suggestions = []
+    this.settlements = []
+  }
+
   async fetchBalances(tripId: string) {
-    runInAction(() => { this.isLoading = true; this.error = null })
+    runInAction(() => { this.switchTrip(tripId); this.isLoading = true; this.error = null })
     try {
       const [bal, sug] = await Promise.all([
         api.get<Balance[]>(`/trips/${tripId}/balances`),
@@ -45,6 +56,7 @@ export class BalanceStore {
   }
 
   async fetchSettlements(tripId: string) {
+    runInAction(() => this.switchTrip(tripId))
     try {
       const res = await api.get<Settlement[]>(`/trips/${tripId}/settlements`)
       runInAction(() => { this.settlements = res.data })

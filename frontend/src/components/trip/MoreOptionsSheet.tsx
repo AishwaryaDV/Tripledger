@@ -21,6 +21,8 @@ const MoreOptionsSheet = observer(({ trip, onClose }: Props) => {
   const [codeCopied, setCodeCopied] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [confirmLeave, setConfirmLeave] = useState(false)
+  // Set when the backend blocks mark-settled with outstanding payments (409)
+  const [confirmSettleMsg, setConfirmSettleMsg] = useState<string | null>(null)
   const [loading, setLoading] = useState<string | null>(null)
 
   const isOwner = trip.members.find(m => m.userId === auth.currentUser?.id)?.role === 'owner'
@@ -101,7 +103,14 @@ const MoreOptionsSheet = observer(({ trip, onClose }: Props) => {
           else await trips.settleTrip(trip.id)
           toast.success(trip.isSettled ? 'Circle reopened.' : 'Circle settled.')
           onClose()
-        } catch (err: any) { toast.error(getApiError(err)) }
+        } catch (err: any) {
+          // Outstanding payments — ask the owner to confirm instead of toasting
+          if (err?.response?.status === 409 && !trip.isSettled) {
+            setConfirmSettleMsg(getApiError(err, 'Payments are still outstanding on this circle'))
+          } else {
+            toast.error(getApiError(err))
+          }
+        }
         finally { setLoading(null) }
       },
       ownerOnly: true,
@@ -156,7 +165,44 @@ const MoreOptionsSheet = observer(({ trip, onClose }: Props) => {
 
         {/* Option grid */}
         <div className="p-5 pb-8">
-          {(confirmDelete || confirmLeave) ? (
+          {confirmSettleMsg ? (
+            <div className="rounded-xl border border-amber-300 bg-amber-50 dark:bg-amber-950/30 dark:border-amber-800 p-4 space-y-3">
+              <p className="text-sm font-medium text-amber-700 dark:text-amber-400">
+                Mark "{trip.name}" as settled?
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {confirmSettleMsg}. Settling freezes the circle — no expenses or payments
+                can be added until it's reopened.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={async () => {
+                    setLoading('settle')
+                    try {
+                      await trips.settleTrip(trip.id, true)
+                      toast.success('Circle settled.')
+                      onClose()
+                    } catch (err: any) {
+                      toast.error(getApiError(err))
+                    } finally {
+                      setLoading(null)
+                      setConfirmSettleMsg(null)
+                    }
+                  }}
+                  disabled={!!loading}
+                  className="flex-1 py-2.5 rounded-xl bg-amber-600 text-white text-sm font-medium hover:opacity-90 transition-opacity disabled:opacity-50"
+                >
+                  {loading ? 'Please wait...' : 'Settle anyway'}
+                </button>
+                <button
+                  onClick={() => setConfirmSettleMsg(null)}
+                  className="px-4 py-2.5 rounded-xl border text-sm hover:bg-muted transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          ) : (confirmDelete || confirmLeave) ? (
             <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 space-y-3">
               <p className="text-sm font-medium text-destructive">
                 {confirmDelete ? `Delete "${trip.name}"?` : `Leave "${trip.name}"?`}

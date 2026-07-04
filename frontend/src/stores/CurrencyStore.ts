@@ -55,7 +55,11 @@ export class CurrencyStore {
   // e.g. getRate('USD') when base is INR → 83.02
   // The API returns base→foreign rates (base USD → rates.THB ≈ 36, i.e. 1 USD = 36 THB),
   // so the foreign→base rate is the reciprocal.
-  getRate(from: string): number | null {
+  // Pass `expectedBase` (the trip's base currency) so stale rates fetched for a
+  // DIFFERENT base can never silently produce wrong conversions — mismatch → null,
+  // and callers already treat null as "rate unavailable".
+  getRate(from: string, expectedBase?: string): number | null {
+    if (expectedBase && this.base !== expectedBase) return from === expectedBase ? 1 : null
     if (from === this.base) return 1
     const baseToForeign = this.rates[from]
     if (baseToForeign == null || baseToForeign <= 0) return null
@@ -63,9 +67,8 @@ export class CurrencyStore {
   }
 
   // Convert an amount from `fromCurrency` to the base currency
-  convert(amount: number, fromCurrency: string): number | null {
-    if (fromCurrency === this.base) return amount
-    const rate = this.getRate(fromCurrency)
+  convert(amount: number, fromCurrency: string, expectedBase?: string): number | null {
+    const rate = this.getRate(fromCurrency, expectedBase)
     if (rate === null) return null
     return amount * rate
   }
