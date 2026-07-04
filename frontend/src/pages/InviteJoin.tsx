@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
 import { Plane, User, Home, PartyPopper, Users, Coins, AlertTriangle, CheckCircle2, ArrowRight, LogIn } from 'lucide-react'
 import { useStore } from '@/hooks/useStore'
+import { getApiError } from '@/lib/utils'
 import type { CircleType, TripPreview } from '@/types'
 
 const CIRCLE_TYPE_CONFIG: Record<CircleType, { label: string; icon: React.ElementType; style: string }> = {
@@ -33,12 +34,13 @@ const InviteJoin = observer(() => {
     setIsLoading(true)
     trips.fetchTripByCode(code)
       .then(trip => { setPreview(trip); setIsLoading(false) })
-      .catch(err => { setLoadError(err.message ?? 'Invalid join code.'); setIsLoading(false) })
+      .catch(err => { setLoadError(getApiError(err, 'Invalid join code.')); setIsLoading(false) })
   }, [code])
 
   useEffect(() => {
     if (isLoggedIn) trips.fetchTrips()
-  }, [isLoggedIn]) // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn])
 
   const handleJoin = async () => {
     if (!code) return
@@ -48,7 +50,7 @@ const InviteJoin = observer(() => {
       const trip = await trips.joinTrip(code)
       navigate(`/trips/${trip.id}`)
     } catch (err: any) {
-      setJoinError(err.message ?? 'Something went wrong.')
+      setJoinError(getApiError(err, 'Something went wrong.'))
       setIsJoining(false)
     }
   }

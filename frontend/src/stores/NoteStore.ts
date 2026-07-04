@@ -1,6 +1,7 @@
 // src/stores/NoteStore.ts
 import { makeAutoObservable, runInAction } from 'mobx'
 import { api } from '../lib/api'
+import { getApiError } from '../lib/utils'
 import type { Note } from '../types'
 import type { RootStore } from './RootStore'
 
@@ -30,7 +31,7 @@ export class NoteStore {
       const res = await api.get<Note[]>(`/trips/${tripId}/notes`)
       runInAction(() => { this.notes = res.data })
     } catch (e: any) {
-      runInAction(() => { this.error = e.message })
+      runInAction(() => { this.error = getApiError(e) })
     } finally {
       runInAction(() => { this.isLoading = false })
     }

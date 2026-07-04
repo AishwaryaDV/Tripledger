@@ -8,6 +8,7 @@ import { toast } from 'sonner'
 import { Link } from 'react-router-dom'
 import { useStore } from '../../hooks/useStore'
 import { supabase } from '../../lib/supabase'
+import { getApiError } from '../../lib/utils'
 import CustomSelect from './CustomSelect'
 import { SUPPORTED_CURRENCIES } from '../../lib/currencies'
 
@@ -68,7 +69,7 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
       toast.success('Display name updated.')
       setEditingName(false)
     } catch (err: any) {
-      toast.error(err.message ?? 'Failed to update name.')
+      toast.error(getApiError(err, 'Failed to update name.'))
     } finally {
       setNameLoading(false)
     }
@@ -81,7 +82,7 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
       await auth.updateDefaultCurrency(currency)
       toast.success('Default currency updated.')
     } catch (err: any) {
-      toast.error(err.message ?? 'Failed to update currency.')
+      toast.error(getApiError(err, 'Failed to update currency.'))
     } finally {
       setCurrencyLoading(false)
     }
@@ -93,7 +94,7 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
       await auth.updatePronouns(pronouns)
       toast.success('Pronouns updated.')
     } catch (err: any) {
-      toast.error(err.message ?? 'Failed to update pronouns.')
+      toast.error(getApiError(err, 'Failed to update pronouns.'))
     } finally {
       setPronounsLoading(false)
     }
@@ -115,7 +116,7 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
       await auth.updateAvatarUrl(publicUrl)
       toast.success('Profile picture updated.')
     } catch (err: any) {
-      toast.error(err.message ?? 'Failed to upload picture.')
+      toast.error(getApiError(err, 'Failed to upload picture.'))
     } finally {
       setAvatarLoading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
@@ -129,7 +130,7 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
       navigate('/login', { replace: true })
       toast.success('Signed out of all devices.')
     } catch (err: any) {
-      toast.error(err.message ?? 'Failed to sign out.')
+      toast.error(getApiError(err, 'Failed to sign out.'))
     } finally {
       setLogoutAllLoading(false)
     }
@@ -142,7 +143,7 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
       await auth.updateAvatarUrl('')
       toast.success('Profile picture removed.')
     } catch (err: any) {
-      toast.error(err.message ?? 'Failed to remove picture.')
+      toast.error(getApiError(err, 'Failed to remove picture.'))
     } finally {
       setAvatarLoading(false)
     }
@@ -159,7 +160,7 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
       setNewPassword('')
       setConfirmPassword('')
     } catch (err: any) {
-      toast.error(err.message ?? 'Failed to update password.')
+      toast.error(getApiError(err, 'Failed to update password.'))
     } finally {
       setPassLoading(false)
     }
@@ -172,7 +173,7 @@ const ProfileDrawer = observer(({ onClose }: { onClose: () => void }) => {
       navigate('/login', { replace: true })
       toast.success('Account deleted.')
     } catch (err: any) {
-      toast.error(err.message ?? 'Failed to delete account.')
+      toast.error(getApiError(err, 'Failed to delete account.'))
     } finally {
       setDeleteLoading(false)
     }

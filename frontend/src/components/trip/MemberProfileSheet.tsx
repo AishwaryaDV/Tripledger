@@ -4,7 +4,7 @@ import { observer } from 'mobx-react-lite'
 import { X, Bell, TrendingUp, TrendingDown, Minus } from 'lucide-react'
 import { toast } from 'sonner'
 import { useStore } from '@/hooks/useStore'
-import { formatCurrency } from '@/lib/utils'
+import { formatCurrency, getApiError } from '@/lib/utils'
 import { api } from '@/lib/api'
 import { supabase } from '@/lib/supabase'
 import type { TripMember, Balance, SettlementSuggestion, Expense } from '@/types'
@@ -65,7 +65,7 @@ const MemberProfileSheet = observer(({
       )
       toast.success(`Reminder sent to ${member.displayName}.`)
     } catch (err: any) {
-      toast.error(err.response?.data?.detail ?? 'Failed to send reminder.')
+      toast.error(getApiError(err, 'Failed to send reminder.'))
     } finally {
       setReminding(false)
     }

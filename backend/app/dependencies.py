@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import Depends, HTTPException
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -35,7 +37,9 @@ async def get_current_user(
 ) -> User:
     token = credentials.credentials
     try:
-        signing_key = _jwks_client.get_signing_key_from_jwt(token)
+        # JWKS lookup does blocking network I/O on cold cache / key rotation —
+        # run it off the event loop so it can't stall every other request
+        signing_key = await asyncio.to_thread(_jwks_client.get_signing_key_from_jwt, token)
         payload = jwt.decode(
             token,
             signing_key.key,
@@ -47,8 +51,10 @@ async def get_current_user(
     except jwt.InvalidTokenError as e:
         raise HTTPException(status_code=401, detail=f"Invalid token: {e}")
 
-    user_id: str = payload.get("sub")
+    user_id: str | None = payload.get("sub")
     email: str = payload.get("email", "")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token: missing subject")
 
     result = await db.execute(select(User).where(User.id == user_id))
     user = result.scalar_one_or_none()

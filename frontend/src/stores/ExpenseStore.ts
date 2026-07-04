@@ -1,6 +1,7 @@
 // src/stores/ExpenseStore.ts
 import { makeAutoObservable, runInAction } from 'mobx'
 import { api } from '../lib/api'
+import { getApiError } from '../lib/utils'
 import type { Expense } from '../types'
 import type { RootStore } from './RootStore'
 
@@ -63,7 +64,7 @@ export class ExpenseStore {
     } catch (e: any) {
       runInAction(() => {
         this.expenses = this.expenses.filter(e => e.id !== temp.id)
-        this.error = e.message
+        this.error = getApiError(e)
       })
       throw e
     }
@@ -80,7 +81,7 @@ export class ExpenseStore {
       const data = (await api.put<Expense>(`/trips/${tripId}/expenses/${expenseId}`, payload)).data
       runInAction(() => { this.expenses[idx] = data; this.error = null })
     } catch (e: any) {
-      runInAction(() => { this.expenses[idx] = snapshot; this.error = e.message })
+      runInAction(() => { this.expenses[idx] = snapshot; this.error = getApiError(e) })
       throw e
     }
   }
@@ -96,7 +97,7 @@ export class ExpenseStore {
     } catch (e: any) {
       runInAction(() => {
         if (snapshot) this.expenses.push(snapshot)
-        this.error = e.message
+        this.error = getApiError(e)
       })
       throw e
     }

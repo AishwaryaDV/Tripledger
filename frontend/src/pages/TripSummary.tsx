@@ -16,6 +16,7 @@ import {
 } from 'recharts'
 import { toJS } from 'mobx'
 import { useStore } from '@/hooks/useStore'
+import { toast } from 'sonner'
 import { formatCurrency, formatDate } from '@/lib/utils'
 import { Skeleton, SpendingRowSkeleton } from '@/components/shared/Skeleton'
 import ErrorBoundary from '@/components/shared/ErrorBoundary'
@@ -256,9 +257,15 @@ const TripSummary = observer(() => {
       })
     }
     navigator.clipboard.writeText(lines.join('\n'))
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+      .then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      })
+      .catch(() => toast.error('Could not copy to clipboard'))
   }
+
+  // Quote + escape every field — display names can contain commas/quotes
+  const csvCell = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`
 
   const downloadCSV = () => {
     const headers = ['Date', 'Title', 'Category', 'Amount', 'Currency', `Base Amount (${trip.baseCurrency})`, 'Paid By', 'Split']
@@ -266,13 +273,13 @@ const TripSummary = observer(() => {
       .slice().sort((a, b) => a.expenseDate.localeCompare(b.expenseDate))
       .map(e => [
         e.expenseDate,
-        `"${e.title.replace(/"/g, '""')}"`,
+        e.title,
         CATEGORY_CONFIG[e.category]?.label ?? e.category,
         e.amount, e.currency, e.amountBase.toFixed(2),
         getName(e.paidBy),
-        `"${e.splits.map(s => `${getName(s.userId)} ${formatCurrency(s.amountOwed, trip.baseCurrency)}`).join(', ')}"`,
+        e.splits.map(s => `${getName(s.userId)} ${formatCurrency(s.amountOwed, trip.baseCurrency)}`).join(', '),
       ])
-    const csv  = [headers, ...rows].map(r => r.join(',')).join('\n')
+    const csv  = [headers, ...rows].map(r => r.map(csvCell).join(',')).join('\n')
     const blob = new Blob([csv], { type: 'text/csv' })
     const url  = URL.createObjectURL(blob)
     const a    = document.createElement('a')

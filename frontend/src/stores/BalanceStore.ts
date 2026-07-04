@@ -1,6 +1,7 @@
 // src/stores/BalanceStore.ts
 import { makeAutoObservable, runInAction } from 'mobx'
 import { api } from '../lib/api'
+import { getApiError } from '../lib/utils'
 import type { Balance, Settlement, SettlementSuggestion } from '../types'
 import type { RootStore } from './RootStore'
 
@@ -49,7 +50,7 @@ export class BalanceStore {
       ])
       runInAction(() => { this.balances = bal.data; this.suggestions = sug.data })
     } catch (e: any) {
-      runInAction(() => { this.error = e?.response?.data?.detail ?? e.message ?? 'Failed to load balances' })
+      runInAction(() => { this.error = getApiError(e, 'Failed to load balances') })
     } finally {
       runInAction(() => { this.isLoading = false })
     }
@@ -93,9 +94,4 @@ export class BalanceStore {
     }
   }
 
-  // Called by Supabase Realtime hook when DB changes
-  updateFromRealtime(tripId: string) {
-    this.fetchBalances(tripId)
-    this.fetchSettlements(tripId)
-  }
 }

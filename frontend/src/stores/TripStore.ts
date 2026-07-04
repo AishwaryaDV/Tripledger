@@ -1,6 +1,7 @@
 // src/stores/TripStore.ts
 import { makeAutoObservable, runInAction } from 'mobx'
 import { api } from '../lib/api'
+import { getApiError } from '../lib/utils'
 import type { Trip, TripPreview } from '../types'
 import type { RootStore } from './RootStore'
 
@@ -34,7 +35,7 @@ export class TripStore {
       const { data } = await api.get<Trip[]>('/trips')
       runInAction(() => { this.trips = data; this.lastFetched = Date.now() })
     } catch (e: any) {
-      runInAction(() => { this.error = e.message })
+      runInAction(() => { this.error = getApiError(e) })
     } finally {
       runInAction(() => { this.isLoading = false })
     }
@@ -50,7 +51,7 @@ export class TripStore {
         if (idx >= 0) this.trips[idx] = data
       })
     } catch (e: any) {
-      runInAction(() => { this.error = e.message })
+      runInAction(() => { this.error = getApiError(e) })
     } finally {
       runInAction(() => { this.isLoading = false })
     }
@@ -65,7 +66,7 @@ export class TripStore {
         if (idx >= 0) this.trips[idx] = data
       })
     } catch (e: any) {
-      runInAction(() => { this.error = e.message })
+      runInAction(() => { this.error = getApiError(e) })
       throw e
     }
   }
@@ -79,7 +80,7 @@ export class TripStore {
         if (idx >= 0) this.trips[idx] = data
       })
     } catch (e: any) {
-      runInAction(() => { this.error = e.message })
+      runInAction(() => { this.error = getApiError(e) })
       throw e
     }
   }
@@ -90,7 +91,7 @@ export class TripStore {
       runInAction(() => { this.trips.push(data) })
       return data
     } catch (e: any) {
-      runInAction(() => { this.error = e.message })
+      runInAction(() => { this.error = getApiError(e) })
       throw e
     }
   }
@@ -108,7 +109,7 @@ export class TripStore {
         if (this.currentTrip?.id === id) this.currentTrip = null
       })
     } catch (e: any) {
-      runInAction(() => { this.error = e.message })
+      runInAction(() => { this.error = getApiError(e) })
       throw e
     }
   }
@@ -121,24 +122,20 @@ export class TripStore {
         if (this.currentTrip?.id === id) this.currentTrip = null
       })
     } catch (e: any) {
-      runInAction(() => { this.error = e.message })
+      runInAction(() => { this.error = getApiError(e) })
       throw e
     }
   }
 
   // Joins by the 6-char join code — the code is the credential, not the trip ID
   async joinTrip(joinCode: string) {
-    try {
-      const { data } = await api.post<Trip>('/trips/join', { joinCode })
-      runInAction(() => {
-        const idx = this.trips.findIndex(t => t.id === data.id)
-        if (idx >= 0) this.trips[idx] = data
-        else this.trips.push(data)
-      })
-      return data
-    } catch (e: any) {
-      throw e
-    }
+    const { data } = await api.post<Trip>('/trips/join', { joinCode })
+    runInAction(() => {
+      const idx = this.trips.findIndex(t => t.id === data.id)
+      if (idx >= 0) this.trips[idx] = data
+      else this.trips.push(data)
+    })
+    return data
   }
 
 }

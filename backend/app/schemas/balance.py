@@ -1,4 +1,4 @@
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, field_validator, model_validator
 from typing import Optional
 
 
@@ -31,6 +31,20 @@ class SettlementCreate(BaseModel):
         if v > 99_999_999:
             raise ValueError('amount cannot exceed 99,999,999')
         return v
+
+    @field_validator('currency')
+    @classmethod
+    def currency_must_be_valid(cls, v: str) -> str:
+        v = v.strip().upper()
+        if len(v) != 3 or not v.isalpha():
+            raise ValueError('currency must be a 3-letter currency code')
+        return v
+
+    @model_validator(mode='after')
+    def no_self_settlement(self) -> 'SettlementCreate':
+        if self.fromUserId == self.toUserId:
+            raise ValueError('payer and recipient cannot be the same person')
+        return self
 
 
 class SettlementResponse(BaseModel):

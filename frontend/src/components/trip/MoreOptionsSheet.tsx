@@ -29,8 +29,11 @@ const MoreOptionsSheet = observer(({ trip, onClose }: Props) => {
 
   const copyCode = () => {
     navigator.clipboard.writeText(trip.joinCode)
-    setCodeCopied(true)
-    setTimeout(() => setCodeCopied(false), 2000)
+      .then(() => {
+        setCodeCopied(true)
+        setTimeout(() => setCodeCopied(false), 2000)
+      })
+      .catch(() => toast.error('Could not copy to clipboard'))
   }
 
   const handleLeave = async () => {
@@ -40,7 +43,7 @@ const MoreOptionsSheet = observer(({ trip, onClose }: Props) => {
       toast.success(`Left ${trip.name}.`)
       navigate('/dashboard', { replace: true })
     } catch (err: any) {
-      toast.error(err.message ?? 'Failed to leave circle.')
+      toast.error(getApiError(err, 'Failed to leave circle.'))
     } finally {
       setLoading(null)
     }
@@ -53,7 +56,7 @@ const MoreOptionsSheet = observer(({ trip, onClose }: Props) => {
       toast.success(`${trip.name} deleted.`)
       navigate('/dashboard', { replace: true })
     } catch (err: any) {
-      toast.error(err.message ?? 'Failed to delete circle.')
+      toast.error(getApiError(err, 'Failed to delete circle.'))
     } finally {
       setLoading(null)
     }

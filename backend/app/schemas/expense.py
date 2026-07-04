@@ -54,6 +54,31 @@ class ExpenseCreate(BaseModel):
             raise ValueError('exchangeRate is out of range')
         return v
 
+    @field_validator('title')
+    @classmethod
+    def title_must_be_sane(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError('title must not be empty')
+        if len(v) > 100:
+            raise ValueError('title must be 100 characters or fewer')
+        return v
+
+    @field_validator('notes')
+    @classmethod
+    def notes_length(cls, v: Optional[str]) -> Optional[str]:
+        if v is not None and len(v) > 500:
+            raise ValueError('notes must be 500 characters or fewer')
+        return v
+
+    @field_validator('currency')
+    @classmethod
+    def currency_must_be_valid(cls, v: str) -> str:
+        v = v.strip().upper()
+        if len(v) != 3 or not v.isalpha():
+            raise ValueError('currency must be a 3-letter currency code')
+        return v
+
     @field_validator('category')
     @classmethod
     def category_must_be_valid(cls, v: str) -> str:

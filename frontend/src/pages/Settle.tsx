@@ -334,7 +334,7 @@ const Settle = observer(() => {
                       <span className="ml-1 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">Partial</span>
                     )}
                     {s.confirmedAt && (
-                      <span className="text-xs text-muted-foreground ml-1">{formatCurrency(0, s.currency).replace('0.00', '')} {new Date(s.confirmedAt).toLocaleDateString()}</span>
+                      <span className="text-xs text-muted-foreground ml-1">{new Date(s.confirmedAt).toLocaleDateString()}</span>
                     )}
                   </div>
                   <span className={`font-semibold shrink-0 ${s.isPartial ? 'text-yellow-700' : 'text-green-600'}`}>

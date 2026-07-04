@@ -3,8 +3,10 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { observer } from 'mobx-react-lite'
 import { ArrowLeft, Check, Copy, Plane, User, Home, PartyPopper } from 'lucide-react'
+import { toast } from 'sonner'
 import { useStore } from '@/hooks/useStore'
 import { SUPPORTED_CURRENCIES } from '@/lib/currencies'
+import { getApiError } from '@/lib/utils'
 import type { Trip, CircleType } from '@/types'
 
 const CIRCLE_TYPES: { value: CircleType; label: string; description: string; icon: React.ElementType }[] = [
@@ -63,7 +65,7 @@ const CreateTrip = observer(() => {
       })
       setCreatedTrip(trip)
     } catch (err: any) {
-      setError(err.message ?? 'Something went wrong')
+      setError(getApiError(err, 'Something went wrong'))
     } finally {
       setIsSubmitting(false)
     }
@@ -72,8 +74,11 @@ const CreateTrip = observer(() => {
   const handleCopy = () => {
     if (!createdTrip) return
     navigator.clipboard.writeText(createdTrip.joinCode)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+      .then(() => {
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2000)
+      })
+      .catch(() => toast.error('Could not copy to clipboard'))
   }
 
   // ── Success screen ──────────────────────────────────────────────────────────

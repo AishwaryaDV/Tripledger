@@ -69,8 +69,11 @@ const TripDetail = observer(() => {
 
   const copyJoinCode = (code: string) => {
     navigator.clipboard.writeText(code)
-    setCodeCopied(true)
-    setTimeout(() => setCodeCopied(false), 2000)
+      .then(() => {
+        setCodeCopied(true)
+        setTimeout(() => setCodeCopied(false), 2000)
+      })
+      .catch(() => toast.error('Could not copy to clipboard'))
   }
 
   useEffect(() => {
