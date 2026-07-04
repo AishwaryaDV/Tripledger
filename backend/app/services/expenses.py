@@ -63,6 +63,19 @@ async def _check_membership(db: AsyncSession, trip_id: str, user_id: str) -> Non
         raise HTTPException(status_code=403, detail="Not a member of this trip")
 
 
+def _validate_splits_total(data: ExpenseCreate) -> None:
+    # Splits are stored in base currency and must cover the expense's base amount.
+    # Generous tolerance: the frontend rounds per-split in the original currency,
+    # and that rounding error scales with the exchange rate.
+    split_total = sum(s.amountOwed for s in data.splits)
+    tolerance = max(0.05, data.amountBase * 0.01)
+    if abs(split_total - data.amountBase) > tolerance:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Splits add up to {split_total:.2f} but the expense is {data.amountBase:.2f} — they must match",
+        )
+
+
 async def get_expenses(db: AsyncSession, trip_id: str, current_user: User) -> list[ExpenseResponse]:
     await _check_membership(db, trip_id, current_user.id)
 
@@ -86,6 +99,7 @@ async def create_expense(db: AsyncSession, trip_id: str, current_user: User, dat
     for s in data.splits:
         if s.userId not in member_ids:
             raise HTTPException(status_code=400, detail=f"Split user {s.userId} is not a member of this trip")
+    _validate_splits_total(data)
 
     expense = Expense(
         id=str(uuid.uuid4()),
@@ -131,6 +145,7 @@ async def update_expense(db: AsyncSession, trip_id: str, expense_id: str, curren
     for s in data.splits:
         if s.userId not in member_ids:
             raise HTTPException(status_code=400, detail=f"Split user {s.userId} is not a member of this trip")
+    _validate_splits_total(data)
 
     result = await db.execute(select(Expense).where(Expense.id == expense_id, Expense.trip_id == trip_id))
     expense = result.scalar_one_or_none()

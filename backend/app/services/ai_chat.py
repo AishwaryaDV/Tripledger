@@ -218,6 +218,15 @@ async def _execute_action(
         try:
             amount = float(action_data["amount"])
             currency = str(action_data["currency"])[:3].upper()
+            # The backend has no exchange-rate source, so chat expenses are limited to
+            # the trip's base currency; the Add Expense form handles conversion.
+            trip_res = await db.execute(select(Trip).where(Trip.id == trip_id))
+            trip = trip_res.scalar_one()
+            if currency != trip.base_currency:
+                return (
+                    f"I can only add expenses in {trip.base_currency}, this trip's base currency. "
+                    f"For a {currency} amount, please use the Add Expense form — it converts currencies for you."
+                )
             title = str(action_data["title"])
             category = action_data.get("category", "other")
             if category not in VALID_CATEGORIES:
@@ -264,6 +273,18 @@ async def _execute_action(
         expense = res.scalar_one_or_none()
         if not expense:
             return f"Expense {expense_id} not found."
+        trip_res = await db.execute(select(Trip).where(Trip.id == trip_id))
+        trip = trip_res.scalar_one()
+        if "currency" in action_data and str(action_data["currency"])[:3].upper() != trip.base_currency:
+            return (
+                f"I can only work with {trip.base_currency}, this trip's base currency. "
+                f"To change an expense's currency, please use the edit form — it converts currencies for you."
+            )
+        if "amount" in action_data and expense.currency != trip.base_currency:
+            return (
+                f"This expense is in {expense.currency}, and I can only edit amounts for "
+                f"{trip.base_currency} expenses. Please use the edit form — it converts currencies for you."
+            )
         if "title" in action_data:
             expense.title = action_data["title"]
         if "amount" in action_data:

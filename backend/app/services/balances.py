@@ -111,14 +111,8 @@ def _minimum_transactions(
     return suggestions
 
 
-async def get_balances(
-    db: AsyncSession, trip_id: str, current_user: User
-) -> list[BalanceResponse]:
-    await _check_membership(db, trip_id, current_user.id)
-    trip = await _get_trip(db, trip_id)
-
-    # Fetch all expenses for the trip
-    exp_result = await db.execute(select(Expense).where(Expense.trip_id == trip_id))
+async def _load_net_balances(db: AsyncSession, trip: Trip) -> dict[str, float]:
+    exp_result = await db.execute(select(Expense).where(Expense.trip_id == trip.id))
     expenses = exp_result.scalars().all()
 
     expense_ids = [e.id for e in expenses]
@@ -129,10 +123,19 @@ async def get_balances(
         )
         splits = split_result.scalars().all()
 
-    sett_result = await db.execute(select(Settlement).where(Settlement.trip_id == trip_id))
+    sett_result = await db.execute(select(Settlement).where(Settlement.trip_id == trip.id))
     past_settlements = sett_result.scalars().all()
 
-    net = _compute_net_balances(trip.members, splits, list(expenses), list(past_settlements))
+    return _compute_net_balances(trip.members, list(splits), list(expenses), list(past_settlements))
+
+
+async def get_balances(
+    db: AsyncSession, trip_id: str, current_user: User
+) -> list[BalanceResponse]:
+    await _check_membership(db, trip_id, current_user.id)
+    trip = await _get_trip(db, trip_id)
+
+    net = await _load_net_balances(db, trip)
 
     return [
         BalanceResponse(
@@ -150,21 +153,7 @@ async def get_suggestions(
     await _check_membership(db, trip_id, current_user.id)
     trip = await _get_trip(db, trip_id)
 
-    exp_result = await db.execute(select(Expense).where(Expense.trip_id == trip_id))
-    expenses = exp_result.scalars().all()
-
-    expense_ids = [e.id for e in expenses]
-    splits: list[ExpenseSplit] = []
-    if expense_ids:
-        split_result = await db.execute(
-            select(ExpenseSplit).where(ExpenseSplit.expense_id.in_(expense_ids))
-        )
-        splits = split_result.scalars().all()
-
-    sett_result = await db.execute(select(Settlement).where(Settlement.trip_id == trip_id))
-    past_settlements = sett_result.scalars().all()
-
-    net = _compute_net_balances(trip.members, splits, list(expenses), list(past_settlements))
+    net = await _load_net_balances(db, trip)
     return _minimum_transactions(net, trip.base_currency)
 
 
@@ -210,13 +199,26 @@ async def create_settlement(
     if data.fromUserId not in member_ids or data.toUserId not in member_ids:
         raise HTTPException(status_code=400, detail="Both payer and recipient must be members of this trip")
 
+    # A payment can't exceed what the payer owes / the recipient is owed —
+    # anything larger would flip balances negative instead of settling them.
+    net = await _load_net_balances(db, trip)
+    max_settle = min(-net.get(data.fromUserId, 0.0), net.get(data.toUserId, 0.0))
+    if data.amount > max_settle + 0.05:
+        if max_settle <= 0:
+            raise HTTPException(status_code=400, detail="There's nothing to settle between these two members")
+        raise HTTPException(
+            status_code=400,
+            detail=f"That's more than what's owed — at most {max_settle:.2f} {trip.base_currency} can be settled here",
+        )
+
     settlement = Settlement(
         id=str(uuid.uuid4()),
         trip_id=trip_id,
         from_user_id=data.fromUserId,
         to_user_id=data.toUserId,
         amount=data.amount,
-        currency=data.currency,
+        # Balance math runs entirely in the trip's base currency; ignore any other value
+        currency=trip.base_currency,
         method=data.method,
         is_partial=data.isPartial,
     )

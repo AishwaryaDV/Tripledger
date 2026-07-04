@@ -95,7 +95,13 @@ const AddExpense = observer(() => {
       notes: expense.notes ?? '',
     })
     setSplitType(expense.splitType)
-    setSplits(expense.splits)
+    // Stored split amounts are in the trip's base currency; the form (and SplitEditor)
+    // operate in the expense's original currency, so convert them back before prefilling.
+    const toOriginal = expense.amountBase > 0 ? expense.amount / expense.amountBase : 1
+    setSplits(expense.splits.map(s => ({
+      ...s,
+      amountOwed: Math.round(s.amountOwed * toOriginal * 100) / 100,
+    })))
     setIsSelfExpense(expense.splits.length === 1 && expense.splits[0].userId === expense.paidBy)
     setSplitKey(k => k + 1) // remount SplitEditor with pre-filled data
   }, [isEditing, expenseId, expenses.expenses.length]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -375,7 +381,7 @@ const AddExpense = observer(() => {
             <p className="text-xs text-muted-foreground -mt-3">
               = {new Intl.NumberFormat('en-US', { style: 'currency', currency: trip.baseCurrency }).format(converted)}
               <span className="ml-2 opacity-70">
-                (1 {watchedCurrency} = {new Intl.NumberFormat('en-US', { style: 'currency', currency: trip.baseCurrency }).format(rate!)})
+                (1 {watchedCurrency} = {new Intl.NumberFormat('en-US', { style: 'currency', currency: trip.baseCurrency, maximumSignificantDigits: 4 }).format(rate!)})
               </span>
             </p>
           ) : (

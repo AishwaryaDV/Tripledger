@@ -53,9 +53,13 @@ export class CurrencyStore {
 
   // Returns the rate for converting 1 unit of `from` into `baseCurrency`
   // e.g. getRate('USD') when base is INR → 83.02
+  // The API returns base→foreign rates (base USD → rates.THB ≈ 36, i.e. 1 USD = 36 THB),
+  // so the foreign→base rate is the reciprocal.
   getRate(from: string): number | null {
     if (from === this.base) return 1
-    return this.rates[from] ?? null
+    const baseToForeign = this.rates[from]
+    if (baseToForeign == null || baseToForeign <= 0) return null
+    return 1 / baseToForeign
   }
 
   // Convert an amount from `fromCurrency` to the base currency

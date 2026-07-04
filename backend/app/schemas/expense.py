@@ -4,11 +4,23 @@ from typing import Literal, Optional
 VALID_CATEGORIES = {'food', 'transport', 'accommodation', 'activities', 'other'}
 VALID_SPLIT_TYPES = {'equal', 'exact', 'percentage', 'shares'}
 
+# Numeric(12,4) columns overflow above this — reject early with a clean 422
+MAX_AMOUNT = 99_999_999
+
 
 class ExpenseSplitInput(BaseModel):
     userId: str
     amountOwed: float
     shareValue: Optional[float] = None
+
+    @field_validator('amountOwed')
+    @classmethod
+    def amount_owed_must_be_sane(cls, v: float) -> float:
+        if v < 0:
+            raise ValueError('amountOwed cannot be negative')
+        if v > MAX_AMOUNT:
+            raise ValueError(f'amountOwed cannot exceed {MAX_AMOUNT:,}')
+        return v
 
 
 class ExpenseCreate(BaseModel):
@@ -24,11 +36,22 @@ class ExpenseCreate(BaseModel):
     expenseDate: str
     notes: Optional[str] = None
 
-    @field_validator('amount')
+    @field_validator('amount', 'amountBase')
     @classmethod
     def amount_must_be_positive(cls, v: float) -> float:
         if v <= 0:
             raise ValueError('amount must be greater than 0')
+        if v > MAX_AMOUNT:
+            raise ValueError(f'amount cannot exceed {MAX_AMOUNT:,}')
+        return v
+
+    @field_validator('exchangeRate')
+    @classmethod
+    def exchange_rate_must_be_positive(cls, v: float) -> float:
+        if v <= 0:
+            raise ValueError('exchangeRate must be greater than 0')
+        if v > 1_000_000:
+            raise ValueError('exchangeRate is out of range')
         return v
 
     @field_validator('category')
