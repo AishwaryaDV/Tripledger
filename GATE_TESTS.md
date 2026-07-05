@@ -3,6 +3,28 @@
 Running checklist of manual tests to do after the FINAL_AUDIT fix batches are complete.
 Items get added here as each batch lands. Do these on the final build, in order.
 
+## ✅ Automated API run — 2026-07-04 (47/47 passed)
+
+`backend/scripts/api_gate_tests.py` (run with backend up: `venv/bin/python scripts/api_gate_tests.py`
+from `backend/`) drives the real local API with two real Supabase accounts and verifies against
+independently computed math. It discharges the backend side of the checklist:
+
+- Cross-currency balance math (live THB/EUR rates, all 4 split modes, edit flow, zero-sum,
+  suggestion amounts) — matched to the cent
+- Join flow (bad code 404, rejoin 409, UUID-join endpoint removed, slim public preview)
+- AI chat + expense tenancy (403 for non-members)
+- Over-settle 400, self-settle 422, settlement currency forced to base, settle-to-zero
+- Mark-settled 409 with outstanding + force flag + owner-only; settled-trip delete 409
+- Leave-with-involvement 409, owner-leave 400, account-deletion-while-active 409
+- All Batch 4 validators (circleType, dates, name length, currency codes, negative amounts,
+  splits-sum, whitespace notes)
+
+**Still manual (frontend/UI):** the browser-side checks below — FX hint display, edit-prefill
+showing original-currency values, trip-switch flash, error banners, profile-drawer expiry,
+force-settle confirm panel, receipt scan, clipboard denial, CSV column alignment, deep links,
+AI chat guardrail replies (LLM-driven), and full account deletion once
+`SUPABASE_SERVICE_ROLE_KEY` is added to `backend/.env`.
+
 ## From Batch 1 — Money math (N1, N6, N3-currency, N11-amounts)
 
 - [ ] **Wipe or re-enter existing multi-currency test data.** Any cross-currency expense
