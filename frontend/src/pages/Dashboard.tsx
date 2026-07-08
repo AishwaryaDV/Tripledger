@@ -100,25 +100,25 @@ const Dashboard = observer(() => {
       {/* Header */}
       <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
         <div>
-          <p className="text-base sm:text-sm text-muted-foreground mb-1 sm:mb-0.5">
+          <p className="text-sm text-muted-foreground mb-0.5">
             Hey, {auth.currentUser?.displayName?.split(' ')[0] ?? 'there'} 👋
           </p>
-          <h2 className="text-3xl font-bold mt-1">My Circles</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold mt-1">My Circles</h2>
         </div>
         <div className="flex gap-2 shrink-0">
           <button
             onClick={() => setShowJoinModal(true)}
-            className="px-4 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors flex items-center gap-1.5"
+            className="px-3 sm:px-4 py-2 rounded-lg border text-xs sm:text-sm font-medium hover:bg-muted transition-colors flex items-center gap-1.5"
           >
             <Link2 size={15} />
             Connect
           </button>
           <button
             onClick={() => navigate('/trips/new')}
-            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5"
+            className="px-3 sm:px-4 py-2 rounded-lg bg-primary text-primary-foreground text-xs sm:text-sm font-medium hover:opacity-90 transition-opacity flex items-center gap-1.5"
           >
             <Plus size={15} />
-            New Circle
+            New
           </button>
         </div>
       </div>
@@ -127,7 +127,7 @@ const Dashboard = observer(() => {
       <JoinCircleModal isOpen={showJoinModal} onClose={() => setShowJoinModal(false)} />
 
       {/* Tabs */}
-      <div className="flex border-b mb-6 mt-8 sm:mt-3">
+      <div className="flex border-b mb-6 mt-4 sm:mt-3">
         <button
           onClick={() => { setActiveTab('active'); setTypeFilter('all') }}
           className={`flex-1 py-2 text-sm font-medium transition-colors relative ${

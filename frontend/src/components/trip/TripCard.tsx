@@ -23,7 +23,7 @@ const TripCard = ({ trip }: TripCardProps) => {
   return (
     <div
       onClick={() => navigate(`/trips/${trip.id}`)}
-      className={`p-5 rounded-xl border text-card-foreground shadow-sm cursor-pointer transition-all ${
+      className={`p-4 sm:p-5 rounded-xl border text-card-foreground shadow-sm cursor-pointer transition-all ${
         trip.isSettled
           ? 'bg-muted/40 border-border/50 hover:border-border'
           : 'bg-card hover:shadow-md hover:border-primary/40'
@@ -52,7 +52,7 @@ const TripCard = ({ trip }: TripCardProps) => {
             <p className="text-sm text-muted-foreground truncate mb-2">{trip.description}</p>
           )}
 
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-2 sm:gap-3 text-xs text-muted-foreground flex-wrap">
             <span>{trip.members.length} member{trip.members.length !== 1 ? 's' : ''}</span>
             <span>·</span>
             <span>{trip.currencies.join(' · ')}</span>

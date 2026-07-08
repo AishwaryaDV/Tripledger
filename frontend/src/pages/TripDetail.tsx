@@ -148,10 +148,10 @@ const TripDetail = observer(() => {
 
       {/* Trip Header */}
       <div className="mb-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2 mb-1 flex-wrap">
-              <h2 className="text-3xl font-bold">{trip.name}</h2>
+              <h2 className="text-2xl sm:text-3xl font-bold break-words">{trip.name}</h2>
               {(() => {
                 const cfg = CIRCLE_TYPE_CONFIG[trip.circleType] ?? CIRCLE_TYPE_CONFIG.trip
                 const Icon = cfg.icon
@@ -168,7 +168,7 @@ const TripDetail = observer(() => {
               )}
             </div>
             {trip.description && (
-              <p className="text-muted-foreground mb-3">{trip.description}</p>
+              <p className="text-sm text-muted-foreground mb-3 break-words">{trip.description}</p>
             )}
             <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
               <span>{trip.members.length} members</span>
@@ -318,33 +318,34 @@ const TripDetail = observer(() => {
             )}
           </div>
         ) : (
-          <div className="flex gap-2 mt-5">
+          <div className="grid grid-cols-4 gap-2 mt-5">
             <button
               onClick={() => navigate(`/trips/${id}/add`)}
-              className="flex-1 px-3 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-1.5"
+              className="px-2 sm:px-3 py-2 rounded-lg bg-primary text-primary-foreground text-xs sm:text-sm font-medium hover:opacity-90 transition-opacity flex items-center justify-center gap-1 sm:gap-1.5"
             >
-              <Plus size={15} />
+              <Plus size={14} className="shrink-0" />
               <span className="hidden sm:inline">Add Expense</span>
               <span className="sm:hidden">Add</span>
             </button>
             <button
               onClick={() => navigate(`/trips/${id}/settle`)}
-              className="flex-1 px-3 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-1.5"
+              className="px-2 sm:px-3 py-2 rounded-lg border text-xs sm:text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-1 sm:gap-1.5"
             >
-              <CreditCard size={15} />
+              <CreditCard size={14} className="shrink-0" />
               <span className="hidden sm:inline">Settle Up</span>
               <span className="sm:hidden">Settle</span>
             </button>
             <button
               onClick={() => navigate(`/trips/${id}/summary`)}
-              className="flex-1 px-3 py-2 rounded-lg border text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-1.5"
+              className="px-2 sm:px-3 py-2 rounded-lg border text-xs sm:text-sm font-medium hover:bg-muted transition-colors flex items-center justify-center gap-1 sm:gap-1.5"
             >
-              <FileText size={15} />
-              Summary
+              <FileText size={14} className="shrink-0" />
+              <span className="hidden sm:inline">Summary</span>
+              <span className="sm:hidden">Sum</span>
             </button>
             <button
               onClick={() => setShowMoreOptions(true)}
-              className="px-3 py-2 rounded-lg border hover:bg-muted transition-colors flex items-center justify-center"
+              className="px-2 sm:px-3 py-2 rounded-lg border hover:bg-muted transition-colors flex items-center justify-center"
               title="More options"
             >
               <MoreHorizontal size={18} />
@@ -354,40 +355,40 @@ const TripDetail = observer(() => {
       </div>
 
       {/* Total spend + currency rate bar */}
-      <div className="rounded-xl bg-muted/50 p-4 mb-6">
+      <div className="rounded-xl bg-muted/50 p-3 sm:p-4 mb-6">
         <div className="flex items-center justify-between">
           <span className="text-sm text-muted-foreground">Total spend</span>
-          <span className="text-xl font-bold">
+          <span className="text-lg sm:text-xl font-bold">
             {formatCurrency(expenses.totalAmount, trip.baseCurrency)}
           </span>
         </div>
-        <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
-          <div className="text-xs text-muted-foreground">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mt-2 pt-2 border-t border-border/50 gap-1">
+          <div className="text-xs text-muted-foreground truncate">
             {currency.error
               ? <span className="text-destructive">Couldn't fetch rates</span>
               : currency.updatedAt
-              ? `Rates as of ${new Date(currency.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} · ${new Date(currency.updatedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`
+              ? `Rates: ${new Date(currency.updatedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} ${new Date(currency.updatedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`
               : currency.isLoading ? 'Fetching rates...' : 'Rates not loaded'}
           </div>
           <button
             onClick={() => currency.fetchRates(trip.baseCurrency, true)}
             disabled={currency.isLoading}
-            className="text-xs text-primary hover:opacity-70 disabled:opacity-40 transition-opacity font-medium flex items-center gap-1"
+            className="text-xs text-primary hover:opacity-70 disabled:opacity-40 transition-opacity font-medium flex items-center gap-1 shrink-0 self-end sm:self-auto"
           >
             <RefreshCw size={11} className={currency.isLoading ? 'animate-spin' : ''} />
-            {currency.isLoading ? 'Refreshing...' : 'Refresh rates'}
+            {currency.isLoading ? 'Refreshing...' : 'Refresh'}
           </button>
         </div>
       </div>
 
-      {/* Tabs — equally distributed, scroll on mobile */}
-      <div className="flex border-b mb-6 overflow-x-auto scrollbar-none gap-1">
+      {/* Tabs — scroll on mobile, equally distributed on desktop */}
+      <div className="flex border-b mb-6 overflow-x-auto scrollbar-none -mx-4 px-4 sm:mx-0 sm:px-0">
         {TABS.map(tab => (
           <button
             key={tab.key}
             onClick={() => !tab.locked && setActiveTab(tab.key)}
             disabled={tab.locked}
-            className={`flex-1 min-w-max py-2.5 px-4 text-sm font-medium transition-colors relative whitespace-nowrap ${
+            className={`sm:flex-1 py-2.5 px-3 sm:px-4 text-xs sm:text-sm font-medium transition-colors relative whitespace-nowrap ${
               tab.locked
                 ? 'text-muted-foreground/40 cursor-not-allowed'
                 : activeTab === tab.key
@@ -397,17 +398,17 @@ const TripDetail = observer(() => {
           >
             {tab.label}
             {tab.locked && (
-              <span className="ml-1.5 text-[10px] bg-muted text-muted-foreground px-1.5 py-0.5 rounded-full font-normal">
+              <span className="ml-1 text-[10px] bg-muted text-muted-foreground px-1 py-0.5 rounded-full font-normal">
                 soon
               </span>
             )}
             {tab.key === 'expenses' && (
-              <span className="ml-1.5 text-xs bg-muted px-1.5 py-0.5 rounded-full">
+              <span className="ml-1 text-[10px] sm:text-xs bg-muted px-1 sm:px-1.5 py-0.5 rounded-full">
                 {expenses.expenses.length}
               </span>
             )}
             {tab.key === 'notes' && notes.notes.length > 0 && (
-              <span className="ml-1.5 text-xs bg-muted px-1.5 py-0.5 rounded-full">
+              <span className="ml-1 text-[10px] sm:text-xs bg-muted px-1 sm:px-1.5 py-0.5 rounded-full">
                 {notes.notes.length}
               </span>
             )}
