@@ -110,3 +110,25 @@
     font-size: 17px;
   }
 }
+
+/* Theme-aware date/time inputs and native selects */
+input[type="date"],
+input[type="time"],
+select {
+  color-scheme: light;
+}
+.dark input[type="date"],
+.dark input[type="time"],
+.dark select {
+  color-scheme: dark;
+}
+input[type="date"]::-webkit-calendar-picker-indicator,
+input[type="time"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+input[type="date"]::-webkit-calendar-picker-indicator:hover,
+input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}

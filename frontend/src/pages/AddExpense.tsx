@@ -365,14 +365,13 @@ const AddExpense = observer(() => {
 
           <div className="w-32">
             <label className="block text-sm font-medium mb-1.5">Currency</label>
-            <select
-              {...register('currency')}
-              className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              {trip.currencies.map(c => (
-                <option key={c} value={c}>{c}</option>
-              ))}
-            </select>
+            <CustomSelect
+              value={watchedCurrency || trip.baseCurrency}
+              onChange={v => setValue('currency', v)}
+              options={trip.currencies.map(c => ({ value: c, label: c }))}
+              className="w-full"
+              buttonClassName="py-2"
+            />
           </div>
         </div>
 
@@ -404,15 +403,13 @@ const AddExpense = observer(() => {
                 </span>
               )}
             </label>
-            <select
-              {...register('category')}
-              onChange={e => { setValue('category', e.target.value as ExpenseCategory); setAiCategory(false) }}
-              className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
-            >
-              {CATEGORIES.map(c => (
-                <option key={c.value} value={c.value}>{c.label}</option>
-              ))}
-            </select>
+            <CustomSelect
+              value={watch('category')}
+              onChange={v => { setValue('category', v as ExpenseCategory); setAiCategory(false) }}
+              options={CATEGORIES}
+              className="w-full"
+              buttonClassName="py-2"
+            />
           </div>
 
           <div className="flex-1">

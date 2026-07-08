@@ -30,6 +30,7 @@ const CreateTrip = observer(() => {
   const [endDate, setEndDate] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [createdTrip, setCreatedTrip] = useState<Trip | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -50,9 +51,10 @@ const CreateTrip = observer(() => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!title.trim()) { setError('Name is required'); return }
-    setIsSubmitting(true)
+    setFieldErrors({})
     setError(null)
+    if (!title.trim()) { setFieldErrors({ name: 'Name is required' }); return }
+    setIsSubmitting(true)
     try {
       const trip = await trips.createTrip({
         name: title.trim(),
@@ -65,7 +67,20 @@ const CreateTrip = observer(() => {
       })
       setCreatedTrip(trip)
     } catch (err: any) {
-      setError(getApiError(err, 'Something went wrong'))
+      const detail = err?.response?.data?.detail
+      if (Array.isArray(detail)) {
+        const errs: Record<string, string> = {}
+        for (const d of detail) {
+          const field = d.loc?.[d.loc.length - 1]
+          const msg = (d.msg ?? String(d)).replace(/^Value error,\s*/i, '')
+          if (field) errs[field] = msg
+          else setError(msg)
+        }
+        if (Object.keys(errs).length) setFieldErrors(errs)
+        else if (!error) setError(getApiError(err, 'Something went wrong'))
+      } else {
+        setError(getApiError(err, 'Something went wrong'))
+      }
     } finally {
       setIsSubmitting(false)
     }
@@ -208,15 +223,16 @@ const CreateTrip = observer(() => {
           <input
             type="text"
             value={title}
-            onChange={e => setTitle(e.target.value)}
+            onChange={e => { setTitle(e.target.value); setFieldErrors(prev => { const { name, ...rest } = prev; return rest }) }}
             placeholder={
               circleType === 'trip' ? 'e.g. Goa 2026' :
               circleType === 'personal' ? 'e.g. My Expenses' :
               circleType === 'household' ? 'e.g. Flat Expenses' :
               'e.g. Rohan\'s Wedding'
             }
-            className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+            className={`w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary ${fieldErrors.name ? 'border-destructive' : ''}`}
           />
+          {fieldErrors.name && <p className="text-xs text-destructive mt-1">{fieldErrors.name}</p>}
         </div>
 
         {/* Description */}
@@ -229,8 +245,9 @@ const CreateTrip = observer(() => {
             value={description}
             onChange={e => setDescription(e.target.value)}
             placeholder={selectedType.description}
-            className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+            className={`w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary ${fieldErrors.description ? 'border-destructive' : ''}`}
           />
+          {fieldErrors.description && <p className="text-xs text-destructive mt-1">{fieldErrors.description}</p>}
         </div>
 
         {/* Date range */}
@@ -242,9 +259,10 @@ const CreateTrip = observer(() => {
             <input
               type="date"
               value={startDate}
-              onChange={e => { setStartDate(e.target.value); if (endDate && e.target.value > endDate) setEndDate('') }}
-              className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+              onChange={e => { setStartDate(e.target.value); if (endDate && e.target.value > endDate) setEndDate(''); setFieldErrors(prev => { const { startDate: _, endDate: __, ...rest } = prev; return rest }) }}
+              className={`w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary ${fieldErrors.startDate ? 'border-destructive' : ''}`}
             />
+            {fieldErrors.startDate && <p className="text-xs text-destructive mt-1">{fieldErrors.startDate}</p>}
           </div>
           <div className="flex-1">
             <label className="block text-sm font-medium mb-1.5">
@@ -254,9 +272,11 @@ const CreateTrip = observer(() => {
               type="date"
               value={endDate}
               min={startDate || undefined}
+              disabled={!startDate}
               onChange={e => setEndDate(e.target.value)}
-              className="w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+              className={`w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary ${!startDate ? 'opacity-50 cursor-not-allowed' : ''}`}
             />
+            {!startDate && <p className="text-xs text-muted-foreground mt-1">Pick a start date first</p>}
           </div>
         </div>
 
