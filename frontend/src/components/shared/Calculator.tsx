@@ -138,7 +138,7 @@ const Calculator = () => {
 
   const btnStyle: React.CSSProperties = pos
     ? { position: 'fixed', left: pos.x, top: pos.y, touchAction: 'none' }
-    : { position: 'fixed', bottom: 80, right: 16, touchAction: 'none' }   // default: original spot
+    : { position: 'fixed', bottom: 20, right: 16, touchAction: 'none' }   // default: bottom-right corner
 
   const PANEL_W = 256
   const PANEL_H = 320
@@ -149,7 +149,7 @@ const Calculator = () => {
         top: pos.y > PANEL_H + 16 ? pos.y - PANEL_H - 12 : pos.y + BTN + 12,
         background: '#1c1c1e',
       }
-    : { position: 'fixed', bottom: 80 + BTN + 12, right: 16, background: '#1c1c1e' }  // default: above default button
+    : { position: 'fixed', bottom: 20 + BTN + 12, right: 16, background: '#1c1c1e' }  // default: above default button
 
   return (
     <>

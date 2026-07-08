@@ -40,12 +40,12 @@ interface ExpenseCardProps {
 
 const ExpenseCard = ({ expense, members, baseCurrency, onEdit, onDelete }: ExpenseCardProps) => {
   const paidByMember = members.find(m => m.userId === expense.paidBy)
-  const paidByName = paidByMember?.displayName ?? 'Unknown'
+  const paidByFirst = (paidByMember?.displayName ?? 'Unknown').split(' ')[0]
   const categoryStyle = CATEGORY_STYLES[expense.category] ?? CATEGORY_STYLES.other
   const CategoryIcon = CATEGORY_ICONS[expense.category] ?? Package
 
-  const getMemberName = (userId: string) =>
-    members.find(m => m.userId === userId)?.displayName ?? userId
+  const getFirstName = (userId: string) =>
+    (members.find(m => m.userId === userId)?.displayName ?? userId).split(' ')[0]
 
   const getMemberColor = (userId: string) =>
     MEMBER_COLORS[members.findIndex(m => m.userId === userId) % MEMBER_COLORS.length] ?? MEMBER_COLORS[0]
@@ -67,7 +67,7 @@ const ExpenseCard = ({ expense, members, baseCurrency, onEdit, onDelete }: Expen
         <div className="flex-1 min-w-0">
           <p className="font-medium truncate">{expense.title}</p>
           <p className="text-xs text-muted-foreground mt-0.5">
-            Paid by <span className="font-medium text-foreground">{paidByName}</span>
+            Paid by <span className="font-medium text-foreground">{paidByFirst}</span>
             {' · '}{formatDate(expense.expenseDate)}
           </p>
 
@@ -82,7 +82,7 @@ const ExpenseCard = ({ expense, members, baseCurrency, onEdit, onDelete }: Expen
                     className="shrink-0 whitespace-nowrap inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium"
                     style={{ backgroundColor: `${color}18`, color, border: `1px solid ${color}50` }}
                   >
-                    {getMemberName(s.userId)}
+                    {getFirstName(s.userId)}
                     <span style={{ opacity: 0.75 }}>−{formatCurrency(s.amountOwed, baseCurrency)}</span>
                   </span>
                 )
@@ -97,30 +97,29 @@ const ExpenseCard = ({ expense, members, baseCurrency, onEdit, onDelete }: Expen
         </div>
 
         {/* Right: amount + edit/delete */}
-        <div className="flex flex-col items-end gap-1 shrink-0">
-          <p className="font-semibold">{formatCurrency(expense.amountBase, baseCurrency)}</p>
-          {expense.currency !== baseCurrency && (
-            <p className="text-xs text-muted-foreground">
-              {formatCurrency(expense.amount, expense.currency)}
-            </p>
-          )}
-
-          <div className="flex items-center gap-0.5 mt-1">
+        <div className="flex flex-col items-end shrink-0">
+          <div className="flex items-center gap-1">
+            <p className="font-semibold">{formatCurrency(expense.amountBase, baseCurrency)}</p>
             <button
               onClick={onEdit}
               title="Edit expense"
               className="p-1 rounded hover:bg-muted text-muted-foreground hover:text-foreground transition-colors"
             >
-              <Pencil size={13} />
+              <Pencil size={12} />
             </button>
             <button
               onClick={onDelete}
               title="Delete expense"
               className="p-1 rounded hover:bg-muted text-destructive transition-colors"
             >
-              <Trash2 size={13} />
+              <Trash2 size={12} />
             </button>
           </div>
+          {expense.currency !== baseCurrency && (
+            <p className="text-xs text-muted-foreground">
+              {formatCurrency(expense.amount, expense.currency)}
+            </p>
+          )}
         </div>
 
       </div>

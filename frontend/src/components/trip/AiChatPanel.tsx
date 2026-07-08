@@ -135,7 +135,7 @@ const AiChatPanel = ({ tripId, onActionPerformed }: Props) => {
   return (
     <>
       {/* Floating bot button */}
-      <div className="group" style={{ position: 'fixed', bottom: 136, right: 16, zIndex: 30 }}>
+      <div className="group" style={{ position: 'fixed', bottom: 76, right: 16, zIndex: 30 }}>
         {/* Hover tooltip */}
         <div className="absolute bottom-full right-0 mb-2 pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-150">
           <div className="bg-popover text-popover-foreground border rounded-xl shadow-lg px-3 py-2 w-44 text-right">
