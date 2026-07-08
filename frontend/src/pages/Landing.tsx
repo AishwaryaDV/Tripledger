@@ -1,172 +1,9 @@
 // src/pages/Landing.tsx
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Moon, Sun } from 'lucide-react'
+import { Moon, Sun, ChevronDown } from 'lucide-react'
 import { useTheme } from '@/hooks/useTheme'
 
-// ── Onboarding slides ────────────────────────────────────────────────────────
-const SLIDES = [
-  {
-    headline: 'Welcome to\nTripLedger',
-    sub: 'Split expenses with anyone — fairly, instantly, without the awkward follow-ups.',
-    accent: 'from-orange-200 to-amber-100',
-    bg: 'linear-gradient(180deg, hsl(25,70%,84%) 0%, hsl(35,50%,93%) 55%, hsl(40,25%,99%) 100%)',
-  },
-  {
-    headline: 'Track every\nshared expense',
-    sub: 'Add an expense in seconds and we calculate exactly what everyone owes in real time.',
-    accent: 'from-teal-200 to-emerald-100',
-    bg: 'linear-gradient(180deg, hsl(172,45%,82%) 0%, hsl(165,32%,92%) 55%, hsl(160,18%,99%) 100%)',
-  },
-  {
-    headline: 'Any currency,\nno confusion',
-    sub: 'Set a base currency and log in any currency — live rates handle the conversion automatically.',
-    accent: 'from-blue-200 to-sky-100',
-    bg: 'linear-gradient(180deg, hsl(210,60%,82%) 0%, hsl(205,40%,92%) 55%, hsl(200,20%,99%) 100%)',
-  },
-  {
-    headline: 'Settle up\nfairly, fast',
-    sub: 'We calculate the minimum transfers needed so nobody is chasing anyone. Clean slate, every time.',
-    accent: 'from-emerald-200 to-teal-100',
-    bg: 'linear-gradient(180deg, hsl(145,45%,80%) 0%, hsl(152,32%,91%) 55%, hsl(155,18%,99%) 100%)',
-  },
-]
-
-// Box position + animation per slide — all positioning inside cls
-const BOX_CONFIG = [
-  {
-    cls: 'absolute top-1/2 left-1/2 w-72 h-52',  // centered via keyframe translate
-    enterAnim: 'fadeScaleIn 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.6s forwards',
-    floatAnim: 'floatCenter 3s ease-in-out 1.4s infinite',
-  },
-  {
-    cls: 'absolute top-[15%] left-[8%] w-48 h-32',
-    enterAnim: 'slideFromLeft 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.6s forwards',
-    floatAnim: 'float 3s ease-in-out 1.4s infinite',
-  },
-  {
-    cls: 'absolute bottom-[18%] right-[6%] w-48 h-32',
-    enterAnim: 'slideFromRight 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.6s forwards',
-    floatAnim: 'float 3s ease-in-out 1.4s infinite',
-  },
-  {
-    cls: 'absolute top-[20%] right-[10%] w-48 h-32',
-    enterAnim: 'slideFromRight 0.8s cubic-bezier(0.34,1.56,0.64,1) 0.6s forwards',
-    floatAnim: 'float 3s ease-in-out 1.4s infinite',
-  },
-]
-
-// ── Mobile onboarding carousel ───────────────────────────────────────────────
-const MobileOnboarding = () => {
-  const navigate = useNavigate()
-  const { theme, toggle } = useTheme()
-  const [current, setCurrent] = useState(0)
-  const touchStartX = useRef(0)
-  const touchEndX = useRef(0)
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    touchStartX.current = e.touches[0].clientX
-  }
-  const handleTouchEnd = (e: React.TouchEvent) => {
-    touchEndX.current = e.changedTouches[0].clientX
-    const diff = touchStartX.current - touchEndX.current
-    if (diff > 50) setCurrent(c => Math.min(c + 1, SLIDES.length - 1))
-    else if (diff < -50) setCurrent(c => Math.max(c - 1, 0))
-  }
-
-  const slide = SLIDES[current]
-  const isLast = current === SLIDES.length - 1
-
-  return (
-    <div
-      className="fixed inset-0 flex flex-col select-none px-8 transition-all duration-700 overflow-y-auto relative"
-      style={{ background: slide.bg }}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
-    >
-      {/* Theme toggle — top right */}
-      <button
-        type="button"
-        onClick={toggle}
-        className="absolute top-4 right-4 p-2 rounded-lg text-foreground/60 hover:text-foreground hover:bg-black/10 transition-colors focus:outline-none z-10"
-        aria-label="Toggle dark mode"
-      >
-        {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-      </button>
-
-      {/* Text — top, left justified */}
-      <div key={`text-${current}`} className="pt-16 pb-6">
-        <h1
-          className="text-4xl font-extrabold leading-tight mb-3 whitespace-pre-line"
-          style={{ opacity: 0, animation: 'fadeSlideUp 0.7s ease 0.1s forwards' }}
-        >
-          {slide.headline}
-        </h1>
-        <p
-          className="text-foreground/70 text-lg font-semibold leading-snug"
-          style={{ opacity: 0, animation: 'fadeSlideUp 0.7s ease 0.4s forwards' }}
-        >
-          {slide.sub}
-        </p>
-      </div>
-
-      {/* Animation area */}
-      <div className="flex-1 relative">
-        {(() => {
-          const box = BOX_CONFIG[current]
-          return (
-            <div
-              key={`box-${current}`}
-              className={`bg-white rounded-2xl border border-white/80 ${box.cls}`}
-              style={{ opacity: 0, animation: `${box.enterAnim}, ${box.floatAnim}` }}
-            />
-          )
-        })()}
-      </div>
-
-      {/* Bottom — dots + skip */}
-      <div className="pb-14 flex flex-col items-center gap-4">
-        <div className="flex gap-2">
-          {SLIDES.map((_, i) => (
-            <button
-              key={i}
-              onClick={() => setCurrent(i)}
-              className={`rounded-full transition-all duration-300 ${
-                i === current ? 'w-6 h-2 bg-primary' : 'w-2 h-2 bg-muted-foreground/30'
-              }`}
-            />
-          ))}
-        </div>
-
-        {isLast ? (
-          <div className="w-full flex flex-col gap-3">
-            <button
-              onClick={() => navigate('/login', { state: { tab: 'signup', hint: 'trip' } })}
-              className="w-full py-3.5 rounded-lg bg-primary text-primary-foreground font-semibold text-base hover:opacity-90 transition-opacity"
-            >
-              Add a group trip
-            </button>
-            <button
-              onClick={() => navigate('/login', { state: { tab: 'signup', hint: 'household' } })}
-              className="w-full py-3.5 rounded-lg border border-primary text-primary font-semibold text-base hover:bg-primary/5 transition-colors bg-white/60"
-            >
-              Add your household
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => navigate('/login')}
-            className="text-base font-bold text-primary"
-          >
-            Skip tour
-          </button>
-        )}
-      </div>
-    </div>
-  )
-}
-
-// ── Desktop landing ──────────────────────────────────────────────────────────
 type FeatureTab = 'split' | 'currencies' | 'settle' | 'trips'
 
 const FEATURE_TABS: { key: FeatureTab; label: string }[] = [
@@ -249,8 +86,8 @@ const DesktopLanding = () => {
         </div>
       </header>
 
-      <section className="container mx-auto px-4 py-20 text-center max-w-2xl">
-        <h2 className="text-5xl font-bold tracking-tight mb-4">
+      <section className="container mx-auto px-4 py-10 sm:py-20 text-center max-w-2xl">
+        <h2 className="text-3xl sm:text-5xl font-bold tracking-tight mb-4">
           Split trips,<br />not friendships
         </h2>
         <p className="text-lg text-muted-foreground mb-10 leading-relaxed">
@@ -275,35 +112,81 @@ const DesktopLanding = () => {
 
       <section className="container mx-auto px-4 pb-20 max-w-3xl">
         <h3 className="text-2xl font-bold text-center mb-8">Everything you need</h3>
-        <div className="flex border-b mb-8 overflow-x-auto scrollbar-none">
-          {FEATURE_TABS.map(tab => (
-            <button
-              key={tab.key}
-              onClick={() => setActiveFeature(tab.key)}
-              className={`flex-1 min-w-max py-2.5 px-2 text-sm font-medium transition-colors relative whitespace-nowrap ${
-                activeFeature === tab.key ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
-              }`}
-            >
-              {tab.label}
-              {activeFeature === tab.key && (
-                <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
-              )}
-            </button>
-          ))}
-        </div>
-        <div className="rounded-xl border bg-card p-6 space-y-4">
-          <div>
-            <h4 className="text-xl font-bold mb-2">{feature.heading}</h4>
-            <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
-          </div>
-          <ul className="space-y-2.5">
-            {feature.points.map((point, i) => (
-              <li key={i} className="flex items-start gap-2.5 text-sm">
-                <span className="text-primary mt-0.5 shrink-0">✓</span>
-                <span>{point}</span>
-              </li>
+
+        {/* Desktop: tabs */}
+        <div className="hidden sm:block">
+          <div className="flex border-b mb-8">
+            {FEATURE_TABS.map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveFeature(tab.key)}
+                className={`flex-1 min-w-max py-2.5 px-2 text-sm font-medium transition-colors relative whitespace-nowrap ${
+                  activeFeature === tab.key ? 'text-primary' : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
+                {tab.label}
+                {activeFeature === tab.key && (
+                  <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary rounded-full" />
+                )}
+              </button>
             ))}
-          </ul>
+          </div>
+          <div className="rounded-xl border bg-card p-6 space-y-4">
+            <div>
+              <h4 className="text-xl font-bold mb-2">{feature.heading}</h4>
+              <p className="text-muted-foreground text-sm leading-relaxed">{feature.description}</p>
+            </div>
+            <ul className="space-y-2.5">
+              {feature.points.map((point, i) => (
+                <li key={i} className="flex items-start gap-2.5 text-sm">
+                  <span className="text-primary mt-0.5 shrink-0">✓</span>
+                  <span>{point}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+
+        {/* Mobile: stacked accordion cards */}
+        <div className="sm:hidden space-y-3">
+          {FEATURE_TABS.map(tab => {
+            const f = FEATURES[tab.key]
+            const isOpen = activeFeature === tab.key
+            return (
+              <div key={tab.key} className="rounded-xl border bg-card overflow-hidden">
+                <button
+                  onClick={() => setActiveFeature(isOpen ? (null as unknown as FeatureTab) : tab.key)}
+                  className="w-full flex items-center justify-between px-4 py-3.5 text-left"
+                >
+                  <span className="font-semibold text-sm">{tab.label}</span>
+                  <ChevronDown
+                    size={16}
+                    className={`text-muted-foreground transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+                  />
+                </button>
+                <div
+                  className={`grid transition-all duration-200 ${isOpen ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
+                >
+                  <div className="overflow-hidden">
+                    <div className="px-4 pb-4 space-y-3">
+                      <div>
+                        <h4 className="text-base font-bold mb-1">{f.heading}</h4>
+                        <p className="text-muted-foreground text-sm leading-relaxed">{f.description}</p>
+                      </div>
+                      <ul className="space-y-2">
+                        {f.points.map((point, i) => (
+                          <li key={i} className="flex items-start gap-2 text-sm">
+                            <span className="text-primary mt-0.5 shrink-0">✓</span>
+                            <span>{point}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )
+          })}
         </div>
       </section>
 
@@ -325,12 +208,4 @@ const DesktopLanding = () => {
   )
 }
 
-// ── Entry point — mobile vs desktop ─────────────────────────────────────────
-const Landing = () => (
-  <>
-    <div className="sm:hidden"><MobileOnboarding /></div>
-    <div className="hidden sm:block"><DesktopLanding /></div>
-  </>
-)
-
-export default Landing
+export default DesktopLanding
