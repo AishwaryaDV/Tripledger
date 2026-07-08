@@ -17,12 +17,16 @@ api.interceptors.request.use(async (config) => {
 })
 
 // If we get a 401 (token expired) — log the user out
-// Skip /auth/me since it can 401 during signup before the session is cached
+// Skip /auth/me (can 401 during signup) and /ai-chat (handled inline)
 api.interceptors.response.use(
   res => res,
   async (error) => {
     const url = error.config?.url ?? ''
-    if (error.response?.status === 401 && !url.includes('/auth/me')) {
+    if (
+      error.response?.status === 401
+      && !url.includes('/auth/me')
+      && !url.includes('/ai-chat')
+    ) {
       await supabase.auth.signOut()
       sessionStorage.setItem('auth_expired', '1')
       window.location.href = '/login'

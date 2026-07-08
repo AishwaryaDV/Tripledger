@@ -88,13 +88,29 @@ const AiChatPanel = ({ tripId, onActionPerformed }: Props) => {
       const res = await api.post<{ message: string; action_type: string | null; action_result: string | null }>(
         `/trips/${tripId}/ai-chat`,
         { message: text },
+        { timeout: 45_000 },
       )
       setMessages(prev => [...prev, { id: `resp-${Date.now()}`, role: 'assistant', content: res.data.message }])
       if (res.data.action_type) onActionPerformed?.()
     } catch (err: any) {
-      toast.error(err.response?.data?.detail ?? 'Something went wrong')
-      setMessages(prev => prev.filter(m => m.id !== userMsg.id))
-      setInput(text)
+      const status = err.response?.status
+      const detail = err.response?.data?.detail
+      let errorMsg = 'Something went wrong'
+      if (err.code === 'ECONNABORTED' || err.message?.includes('timeout')) {
+        errorMsg = 'AI took too long to respond — try a simpler question'
+      } else if (status === 503) {
+        errorMsg = 'AI assistant is not available right now'
+      } else if (status === 504) {
+        errorMsg = 'AI timed out — try again'
+      } else if (status === 401) {
+        errorMsg = 'Session expired — please log in again'
+      } else if (detail) {
+        errorMsg = detail
+      }
+      setMessages(prev => [
+        ...prev.filter(m => m.id !== userMsg.id),
+        { id: `err-${Date.now()}`, role: 'assistant', content: `⚠️ ${errorMsg}` },
+      ])
     } finally {
       setIsSending(false)
       setTimeout(() => inputRef.current?.focus(), 50)
@@ -139,7 +155,7 @@ const AiChatPanel = ({ tripId, onActionPerformed }: Props) => {
 
       {/* Side panel */}
       {isOpen && (
-        <div className="fixed bottom-4 right-4 z-50 bg-background border rounded-2xl shadow-2xl flex flex-col w-full sm:w-[360px]" style={{ height: '520px' }}>
+        <div className="fixed inset-x-0 bottom-0 sm:inset-x-auto sm:bottom-4 sm:right-4 z-50 bg-background border sm:rounded-2xl rounded-t-2xl shadow-2xl flex flex-col w-full sm:w-[360px] h-[85vh] sm:h-[520px]">
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b shrink-0">
             <div className="flex items-center gap-2">

@@ -33,6 +33,14 @@ const ProtectedRoute = observer(({ children }: ProtectedRouteProps) => {
     )
   }
 
+  // After Google OAuth the user may land at /dashboard while a deep link
+  // was saved to sessionStorage — honour it once.
+  const pendingRedirect = sessionStorage.getItem('post_login_redirect')
+  if (pendingRedirect) {
+    sessionStorage.removeItem('post_login_redirect')
+    return <Navigate to={pendingRedirect} replace />
+  }
+
   // Render children if authenticated
   return <>{children}</>
 })

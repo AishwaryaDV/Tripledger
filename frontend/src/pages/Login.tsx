@@ -30,7 +30,9 @@ const Login = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { auth } = useStore()
-  const redirectTo = (location.state as any)?.redirectTo ?? '/dashboard'
+  const redirectTo = (location.state as any)?.redirectTo
+    ?? sessionStorage.getItem('post_login_redirect')
+    ?? '/dashboard'
 
   const [mode, setMode] = useState<Mode>((location.state as any)?.tab === 'signup' ? 'signup' : 'login')
 
@@ -43,6 +45,7 @@ const Login = () => {
 
   useEffect(() => {
     if (!auth.isLoading && auth.isLoggedIn) {
+      sessionStorage.removeItem('post_login_redirect')
       navigate(redirectTo, { replace: true })
     }
   }, [auth.isLoading, auth.isLoggedIn]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -101,7 +104,10 @@ const Login = () => {
   }
 
   const handleGoogle = async () => {
-    await auth.loginWithGoogle()
+    if (redirectTo !== '/dashboard') {
+      sessionStorage.setItem('post_login_redirect', redirectTo)
+    }
+    await auth.loginWithGoogle(redirectTo)
     if (auth.error) toast.error(auth.error)
   }
 

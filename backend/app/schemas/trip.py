@@ -12,8 +12,8 @@ class TripCreate(BaseModel):
     circleType: str = "trip"
     currencies: list[str] = ["USD"]
     baseCurrency: str = "USD"
-    startDate: Optional[str] = None
-    endDate: Optional[str] = None
+    startDate: Optional[_date] = None
+    endDate: Optional[_date] = None
 
     @field_validator('name')
     @classmethod
@@ -63,16 +63,17 @@ class TripCreate(BaseModel):
             raise ValueError('baseCurrency must be a 3-letter currency code')
         return v
 
-    @field_validator('startDate', 'endDate')
+    @field_validator('startDate', 'endDate', mode='before')
     @classmethod
-    def dates_must_be_iso(cls, v: Optional[str]) -> Optional[str]:
+    def dates_must_be_iso(cls, v):
         if v is None or v == "":
             return None
+        if isinstance(v, _date):
+            return v
         try:
-            _date.fromisoformat(v)
-        except ValueError:
+            return _date.fromisoformat(v)
+        except (ValueError, TypeError):
             raise ValueError('dates must be valid ISO dates (YYYY-MM-DD)')
-        return v
 
     @model_validator(mode='after')
     def cross_field_checks(self) -> 'TripCreate':
