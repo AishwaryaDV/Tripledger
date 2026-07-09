@@ -98,8 +98,13 @@ const ExpenseCard = ({ expense, members, baseCurrency, onEdit, onDelete }: Expen
 
         {/* Right: amount + edit/delete */}
         <div className="flex flex-col items-end shrink-0">
-          <div className="flex items-center gap-1">
-            <p className="font-semibold">{formatCurrency(expense.amountBase, baseCurrency)}</p>
+          <p className="font-semibold">{formatCurrency(expense.amountBase, baseCurrency)}</p>
+          {expense.currency !== baseCurrency && (
+            <p className="text-xs text-muted-foreground">
+              {formatCurrency(expense.amount, expense.currency)}
+            </p>
+          )}
+          <div className="flex items-center gap-1 mt-1">
             <button
               onClick={onEdit}
               title="Edit expense"
@@ -115,11 +120,6 @@ const ExpenseCard = ({ expense, members, baseCurrency, onEdit, onDelete }: Expen
               <Trash2 size={12} />
             </button>
           </div>
-          {expense.currency !== baseCurrency && (
-            <p className="text-xs text-muted-foreground">
-              {formatCurrency(expense.amount, expense.currency)}
-            </p>
-          )}
         </div>
 
       </div>

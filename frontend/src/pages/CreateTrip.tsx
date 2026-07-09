@@ -31,6 +31,7 @@ const CreateTrip = observer(() => {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
+  const [touched, setTouched] = useState<Record<string, boolean>>({})
   const [createdTrip, setCreatedTrip] = useState<Trip | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -224,6 +225,7 @@ const CreateTrip = observer(() => {
             type="text"
             value={title}
             onChange={e => { setTitle(e.target.value); setFieldErrors(prev => { const { name, ...rest } = prev; return rest }) }}
+            onBlur={() => { setTouched(prev => ({ ...prev, name: true })); if (!title.trim()) setFieldErrors(prev => ({ ...prev, name: 'Name is required' })) }}
             placeholder={
               circleType === 'trip' ? 'e.g. Goa 2026' :
               circleType === 'personal' ? 'e.g. My Expenses' :
@@ -259,6 +261,7 @@ const CreateTrip = observer(() => {
             <input
               type="date"
               value={startDate}
+              autoComplete="off"
               onChange={e => { setStartDate(e.target.value); if (endDate && e.target.value > endDate) setEndDate(''); setFieldErrors(prev => { const { startDate: _, endDate: __, ...rest } = prev; return rest }) }}
               className={`w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary ${fieldErrors.startDate ? 'border-destructive' : ''}`}
             />
@@ -273,6 +276,7 @@ const CreateTrip = observer(() => {
               value={endDate}
               min={startDate || undefined}
               disabled={!startDate}
+              autoComplete="off"
               onChange={e => setEndDate(e.target.value)}
               className={`w-full border rounded-lg px-3 py-2 text-sm bg-background focus:outline-none focus:ring-2 focus:ring-primary ${!startDate ? 'opacity-50 cursor-not-allowed' : ''}`}
             />

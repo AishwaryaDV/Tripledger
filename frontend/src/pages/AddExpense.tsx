@@ -53,9 +53,10 @@ const AddExpense = observer(() => {
   const currentUserId = auth.currentUser?.id ?? ''
 
   const { register, handleSubmit, watch, reset, setValue, formState: { errors } } = useForm<ExpenseFormValues>({
+    mode: 'onBlur',
     defaultValues: {
       currency: trip?.baseCurrency ?? 'INR',
-      expenseDate: new Date().toISOString().split('T')[0],
+      expenseDate: '',
       category: 'food',
       paidBy: currentUserId,
     }
